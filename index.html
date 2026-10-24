@@ -1081,24 +1081,27 @@
       z-index: 1;
     }
     #event-toast.toast-floating {
-      position: fixed;
-      top: 52px;
+      position: fixed !important;
+      bottom: 20px !important;
+      top: auto !important;
       left: 50% !important;
       right: auto !important;
       transform: translateX(-50%) !important;
       translate: none !important;
-      z-index: 65;
+      z-index: 100 !important;
       width: max-content;
       max-width: min(92vw, 38rem);
-      border-radius: 1rem;
+      border-radius: 9999px;
       margin: 0 auto;
       text-align: center;
       transition: opacity 0.4s ease, transform 0.25s ease;
       cursor: pointer;
+      pointer-events: auto;
     }
     #event-toast.toast-hidden {
-      opacity: 0;
-      pointer-events: none;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: translateX(-50%) translateY(12px) !important;
     }
     .hud-layer {
       position: fixed;
@@ -1111,10 +1114,10 @@
       pointer-events: none;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: flex-start;
       align-items: center;
-      padding: 8px 12px;
-      gap: 6px;
+      padding: 4px 10px;
+      gap: 2px;
       overflow: hidden;
       box-sizing: border-box;
     }
@@ -1126,18 +1129,19 @@
     }
     /* Keep part of the 3D board visible: the HUD scrolls internally instead of filling the screen */
     /* ===== HUD layout =====
-       Desktop: Centered at the bottom, sticky phase controls, interior scroll.
+       Desktop/Laptop: Pulled up directly below header, sticky phase controls, interior scroll.
        Compact (phones/tablets/short screens): Two tabs (Điều khiển / Món & Kho) - always centered!
-       Phone landscape: Centered at the bottom with compact height - never skewed or docked to one side! */
+       Phone landscape: Centered and compact right below header! */
     #hud-main-deck {
-      max-height: min(calc(100vh - var(--hdr-h, 60px) - 16px), 70vh) !important;
-      max-height: min(calc(100dvh - var(--hdr-h, 60px) - 16px), 70dvh) !important;
+      max-height: min(calc(100vh - var(--hdr-h, 46px) - 8px), 82vh) !important;
+      max-height: min(calc(100dvh - var(--hdr-h, 46px) - 8px), 82dvh) !important;
       width: 100% !important;
       max-width: min(100%, 1024px) !important;
       margin-left: auto !important;
       margin-right: auto !important;
       align-self: center !important;
-      margin-top: auto;
+      margin-top: 1px !important;
+      margin-bottom: auto !important;
       box-sizing: border-box !important;
     }
     #mat-phase-controller-area {
@@ -1225,24 +1229,27 @@
 
     /* Phones in landscape: keep HUD centered, compact and never docked/skewed to one side */
     @media (orientation: landscape) and (max-height: 560px) {
+      .hud-layer { padding: 3px 8px !important; gap: 2px !important; }
       header h1 .sm\:inline { display: none !important; }
       header .ph-label { display: none !important; }
       header .md\:flex { display: none !important; }   /* camera presets */
-      header { padding-top: 4px !important; padding-bottom: 4px !important; }
+      header { padding-top: 3px !important; padding-bottom: 3px !important; }
       #hud-main-deck {
         position: relative !important;
         top: auto !important;
         right: auto !important;
-        bottom: 0 !important;
+        bottom: auto !important;
         left: auto !important;
         transform: none !important;
         margin-left: auto !important;
         margin-right: auto !important;
-        width: min(94vw, 760px) !important;
-        max-width: min(94vw, 760px) !important;
-        max-height: min(calc(100dvh - var(--hdr-h, 50px) - 8px), 72dvh) !important;
+        margin-top: 1px !important;
+        margin-bottom: auto !important;
+        width: min(96vw, 840px) !important;
+        max-width: min(96vw, 840px) !important;
+        max-height: min(calc(100dvh - var(--hdr-h, 44px) - 6px), 82dvh) !important;
         border-width: 3px;
-        padding: 8px !important;
+        padding: 6px !important;
       }
       .hud-layer > footer { display: none !important; }
     }
@@ -1343,11 +1350,11 @@
 
     @media (max-height: 760px) {
       .hud-layer {
-        padding: 6px 10px;
-        gap: 4px;
+        padding: 4px 8px;
+        gap: 2px;
       }
       #hud-main-deck {
-        max-height: calc(100vh - 105px);
+        max-height: calc(100vh - var(--hdr-h, 46px) - 8px);
       }
     }
     @media (max-height: 620px) {
@@ -1355,7 +1362,7 @@
         display: none;
       }
       #hud-main-deck {
-        max-height: calc(100vh - 75px);
+        max-height: calc(100vh - var(--hdr-h, 46px) - 6px);
       }
     }
   </style>
@@ -1467,12 +1474,7 @@
       </div>
     </header>
 
-    <!-- 2. NOTIFICATION / EVENT TOAST BAR (Center Top) -->
-    <div id="event-toast" class="hud-interactive self-center max-w-xl text-center bg-stone-950/95 border border-amber-500/60 text-amber-200 text-xs lg:text-sm font-bold px-6 py-2 rounded-full shadow-2xl transition-all duration-300 transform">
-      🎉 VÁN MỚI BẮT ĐẦU: Bếp Cô Ba nhận 2 món (Bánh Mì Kẹp Thịt Chả & Phở Bò Tái Nạm Cung Đình) cùng $300. Ai đạt 20 ⭐ trước sẽ thắng vào cuối ngày!
-    </div>
-
-    <!-- 3. MAIN GAMEPLAY INTERACTION CONTROLLER (Pinned Bottom) -->
+    <!-- 2. MAIN GAMEPLAY INTERACTION CONTROLLER (Directly under Header) -->
     <div id="hud-main-deck" data-tab="controls" class="hud-interactive self-center w-full max-w-5xl player-mat-hud rounded-2xl flex flex-col gap-2 transition-all duration-300 p-2 sm:p-3" style="transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;">
 
       <!-- Compact screens: switch between the controls and the recipes/pantry -->
@@ -1738,6 +1740,11 @@
       <span>Cố định góc nhìn thuận mắt</span>
     </footer>
 
+  </div>
+
+  <!-- FLOATING NOTIFICATION / EVENT TOAST (Bottom Center) -->
+  <div id="event-toast" class="toast-floating hud-interactive max-w-xl text-center bg-stone-950/95 border border-amber-500/60 text-amber-200 text-xs lg:text-sm font-bold px-6 py-2 rounded-full shadow-2xl transition-all duration-300 transform" role="status" aria-live="polite">
+    🎉 VÁN MỚI BẮT ĐẦU: Bếp Cô Ba nhận 2 món (Bánh Mì Kẹp Thịt Chả & Phở Bò Tái Nạm Cung Đình) cùng $300. Ai đạt 20 ⭐ trước sẽ thắng vào cuối ngày!
   </div>
 
   <!-- ========================================== -->
@@ -3222,7 +3229,6 @@ const gameState = {
       if (!hudHeaderEl) return;
       const bottom = Math.round(hudHeaderEl.getBoundingClientRect().bottom);
       document.documentElement.style.setProperty('--hdr-h', bottom + 'px');
-      if (eventToast) eventToast.style.top = (bottom + 6) + 'px';
     }
     syncHeaderHeight();
     setTimeout(() => eventToast && eventToast.classList.add('toast-hidden'), 7000);   // intro message fades out too
@@ -3244,26 +3250,19 @@ const gameState = {
       }
     });
 
-    // Float the toast above modals/banners so validation errors are always visible
-    if (eventToast && !eventToast.classList.contains('toast-floating')) {
-      document.body.appendChild(eventToast);
-      eventToast.classList.add('toast-floating');
-      eventToast.setAttribute('role', 'status');
-      eventToast.setAttribute('aria-live', 'polite');
-    }
     let toastHideTimer = null;
-    eventToast.addEventListener('click', () => eventToast.classList.add('toast-hidden'));
+    if (eventToast) {
+      eventToast.addEventListener('click', () => eventToast.classList.add('toast-hidden'));
+    }
     function setToast(msg, isAlert = false) {
-      // Sit just below the header (which wraps to 2 rows on narrow screens)
-      const hdr = document.querySelector('header');
-      if (hdr) eventToast.style.top = Math.round(hdr.getBoundingClientRect().bottom + 6) + 'px';
+      if (!eventToast) return;
       eventToast.classList.remove('toast-hidden');
       clearTimeout(toastHideTimer);
       toastHideTimer = setTimeout(() => eventToast.classList.add('toast-hidden'), isAlert ? 7000 : 5000);
       eventToast.innerText = msg;
       eventToast.style.borderColor = isAlert ? '#ef4444' : '#f59e0b';
-      eventToast.style.transform = 'scale(1.04)';
-      setTimeout(() => eventToast.style.transform = 'scale(1.0)', 250);
+      eventToast.style.transform = 'translateX(-50%) scale(1.04)';
+      setTimeout(() => eventToast.style.transform = 'translateX(-50%) scale(1.0)', 250);
     }
 
     function updateHUDStats() {
