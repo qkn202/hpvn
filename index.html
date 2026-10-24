@@ -1081,21 +1081,42 @@
       z-index: 1;
     }
     #event-toast.toast-floating {
-      position: fixed; top: 52px; left: 50%; translate: -50% 0; z-index: 65;
-      width: max-content; max-width: min(92vw, 38rem); border-radius: 1rem;
+      position: fixed;
+      top: 52px;
+      left: 50% !important;
+      right: auto !important;
+      transform: translateX(-50%) !important;
+      translate: none !important;
+      z-index: 65;
+      width: max-content;
+      max-width: min(92vw, 38rem);
+      border-radius: 1rem;
+      margin: 0 auto;
+      text-align: center;
+      transition: opacity 0.4s ease, transform 0.25s ease;
+      cursor: pointer;
+    }
+    #event-toast.toast-hidden {
+      opacity: 0;
+      pointer-events: none;
     }
     .hud-layer {
       position: fixed;
       inset: 0;
+      width: 100vw;
+      width: 100dvw;
+      height: 100vh;
+      height: 100dvh;
       z-index: 10;
       pointer-events: none;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 14px;
+      padding: 8px 12px;
       gap: 6px;
       overflow: hidden;
+      box-sizing: border-box;
     }
     .hud-interactive { pointer-events: auto; }
     :focus-visible { outline: 3px solid #fbbf24 !important; outline-offset: 2px; }
@@ -1105,20 +1126,28 @@
     }
     /* Keep part of the 3D board visible: the HUD scrolls internally instead of filling the screen */
     /* ===== HUD layout =====
-       Desktop: the phase controls stay pinned (sticky) at the bottom of the HUD; recipes scroll above them.
-       Compact (phones/tablets/short screens): two tabs – Điều khiển / Món & Kho.
-       Phone landscape: the HUD docks on the right so the 3D board stays visible on the left. */
+       Desktop: Centered at the bottom, sticky phase controls, interior scroll.
+       Compact (phones/tablets/short screens): Two tabs (Điều khiển / Món & Kho) - always centered!
+       Phone landscape: Centered at the bottom with compact height - never skewed or docked to one side! */
     #hud-main-deck {
       max-height: min(calc(100vh - var(--hdr-h, 60px) - 16px), 70vh) !important;
       max-height: min(calc(100dvh - var(--hdr-h, 60px) - 16px), 70dvh) !important;
+      width: 100% !important;
+      max-width: min(100%, 1024px) !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+      align-self: center !important;
       margin-top: auto;
+      box-sizing: border-box !important;
     }
     #mat-phase-controller-area {
       position: sticky; bottom: 0; z-index: 5;
       background: rgba(24, 14, 8, 0.97) !important;
       box-shadow: 0 -10px 18px rgba(0, 0, 0, 0.45);
+      width: 100%;
+      box-sizing: border-box;
     }
-    .hud-tabs { display: none; }
+    .hud-tabs { display: none; width: 100%; box-sizing: border-box; }
     .hud-tabs button {
       flex: 1; padding: 8px 10px; border-radius: 10px; font-weight: 900; font-size: 13px;
       color: #fde68a; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(245, 158, 11, 0.4);
@@ -1127,49 +1156,107 @@
     .hud-tabs button[aria-selected="true"] { background: #f59e0b; color: #1c1917; border-color: #fbbf24; }
     .hud-tab-badge { font-size: 11px; padding: 1px 6px; border-radius: 999px; background: rgba(0,0,0,0.35); }
 
+    /* Dial buttons grid: always symmetrical and centered */
+    .dial-buttons-grid {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      justify-content: center !important;
+      align-items: stretch !important;
+      gap: 6px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .dial-buttons-grid button.dest-btn {
+      flex: 1 1 calc(14.28% - 6px);
+      min-width: 82px;
+      max-width: 145px;
+      box-sizing: border-box;
+    }
+
     @media (max-width: 1023px), (max-height: 620px) {
       .hud-tabs { display: flex; gap: 6px; position: sticky; top: -8px; z-index: 6; padding: 2px 0 6px; background: inherit; }
       #hud-main-deck[data-tab="controls"] #hud-mat-section { display: none !important; }
       #hud-main-deck[data-tab="mat"] #mat-phase-controller-area { display: none !important; }
       #mat-phase-controller-area { position: static; box-shadow: none; border-top: 0 !important; padding-top: 0.5rem; }
+      .dial-buttons-grid button.dest-btn {
+        flex: 1 1 calc(25% - 6px);
+        min-width: 75px;
+        padding: 5px 6px;
+      }
     }
 
     /* Phones in portrait: bottom sheet, compact header */
     @media (max-width: 640px) {
       .hud-layer { padding: 6px; gap: 4px; }
-      #hud-main-deck { max-height: min(calc(100dvh - var(--hdr-h, 90px) - 10px), 64dvh) !important; border-width: 3px; }
-      header .ph-label { display: none; }
-      header [id^="phase-tab-"].bg-amber-500 .ph-label, header [id^="phase-tab-"].bg-red-600 .ph-label { display: inline; }
-      #btn-seat-lola, #btn-seat-angus { font-size: 11px; padding: 3px 8px; }
+      #hud-main-deck {
+        max-height: min(calc(100dvh - var(--hdr-h, 90px) - 10px), 64dvh) !important;
+        border-width: 3px;
+        width: 100% !important;
+        margin-inline: auto !important;
+      }
+      header {
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+      }
+      header .ph-label { display: none !important; }
+      #btn-seat-lola, #btn-seat-angus { font-size: 11px; padding: 3px 6px; }
       #btn-seat-lola > span:first-child, #btn-seat-angus > span:first-child { display: none; }
       /* 2 header rows: [logo + wallet | quick buttons]  /  [seat switch | phase steps] */
-      header > div:nth-child(2) { order: 3; width: 100%; justify-content: space-between; flex-wrap: nowrap; }
+      header > div:nth-child(2) {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
       header > div:nth-child(3) { order: 2; }
-      #mat-phase-controller-area button.dest-btn { min-height: 52px; }
+      #mat-phase-controller-area button.dest-btn { min-height: 48px; }
+      .dial-buttons-grid button.dest-btn {
+        flex: 1 1 calc(33.33% - 6px);
+        min-width: 70px;
+        padding: 4px 2px;
+        font-size: 10px;
+      }
+      .dial-buttons-grid button.dest-btn span.text-base { font-size: 14px; }
+      .dial-buttons-grid button.dest-btn span.text-[11px] { font-size: 9.5px; }
+      .dial-buttons-grid button.dest-btn span.text-[9px] { font-size: 8.5px; }
     }
 
-    /* Phones in landscape: dock the HUD on the right half, header on one line */
-    @media (orientation: landscape) and (max-height: 560px) and (pointer: coarse) {
+    /* Phones in landscape: keep HUD centered, compact and never docked/skewed to one side */
+    @media (orientation: landscape) and (max-height: 560px) {
       header h1 .sm\:inline { display: none !important; }
-      header .ph-label { display: none; }
-      header [id^="phase-tab-"].bg-amber-500 .ph-label, header [id^="phase-tab-"].bg-red-600 .ph-label { display: inline; }
+      header .ph-label { display: none !important; }
       header .md\:flex { display: none !important; }   /* camera presets */
       header { padding-top: 4px !important; padding-bottom: 4px !important; }
       #hud-main-deck {
-        position: fixed !important; top: calc(var(--hdr-h, 50px) + 6px) !important; right: 6px; bottom: auto !important; left: auto;
-        height: calc(100vh - var(--hdr-h, 50px) - 12px) !important; height: calc(100dvh - var(--hdr-h, 50px) - 12px) !important;
-        width: min(62vw, 660px); max-width: none !important; max-height: none !important; margin: 0 !important; min-height: 0;
-        border-width: 3px; padding: 8px !important;
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        bottom: 0 !important;
+        left: auto !important;
+        transform: none !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        width: min(94vw, 760px) !important;
+        max-width: min(94vw, 760px) !important;
+        max-height: min(calc(100dvh - var(--hdr-h, 50px) - 8px), 72dvh) !important;
+        border-width: 3px;
+        padding: 8px !important;
       }
-      #hud-main-deck .sm\:grid-cols-7 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
-      #hud-main-deck .lg\:grid-cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-      #event-toast.toast-floating { left: calc((100vw - min(62vw, 660px) - 12px) / 2); max-width: calc(100vw - min(62vw, 660px) - 24px); font-size: 11px; padding: 6px 10px; }
       .hud-layer > footer { display: none !important; }
     }
 
-    /* Toast fades out after a few seconds so it never permanently covers the board */
-    #event-toast.toast-floating { transition: opacity 0.4s ease, transform 0.25s ease; cursor: pointer; }
-    #event-toast.toast-hidden { opacity: 0; pointer-events: none; }
+    footer.glass-card {
+      margin-left: auto !important;
+      margin-right: auto !important;
+      align-self: center !important;
+      max-width: min(96vw, 44rem);
+      justify-content: center;
+      flex-wrap: wrap;
+      text-align: center;
+    }
+
     @media (max-width: 1023px), (pointer: coarse) {
       .hud-layer > footer { display: none !important; }
     }
@@ -1515,18 +1602,18 @@
                 <p class="text-[10px] text-stone-300">Chọn quầy chợ trên Dial, sau đó bấm nút Lật & Di chuyển!</p>
               </div>
             </div>
-            <div class="flex items-center gap-2.5">
-              <div class="text-xs text-stone-300 bg-stone-900/80 px-2.5 py-1 rounded-lg border border-amber-500/40">
+            <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2 w-full sm:w-auto">
+              <div class="text-xs text-stone-300 bg-stone-900/80 px-2.5 py-1 rounded-lg border border-amber-500/40 text-center">
                 Kim Dial: <b id="selected-dest-label" class="text-amber-400 uppercase font-black">Chợ Hoa Quả ($100)</b>
               </div>
-              <button id="btn-reveal-dials" class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-black text-xs uppercase tracking-wider shadow-xl flex items-center gap-1.5 cursor-pointer transition-all transform hover:scale-105">
+              <button id="btn-reveal-dials" class="w-full sm:w-auto px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-black text-xs uppercase tracking-wider shadow-xl flex items-center justify-center gap-1.5 cursor-pointer transition-all transform hover:scale-105">
                 <span>🛎️ 3, 2, 1... LẬT DIAL & DI CHUYỂN!</span>
               </button>
             </div>
           </div>
 
           <!-- 7 Dial Destination Buttons (Vietnamese Culinary Markets) -->
-          <div class="grid grid-cols-4 sm:grid-cols-7 gap-1.5 text-xs font-bold">
+          <div class="dial-buttons-grid text-xs font-bold">
             <button data-dest="fruit" class="dest-btn p-1.5 rounded-lg bg-sky-950/60 border-2 border-amber-400 bg-amber-900/60 text-sky-200 flex flex-col items-center gap-0.5 transition-all">
               <span class="text-base">🍉</span>
               <span class="text-[11px]">Chợ Hoa Quả</span>
