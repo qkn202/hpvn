@@ -1,6 +1,12 @@
 # 🍲 Vua Đầu Bếp Việt Nam - Đại Chiến Ẩm Thực 3D
 
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-success?style=for-the-badge&logo=github)](https://qkn202.github.io/hpvn/)
+[![Three.js](https://img.shields.io/badge/Three.js-WebGL%203D-black?style=for-the-badge&logo=three.js)](https://threejs.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
+
 Một tựa game cờ bàn chiến thuật ẩm thực 3D (Culinary Battle Board Game) thuần Việt, nơi người chơi bước vào cuộc đua tranh tài tại Chợ Bến Thành để trở thành Bếp Trưởng Huyền Thoại!
+
+Trải nghiệm ngay bản phát hành trực tuyến tại: 👉 **[https://qkn202.github.io/hpvn/](https://qkn202.github.io/hpvn/)**
 
 ---
 
@@ -21,13 +27,17 @@ Một tựa game cờ bàn chiến thuật ẩm thực 3D (Culinary Battle Board
 
 ---
 
-## 🎮 Cách Chơi Trực Tiếp
+## 🎮 Cách Chơi
 
-1. Clone hoặc tải mã nguồn về máy:
+### 1. Chơi trực tiếp trên trình duyệt (Khuyến nghị)
+👉 Truy cập ngay: **[https://qkn202.github.io/hpvn/](https://qkn202.github.io/hpvn/)**
+
+### 2. Chạy trên máy cục bộ (Offline)
+1. Clone mã nguồn về máy:
    ```bash
    git clone https://github.com/qkn202/hpvn.git
    ```
-2. Mở tệp `index.html` trực tiếp trên bất kỳ trình duyệt web hiện đại nào (Chrome, Safari, Edge, Firefox).
+2. Mở trực tiếp tệp `index.html` bằng bất kỳ trình duyệt web nào (Chrome, Safari, Edge, Firefox).
 
 ---
 
