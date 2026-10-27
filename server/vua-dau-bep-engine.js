@@ -159,17 +159,19 @@ const OPS = {
     let text;
     if (card.type === 'steal_money' || card.type === 'steal_item') {
       const victim = otherChef(s, chef, target);
-      if (R.hasUpgrade(victim, 'upg_bouncer')) fail(`${R.chefName(victim.id)} có Bảo Vệ Quán 24/7, không trộm được.`);
-      if (card.type === 'steal_money') {
+      const defended = R.hasUpgrade(victim, 'upg_bouncer') && R.rand(s) < 0.5;
+      if (defended) {
+        text = `định ${card.type === 'steal_money' ? 'cướp tiền' : 'trộm nguyên liệu'} của ${R.chefName(victim.id)} nhưng bị Bảo Vệ Quán 24/7 chặn đứng (tỉ lệ 50%)!`;
+      } else if (card.type === 'steal_money') {
         const amount = Math.min(100, victim.money);
         victim.money -= amount; chef.money += amount;
-        text = `cướp $${amount} của ${R.chefName(victim.id)}`;
+        text = `cướp $${amount} của ${R.chefName(victim.id)}${R.hasUpgrade(victim, 'upg_bouncer') ? ' (vượt qua Bảo Vệ 50%)' : ''}`;
       } else {
         if (!victim.inventory.length) fail('Kho của đối thủ đang trống.');
         if (chef.inventory.length >= R.capacity(chef)) fail('Kho của bạn đã đầy.');
         const [taken] = victim.inventory.splice(Math.floor(R.rand(s) * victim.inventory.length), 1);
         chef.inventory.push(taken);
-        text = `bốc trộm ${taken.emoji} ${taken.name} của ${R.chefName(victim.id)}`;
+        text = `bốc trộm ${taken.emoji} ${taken.name} của ${R.chefName(victim.id)}${R.hasUpgrade(victim, 'upg_bouncer') ? ' (vượt qua Bảo Vệ 50%)' : ''}`;
       }
     } else if (card.type === 'close_market') {
       if (!D.MARKET_KEYS.includes(target) || R.isClosed(s, target)) fail('Chọn một quầy chợ đang mở.');

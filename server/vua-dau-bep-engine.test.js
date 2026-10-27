@@ -100,16 +100,20 @@ test('a closure lasts one round and a ban keeps the rival out of your market on 
   assert.deepEqual(s.closed, [], 'reopened when the closer plays again');
 });
 
-test('a bouncer stops theft and the card is kept', () => {
-  const s = E.newGame(11);
-  const lola = s.chefs.lola;
-  s.chefs.angus.upgrades.push({ id: 'upg_bouncer' });
-  lola.actionCards = [R.actionCard(s, 'steal_money')];
-  E.act(s, 'lola', 'move', { to: 'fruit' });
-  refused(() => E.act(s, 'lola', 'play', { cardId: lola.actionCards[0].id, target: 'angus' }), /Bảo Vệ/);
-  assert.equal(lola.actionCards.length, 1);
-  E.act(s, 'lola', 'play', { cardId: lola.actionCards[0].id, target: 'chen' });
-  assert.equal(lola.money, 400);
+test('a bouncer gives 50% chance to block theft', () => {
+  let blocked = 0;
+  for (let seed = 0; seed < 40; seed++) {
+    const s = E.newGame(seed);
+    const lola = s.chefs.lola;
+    s.chefs.angus.upgrades.push({ id: 'upg_bouncer' });
+    s.chefs.angus.money = 300;
+    lola.money = 300;
+    lola.actionCards = [R.actionCard(s, 'steal_money')];
+    E.act(s, 'lola', 'move', { to: 'fruit' });
+    E.act(s, 'lola', 'play', { cardId: lola.actionCards[0].id, target: 'angus' });
+    if (s.chefs.angus.money === 300) blocked++;
+  }
+  assert.ok(blocked > 0 && blocked < 40, 'bouncer protects with 50% probability');
 });
 
 test('members trade by offer: Bếp Chiều answers in their own turn, unanswered offers lapse', () => {

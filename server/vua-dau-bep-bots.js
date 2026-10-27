@@ -43,17 +43,27 @@ function playOneCard(s, chef) {
   } else {
     card = null;
     const stealMoney = find('steal_money'), stealItem = find('steal_item'), close = find('close_market'), kick = find('kick_opponent');
-    const moneyTarget = byLeader.find(c => canHit(c) && c.money > 0);
-    const itemTarget = byLeader.find(c => canHit(c) && c.inventory.length > 0);
+    const moneyTarget = byLeader.find(c => !R.hasUpgrade(c, 'upg_bouncer') && c.money > 0) || byLeader.find(c => c.money > 0);
+    const itemTarget = byLeader.find(c => !R.hasUpgrade(c, 'upg_bouncer') && c.inventory.length > 0) || byLeader.find(c => c.inventory.length > 0);
     const closeTarget = byLeader.find(c => D.MARKET_KEYS.includes(c.currentLocation) && c.currentLocation !== chef.currentLocation && !R.isClosed(s, c.currentLocation));
     if (stealMoney && moneyTarget) {
-      const amount = Math.min(100, moneyTarget.money);
-      moneyTarget.money -= amount; chef.money += amount;
-      card = stealMoney; text = `cướp $${amount} của ${R.chefName(moneyTarget.id)}`;
+      const defended = R.hasUpgrade(moneyTarget, 'upg_bouncer') && R.rand(s) < 0.5;
+      if (defended) {
+        card = stealMoney; text = `định cướp tiền của ${R.chefName(moneyTarget.id)} nhưng bị Bảo Vệ Quán 24/7 chặn đứng (50%)`;
+      } else {
+        const amount = Math.min(100, moneyTarget.money);
+        moneyTarget.money -= amount; chef.money += amount;
+        card = stealMoney; text = `cướp $${amount} của ${R.chefName(moneyTarget.id)}${R.hasUpgrade(moneyTarget, 'upg_bouncer') ? ' (vượt qua Bảo Vệ 50%)' : ''}`;
+      }
     } else if (stealItem && itemTarget && chef.inventory.length < R.capacity(chef)) {
-      const [taken] = itemTarget.inventory.splice(Math.floor(R.rand(s) * itemTarget.inventory.length), 1);
-      chef.inventory.push(taken);
-      card = stealItem; text = `bốc trộm ${taken.emoji} ${taken.name} của ${R.chefName(itemTarget.id)}`;
+      const defended = R.hasUpgrade(itemTarget, 'upg_bouncer') && R.rand(s) < 0.5;
+      if (defended) {
+        card = stealItem; text = `định trộm nguyên liệu của ${R.chefName(itemTarget.id)} nhưng bị Bảo Vệ Quán 24/7 chặn đứng (50%)`;
+      } else {
+        const [taken] = itemTarget.inventory.splice(Math.floor(R.rand(s) * itemTarget.inventory.length), 1);
+        chef.inventory.push(taken);
+        card = stealItem; text = `bốc trộm ${taken.emoji} ${taken.name} của ${R.chefName(itemTarget.id)}${R.hasUpgrade(itemTarget, 'upg_bouncer') ? ' (vượt qua Bảo Vệ 50%)' : ''}`;
+      }
     } else if (close && closeTarget) {
       s.closed.push({ market: closeTarget.currentLocation, by: chef.id, left: R.round(s) });
       card = close; text = `phong tỏa ${R.marketName(closeTarget.currentLocation)}`;
