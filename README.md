@@ -20,7 +20,7 @@ Trải nghiệm ngay bản phát hành trực tuyến tại: 👉 **[https://qkn
   - Cơm Tấm Sườn, Cơm Tấm Trứng
   - Nem Rán, Gỏi Cuốn, Lẩu Bò
 - **3 Giai đoạn thi đấu kịch tính mỗi vòng**:
-  1. **Giai đoạn 1 - Xoay Đĩa Dial Bí Mật**: Lựa chọn quầy chợ mục tiêu và di chuyển chiến thuật.
+  1. **Giai đoạn 1 - Đến chợ mua đồ**: Lựa chọn quầy chợ mục tiêu và di chuyển chiến thuật.
   2. **Giai đoạn 2 - Mua Sắm & Thương Lượng**: Thu thập nguyên liệu tại Chợ Bến Thành, đấu giá tài nguyên và trao đổi tự do cùng 3 đối thủ.
   3. **Giai đoạn 3 - Nấu Món & Phục Vụ**: Hoàn thiện các món ăn danh tiếng khi gom đủ nguyên liệu để tích lũy Sao (⭐ Likes) và Tiền thưởng.
 - **Kho thẻ hành động & Nâng cấp bếp**: Sử dụng thẻ kỹ năng đặc biệt và mua sắm trang thiết bị nâng cấp vĩnh viễn cho căn bếp.

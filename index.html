@@ -1600,16 +1600,16 @@
             <div class="flex items-center gap-2">
               <span class="text-base">🧭</span>
               <div>
-                <h3 class="text-xs font-black text-amber-300 uppercase">Giai Đoạn 1: Xoay Đĩa Dial Bí Mật</h3>
-                <p class="text-[10px] text-stone-300">Chọn quầy chợ trên Dial, sau đó bấm nút Lật & Di chuyển!</p>
+                <h3 class="text-xs font-black text-amber-300 uppercase">Giai Đoạn 1: Đến chợ mua đồ</h3>
+                <p class="text-[10px] text-stone-300">Chọn quầy chợ, sau đó bấm nút Đi chợ!</p>
               </div>
             </div>
             <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2 w-full sm:w-auto">
               <div class="text-xs text-stone-300 bg-stone-900/80 px-2.5 py-1 rounded-lg border border-amber-500/40 text-center">
-                Kim Dial: <b id="selected-dest-label" class="text-amber-400 uppercase font-black">Chợ Hoa Quả ($100)</b>
+                <b id="selected-dest-label" class="text-amber-400 uppercase font-black">Chợ Hoa Quả ($100)</b>
               </div>
               <button id="btn-reveal-dials" class="w-full sm:w-auto px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-black text-xs uppercase tracking-wider shadow-xl flex items-center justify-center gap-1.5 cursor-pointer transition-all transform hover:scale-105">
-                <span>🛎️ 3, 2, 1... LẬT DIAL & DI CHUYỂN!</span>
+                <span>🛎️ 3, 2, 1... ĐI CHỢ!</span>
               </button>
             </div>
           </div>
@@ -3431,7 +3431,7 @@ const gameState = {
     btnRevealDials.addEventListener('click', () => {
       playSound('bell');
       btnRevealDials.disabled = true;
-      setToast('🛎️ 3, 2, 1... LẬT DIAL! Tất cả 4 đầu bếp cùng mở đĩa bí mật!');
+      setToast('🛎️ 3, 2, 1... ĐI CHỢ! Tất cả 4 đầu bếp cùng di chuyển!');
 
       // AI destination selection (AI rivals only – the hot-seat human keeps the dial they set themselves)
       gameState.rivals.forEach(riv => {
