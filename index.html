@@ -1244,6 +1244,7 @@
         border-width: 3px;
         width: 100% !important;
         margin-inline: auto !important;
+        padding-bottom: max(84px, calc(var(--sab, 0px) + 80px)) !important;
       }
       header {
         justify-content: space-between;
@@ -1444,6 +1445,7 @@
       scrollbar-width: thin;
       scrollbar-color: rgba(245, 158, 11, 0.45) transparent;
       padding-right: 2px;
+      padding-bottom: max(68px, calc(var(--sab, 0px) + 64px)) !important;
       scroll-behavior: smooth;
     }
     #hud-main-deck::-webkit-scrollbar {
@@ -3438,8 +3440,8 @@ const gameState = {
     const toggleHudIcon = document.getElementById('toggle-hud-icon');
     const toggleHudText = document.getElementById('toggle-hud-text');
 
-    // Isolate mouse wheel and touch gestures inside HUD, Header and Modals from Three.js OrbitControls
-    const uiContainers = [hudMainDeck, document.querySelector('header'), ...document.querySelectorAll('[id^="modal-"]')].filter(Boolean);
+    // Isolate mouse wheel and touch gestures inside HUD, Header, Modals and HPVN Panels from Three.js OrbitControls
+    const uiContainers = [hudMainDeck, document.querySelector('header'), ...document.querySelectorAll('[id^="modal-"], [id^="hpvn-"]')].filter(Boolean);
     uiContainers.forEach(el => {
       ['wheel', 'touchstart', 'touchmove', 'touchend'].forEach(evt => {
         el.addEventListener(evt, (e) => {
@@ -6482,6 +6484,6 @@ const gameState = {
       requestRender();
     });
   </script>
-  <script src="./hpvn.js?v=010a2f34c4"></script>
+  <script src="./hpvn.js?v=0ebd2e0fa4"></script>
 </body>
 </html>

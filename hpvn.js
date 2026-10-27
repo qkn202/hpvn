@@ -60,8 +60,8 @@
     #hpvn-turn .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 2px 10px; color: #e7e5e4; font-weight: 500; }
     #hpvn-turn .board .now { color: #fbbf24; font-weight: 800; }
     .hpvn-badge { background: #16a34a; color: #fff; border-radius: 999px; padding: 1px 8px; font-size: 11px; }
-    #hpvn-turn { left: 50%; transform: translateX(-50%); bottom: 8px; width: min(620px, calc(100% - 16px)); padding: 6px 10px; display: none; }
-    #hpvn-solo { left: 50%; transform: translateX(-50%); bottom: 8px; padding: 4px; display: none; }
+    #hpvn-turn { left: 50%; transform: translateX(-50%); bottom: max(8px, env(safe-area-inset-bottom, 8px)); width: min(620px, calc(100% - 16px)); padding: 6px 10px; display: none; max-height: min(48dvh, 320px); overflow-y: auto; box-sizing: border-box; }
+    #hpvn-solo { left: 50%; transform: translateX(-50%); bottom: max(8px, env(safe-area-inset-bottom, 8px)); padding: 4px; display: none; }
     #hpvn-turn .more { display: none; margin-top: 6px; }
     #hpvn-turn.open .more { display: block; }
     #hpvn-turn .more > * + * { margin-top: 6px; }
@@ -70,8 +70,65 @@
     #hpvn-turn .status { color: #fff; }
     #hpvn-turn .row { display: inline-flex; flex-wrap: wrap; gap: 6px; }
     #hpvn-turn button { padding: 4px 9px; font-size: 12px; }
-    #hpvn-log { max-height: 30vh; overflow-y: auto; display: none; font-weight: 500; color: #e7e5e4; }
-    #hpvn-log div { padding: 3px 0; border-bottom: 1px solid #292524; }
+    #hpvn-log-modal {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: none; align-items: center; justify-content: center;
+      padding: max(10px, env(safe-area-inset-top, 10px)) max(10px, env(safe-area-inset-right, 10px)) max(10px, env(safe-area-inset-bottom, 10px)) max(10px, env(safe-area-inset-left, 10px));
+      box-sizing: border-box;
+    }
+    #hpvn-log-modal .hpvn-modal-card {
+      width: min(520px, 100%);
+      max-height: min(88dvh, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 20px));
+      background: rgba(18, 16, 14, 0.98);
+      border: 2px solid #f59e0b;
+      border-radius: 18px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.85), 0 0 25px rgba(245, 158, 11, 0.25);
+      display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
+    }
+    #hpvn-log-modal .hpvn-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+      background: rgba(12, 10, 9, 0.9);
+    }
+    #hpvn-log-modal .hpvn-modal-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 15px; font-weight: 900; color: #fbbf24;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    #hpvn-log-modal .hpvn-modal-close {
+      width: 36px; height: 36px; border-radius: 999px;
+      background: #292524; border: 1px solid #44403c; color: #a8a29e;
+      font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; touch-action: manipulation;
+    }
+    #hpvn-log-modal .hpvn-modal-close:active { transform: scale(0.9); color: #fff; }
+    #hpvn-log {
+      flex: 1 1 auto; min-height: 0; max-height: calc(88dvh - 125px);
+      overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+      padding: 10px 14px; color: #e7e5e4; font-weight: 500; font-size: 13px; line-height: 1.5;
+      display: block; box-sizing: border-box;
+    }
+    #hpvn-log .hpvn-log-line {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 6px 0; border-bottom: 1px solid #292524;
+    }
+    #hpvn-log .hpvn-log-day {
+      flex-shrink: 0; padding: 1px 7px; border-radius: 6px;
+      background: #292524; border: 1px solid #44403c; color: #fbbf24;
+      font-size: 10px; font-weight: 800; text-transform: uppercase;
+    }
+    #hpvn-log .hpvn-log-text { flex: 1; color: #d6d3d1; }
+    #hpvn-log-modal .hpvn-modal-footer {
+      padding: 10px 14px; border-top: 1px solid rgba(245, 158, 11, 0.25);
+      background: rgba(12, 10, 9, 0.9); display: flex; justify-content: flex-end;
+    }
+    .hpvn-btn-full {
+      width: 100%; min-height: 42px; font-weight: 900 !important;
+      font-size: 13px !important; letter-spacing: 0.05em; text-transform: uppercase;
+    }
   `;
   document.head.appendChild(css);
   if (typeof eventToast !== 'undefined' && eventToast) eventToast.classList.add('toast-hidden'); // the solo game's intro line
@@ -86,8 +143,21 @@
   const soloBar = el('div', { id: 'hpvn-solo', className: 'hpvn-panel hud-interactive' },
     el('button', { textContent: '🏠 Về sảnh bàn online', onclick: () => showLobby() }));
   const logBox = el('div', { id: 'hpvn-log' });
-  document.body.append(lobby, turnBar, soloBar);
-  for (const box of [lobby, turnBar, soloBar]) for (const type of ['wheel', 'touchstart', 'touchmove', 'pointerdown']) box.addEventListener(type, e => e.stopPropagation(), { passive: true });
+  const logModal = el('div', { id: 'hpvn-log-modal', className: 'hud-interactive' },
+    el('div', { className: 'hpvn-modal-card' },
+      el('div', { className: 'hpvn-modal-header' },
+        el('div', { className: 'hpvn-modal-title' },
+          el('span', { textContent: '📜' }),
+          el('h3', { textContent: 'Nhật Ký Chợ' })),
+        el('button', { className: 'hpvn-modal-close', textContent: '✕', onclick: closeLog })),
+      logBox,
+      el('div', { className: 'hpvn-modal-footer' },
+        el('button', { className: 'primary hpvn-btn-full', textContent: 'Đóng Nhật Ký', onclick: closeLog }))));
+  logModal.onclick = e => { if (e.target === logModal) closeLog(); };
+  function closeLog() { logModal.style.display = 'none'; }
+  function openLog() { logModal.style.display = 'flex'; logBox.scrollTop = 0; }
+  document.body.append(lobby, turnBar, soloBar, logModal);
+  for (const box of [lobby, turnBar, soloBar, logModal]) for (const type of ['wheel', 'touchstart', 'touchmove', 'pointerdown']) box.addEventListener(type, e => e.stopPropagation(), { passive: true });
 
   // turn order of the day (same as the server's TURN_ORDER); the four chefs below exist only at HPVN tables
   const ORDER = ['lola', 'chen', 'lucrezia', 'hai', 'sau', 'tam', 'muoi', 'angus'];
@@ -117,7 +187,7 @@
     T = null;
     turnBar.style.display = 'none';
     soloBar.style.display = 'none';
-    logBox.style.display = 'none';
+    closeLog();
     lobby.style.display = 'flex';
     lobby.replaceChildren(el('div', { className: 'box' }, el('h2', { textContent: '🍲 Vua Đầu Bếp: bàn lệch giờ' }), el('p', { textContent: INTRO }),
       note ? el('p', { textContent: note, style: 'color:#fca5a5' }) : '', el('p', { textContent: 'Đang tải bàn của bạn…' })));
@@ -280,6 +350,8 @@
     syncDestButtons();
     const p = gameState.player;
     if (shown === 2) {
+      turnBar.classList.remove('open');
+      closeLog();
       marketTitle.innerText = gameState.markets[p.currentLocation].name.toUpperCase();
       buyQuota.innerText = `Đã mua: ${p.boughtCountToday} / ${getBuyLimit(p)} thẻ`;
       timerDisplay.innerText = '∞';
@@ -302,7 +374,7 @@
     else if (st.turnChef === me) status = `Đến lượt bạn${view.deadline ? ` · hạn ${when(view.deadline)}` : ''}`;
     else status = `Đang chờ ${who(st.turnChef)} đi lượt${view.deadline ? ` · hạn ${when(view.deadline)}, quá hạn quản lý quán đi thay` : ''}`;
     const buttons = el('span', { className: 'row' },
-      el('button', { textContent: '📜 Nhật ký', onclick: () => { logBox.style.display = logBox.style.display === 'block' ? 'none' : 'block'; } }),
+      el('button', { textContent: '📜 Nhật ký', onclick: () => { if (logModal.style.display === 'flex') closeLog(); else openLog(); } }),
       el('button', { textContent: '↻', title: 'Tải lại bàn', onclick: () => refresh() }));
     const mine = st.offers.filter(o => o.to === me && st.turnChef === me);
     if (mine.length) turnBar.classList.add('open'); // an offer waits for an answer: show it
@@ -322,13 +394,19 @@
       el('div', { className: 'more' }, el('div', { textContent: `Bàn ${view.code} · Ngày ${st.day} · thứ tự đi chợ:` }),
         el('div', { className: 'board' }, ...ORDER.filter(id => st.chefs[id]).map(id => el('span', { className: id === st.turnChef ? 'now' : '',
           textContent: `${id === st.turnChef ? '▶ ' : ''}${who(id)} · ${st.chefs[id].likes} ⭐${id === me ? ' (bạn)' : ''}` }))),
-        buttons, ...offers, logBox));
+        buttons, ...offers));
     turnBar.style.display = 'block';
   }
 
   function drawLog() {
-    const lines = T.view.state.log.slice(-40).reverse();
-    logBox.replaceChildren(el('b', { textContent: 'Nhật ký chợ' }), ...lines.map(line => el('div', { textContent: `Ngày ${line.day}: ${line.text}` })));
+    const lines = (T?.view?.state?.log || []).slice(-50).reverse();
+    if (!lines.length) {
+      logBox.replaceChildren(el('div', { style: 'text-align:center; padding: 24px 12px; color: #a8a29e; font-style: italic;', textContent: 'Chưa có hoạt động nào trong nhật ký.' }));
+      return;
+    }
+    logBox.replaceChildren(...lines.map(line => el('div', { className: 'hpvn-log-line' },
+      el('span', { className: 'hpvn-log-day', textContent: `Ngày ${line.day}` }),
+      el('span', { className: 'hpvn-log-text', textContent: line.text }))));
   }
 
   function showWinner(st) {
