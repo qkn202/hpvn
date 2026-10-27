@@ -387,7 +387,7 @@
     if (!T?.view?.state) { original.updateLeaderboardUI(); return; }
     const st = T.view.state;
     ribbon?.replaceChildren(el('span', { className: 'text-stone-400 font-bold', textContent: '🏆' }),
-      ...ORDER.filter(id => st.chefs[id]).map(id => el('span', { className: 'font-bold', title: BASE[id].name, style: `color:${BASE[id].colorHex}` },
+      ...ORDER.filter(id => st.chefs[id]).map(id => el('span', { className: 'font-bold cursor-pointer hover:underline', title: `${BASE[id].name} (Bấm để xem thẻ món & nguyên liệu)`, style: `color:${BASE[id].colorHex}`, onclick: () => typeof openRivalKitchensModal === 'function' && openRivalKitchensModal(id) },
         `${BASE[id].avatar} `, el('b', { className: 'text-amber-400', textContent: st.chefs[id].likes }))));
     const actBadge = document.getElementById('header-action-badge');
     if (actBadge) actBadge.innerText = gameState.player.actionCards.length;

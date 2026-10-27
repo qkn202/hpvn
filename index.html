@@ -1428,21 +1428,25 @@
         </div>
 
         <!-- 4-Player Leaderboard Ribbon (Ultra-compact Icon-based) -->
-        <div class="hidden lg:flex items-center gap-1.5 bg-stone-900/90 border border-stone-800 px-2.5 py-0.5 rounded-xl text-[11px] font-semibold" title="Bảng xếp hạng Likes của 4 Bếp">
+        <div class="hidden lg:flex items-center gap-1.5 bg-stone-900/90 border border-stone-800 px-2.5 py-0.5 rounded-xl text-[11px] font-semibold" title="Bảng xếp hạng Likes (Bấm vào bếp để xem thẻ món ăn & nguyên liệu)">
           <span class="text-stone-400 font-bold">🏆</span>
-          <span class="text-pink-300 font-bold" title="Cô Ba">🍲 <b id="lead-p-likes" class="text-amber-400">0</b></span>
+          <span class="text-pink-300 font-bold cursor-pointer hover:underline" id="lead-chef-lola" title="Cô Ba (Bấm để xem thẻ món)">🍲 <b id="lead-p-likes" class="text-amber-400">0</b></span>
           <span class="text-stone-600">•</span>
-          <span class="text-red-400 font-bold" title="Mệ Thảo">🍜 <b id="lead-r1-likes" class="text-amber-400">0</b></span>
+          <span class="text-red-400 font-bold cursor-pointer hover:underline" id="lead-chef-angus" title="Mệ Thảo (Bấm để xem thẻ món)">🍜 <b id="lead-r1-likes" class="text-amber-400">0</b></span>
           <span class="text-stone-600">•</span>
-          <span class="text-teal-400 font-bold" title="Chú Bảy">🍚 <b id="lead-r2-likes" class="text-amber-400">0</b></span>
+          <span class="text-teal-400 font-bold cursor-pointer hover:underline" id="lead-chef-chen" title="Chú Bảy (Bấm để xem thẻ món)">🍚 <b id="lead-r2-likes" class="text-amber-400">0</b></span>
           <span class="text-stone-600">•</span>
-          <span class="text-yellow-400 font-bold" title="Dì Năm">🥞 <b id="lead-r3-likes" class="text-amber-400">0</b></span>
+          <span class="text-yellow-400 font-bold cursor-pointer hover:underline" id="lead-chef-lucrezia" title="Dì Năm (Bấm để xem thẻ món)">🥞 <b id="lead-r3-likes" class="text-amber-400">0</b></span>
         </div>
       </div>
 
       <!-- RIGHT: Action Cards, Barter, Camera Controls, & Toggle HUD -->
       <div class="flex items-center gap-1.5 ml-auto">
-        <!-- Quick Action Cards & Barter buttons -->
+        <!-- Quick Action Cards, Barter & Rival Kitchens buttons -->
+        <button id="btn-open-rival-kitchens" class="hud-interactive px-2 py-1 rounded-lg bg-amber-950/90 hover:bg-amber-900 text-amber-200 border border-amber-500/50 font-bold text-[11px] flex items-center gap-1 cursor-pointer shadow transition-all" title="Xem thực đơn & thẻ món ăn của đối thủ" aria-label="Xem thực đơn & thẻ món ăn của đối thủ">
+          <span>👨‍🍳</span>
+          <span class="hidden xl:inline">Bếp Đối Thủ</span>
+        </button>
         <button id="btn-open-actions" class="hud-interactive px-2 py-1 rounded-lg bg-purple-950/90 hover:bg-purple-900 text-purple-200 border border-purple-500/50 font-bold text-[11px] flex items-center gap-1 cursor-pointer shadow transition-all" title="Xem thẻ hành động" aria-label="Xem thẻ hành động">
           <span>⚡</span>
           <span class="hidden xl:inline">Phá Hoại</span>
@@ -1559,6 +1563,13 @@
           </div>
 
           <!-- CENTER ROW: 2 PHYSICAL PLAYING CARDS -->
+          <div class="flex items-center justify-between px-1">
+            <span class="text-xs font-black text-amber-300 uppercase tracking-wide">📋 Thẻ Món Ăn Của Bạn:</span>
+            <button id="btn-quick-view-rivals" class="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer hover:underline transition-all" title="Xem thực đơn & thẻ món ăn của đối thủ">
+              <span>👨‍🍳 Xem thẻ món đối thủ</span>
+              <span>→</span>
+            </button>
+          </div>
           <div class="flex flex-col sm:flex-row items-stretch justify-center gap-3 py-1" id="phase1-recipes-display">
             <!-- Populated dynamically by updateRecipeUI() -->
           </div>
@@ -1763,9 +1774,14 @@
         <button id="btn-close-barter" class="w-8 h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center cursor-pointer text-sm">✕</button>
       </div>
 
-      <!-- 3 Rivals Selection Tabs -->
-      <div class="grid grid-cols-3 gap-2" id="barter-rival-tabs">
+      <!-- Rivals Selection Tabs -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1" id="barter-rival-tabs">
         <!-- populated dynamically -->
+      </div>
+
+      <!-- Rival Target Recipes & Required Ingredients Preview -->
+      <div id="barter-rival-recipes-preview" class="bg-stone-950/70 p-2.5 rounded-xl border border-stone-800 flex flex-col gap-1.5">
+        <!-- populated dynamically by renderBarterUI() -->
       </div>
 
       <!-- Trade Desk: You Offer vs You Request -->
@@ -1803,6 +1819,35 @@
         <button id="btn-submit-trade" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-stone-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-1.5 cursor-pointer transition-all">
           <span>🤝 GỬI ĐỀ NGHỊ GIAO DỊCH</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: XEM THỰC ĐƠN & BẾP ĐỐI THỦ (RIVAL KITCHENS) -->
+  <!-- ========================================== -->
+  <div id="modal-rival-kitchens" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="glass-card max-h-[92vh] overflow-y-auto w-full max-w-4xl rounded-2xl border-2 border-amber-500/60 p-4 sm:p-5 flex flex-col gap-3 text-stone-100 shadow-2xl">
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-stone-800 pb-2.5">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">👨‍🍳</span>
+          <div>
+            <h3 class="text-sm font-black text-amber-300 uppercase tracking-wide">Thực Đơn & Thẻ Món Ăn Đối Thủ</h3>
+            <p class="text-xs text-stone-400">Xem chi tiết các món ăn đang nấu, nguyên liệu hiện có và nguyên liệu đối thủ đang cần</p>
+          </div>
+        </div>
+        <button id="btn-close-rival-kitchens" class="w-8 h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center cursor-pointer text-sm">✕</button>
+      </div>
+
+      <!-- Chef Selection Tabs -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1" id="rival-kitchen-tabs">
+        <!-- populated dynamically -->
+      </div>
+
+      <!-- Selected Chef Details Container -->
+      <div id="rival-kitchen-content" class="flex flex-col gap-3">
+        <!-- populated dynamically -->
       </div>
     </div>
   </div>
@@ -4011,7 +4056,7 @@ const gameState = {
 
     // Close every transient modal/banner (called on phase changes and seat switches)
     function closeTransientUI() {
-      ['modal-barter', 'modal-action-cards', 'modal-snatch', 'modal-upgrades', 'modal-dumpster'].forEach(id => {
+      ['modal-barter', 'modal-action-cards', 'modal-snatch', 'modal-upgrades', 'modal-dumpster', 'modal-rival-kitchens'].forEach(id => {
         const el = document.getElementById(id); if (el) el.classList.add('hidden');
       });
       if (typeof hideBotTradeBanner === 'function') hideBotTradeBanner();
@@ -4057,6 +4102,160 @@ const gameState = {
       return 'images/dishes/banh_mi.jpg';
     }
 
+    // Reusable Authentic Physical Dish Card Generator for any Chef (Player or Opponent)
+    function createDishCardElement(chef, rec, isOwner = false) {
+      if (!chef || !rec) return document.createElement('div');
+      const canCook = canChefCook(chef, rec);
+      const isGourmet = !!rec.isGourmet;
+
+      const cardBorder = isGourmet
+        ? (canCook ? 'border-4 border-amber-400 ring-4 ring-purple-500/50 shadow-2xl' : 'border-4 border-purple-600 shadow-2xl')
+        : (canCook ? 'border-4 border-amber-400 ring-4 ring-sky-500/50 shadow-2xl' : 'border-4 border-sky-500 shadow-2xl');
+
+      const bannerGrad = isGourmet ? 'from-purple-700 to-indigo-800' : 'from-sky-600 to-blue-700';
+
+      const card = document.createElement('div');
+      card.className = `relative flex-1 max-w-[340px] w-full bg-[#fffdfa] text-stone-900 rounded-xl p-2 ${cardBorder} shadow-2xl flex flex-col justify-between select-none transform transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl cursor-pointer ${rec.cooked ? 'opacity-60 grayscale-[30%]' : ''}`;
+
+      const missInfo = getMissingIngredients(chef, rec);
+      const stillMissing = [...missInfo.missing];
+      let wildLeft = missInfo.wildCount;
+
+      const ingSlotsHtml = (rec.requires || []).map(req => {
+        let hasIt = true, slotLabel = 'ĐÃ CÓ';
+        const mi = stillMissing.indexOf(req);
+        if (mi !== -1) {
+          stillMissing.splice(mi, 1);
+          if (wildLeft > 0) { wildLeft--; slotLabel = '✨ ẢO THUẬT'; } else hasIt = false;
+        }
+        let marketHint = 'Chợ Gạo & Bánh Phở 🌾';
+        let costHint = '$100';
+        let emoji = '📦';
+
+        if (gameState.markets) {
+          for (const [mKey, mData] of Object.entries(gameState.markets)) {
+            const match = mData.cards?.find(card => card.name === req);
+            if (match) {
+              marketHint = mData.name;
+              costHint = `$${match.cost}`;
+              emoji = match.emoji || '📦';
+              break;
+            }
+          }
+        }
+
+        const playerHasThis = !isOwner && gameState.player?.inventory?.some(i => (i.name || '').toLowerCase().includes(req.toLowerCase()));
+
+        if (hasIt) {
+          return `
+            <div class="flex items-center justify-between px-2 py-0.5 rounded-lg bg-emerald-50 border-2 border-emerald-500 text-stone-800 shadow-sm">
+              <div class="flex items-center gap-1.5">
+                <span class="text-base">${emoji}</span>
+                <div>
+                  <div class="font-black text-stone-900 text-[11px] leading-tight">${req}</div>
+                  <div class="text-[9px] text-emerald-700 font-bold">Chợ: ${marketHint}</div>
+                </div>
+              </div>
+              <span class="text-[9px] bg-emerald-600 text-white font-black px-1.5 py-0.5 rounded shadow flex items-center gap-0.5">
+                <span>✓</span> ${slotLabel}
+              </span>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="flex items-center justify-between px-2 py-0.5 rounded-lg bg-rose-50 border-2 border-dashed border-rose-400 text-stone-800 shadow-sm">
+              <div class="flex items-center gap-1.5">
+                <span class="text-base">${emoji}</span>
+                <div>
+                  <div class="font-black text-stone-900 text-[11px] leading-tight flex items-center gap-1">
+                    <span>${req} (${costHint})</span>
+                    ${playerHasThis ? '<span class="text-[8px] bg-amber-400 text-stone-950 font-black px-1 rounded shadow" title="Bạn đang có nguyên liệu này trong kho!">BẠN CÓ</span>' : ''}
+                  </div>
+                  <div class="text-[9px] text-rose-700 font-bold">Mua tại: ${marketHint}</div>
+                </div>
+              </div>
+              <span class="text-[9px] bg-rose-500 text-white font-black px-1.5 py-0.5 rounded shadow animate-pulse flex items-center gap-0.5">
+                <span>✕</span> THIẾU
+              </span>
+            </div>
+          `;
+        }
+      }).join('');
+
+      let tipText = '';
+      const missing = canChefCook(chef, rec) ? [] : missInfo.missing;
+      if (rec.cooked) {
+        tipText = isOwner ? '🎉 Món này đã nấu xong và phục vụ thành công!' : `🎉 ${chef.name} đã nấu xong món này!`;
+      } else if (missing.length === 0) {
+        tipText = isOwner ? '🔥 ĐÃ ĐỦ NGUYÊN LIỆU! Sang Giai đoạn 3 là nấu được ngay!' : `🔥 ${chef.name} ĐÃ ĐỦ NGUYÊN LIỆU! Có thể nấu nhận +${rec.likes}⭐!`;
+      } else {
+        const firstMiss = missing[0];
+        let targetMarket = 'Chợ Gạo & Bánh Phở 🌾';
+        if (gameState.markets) {
+          for (const [mKey, mData] of Object.entries(gameState.markets)) {
+            if (mData.cards?.some(card => card.name === firstMiss)) {
+              targetMarket = mData.name;
+              break;
+            }
+          }
+        }
+        tipText = isOwner
+          ? `👉 <b>Chiến lược:</b> Xoay Dial đến <b>${targetMarket}</b> để mua ${firstMiss}!`
+          : `👉 <b>Mục tiêu đối thủ:</b> ${chef.name} cần đến <b>${targetMarket}</b> để mua ${firstMiss}!`;
+      }
+
+      card.innerHTML = `
+        <!-- Top card header: Recipe Type Banner & Golden Likes Seal -->
+        <div class="flex items-center justify-between pb-1 border-b border-stone-200">
+          <span class="bg-gradient-to-r ${bannerGrad} text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
+            <span>${isGourmet ? '👑' : '🍳'}</span>
+            <span>${isGourmet ? 'Đặc Sản' : 'Cơ Bản'}</span>
+          </span>
+          <span class="bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-600 text-stone-950 font-black text-[11px] px-2 py-0.5 rounded-full border border-amber-300 shadow flex items-center gap-1">
+            <span>+${rec.likes}</span>
+            <span class="text-[8px] uppercase tracking-wide">Likes 👍</span>
+          </span>
+        </div>
+
+        <!-- Real Dish Photo Showcase -->
+        <div class="relative w-full h-24 rounded-lg overflow-hidden my-1 border-2 ${isGourmet ? 'border-purple-300 shadow-md ring-1 ring-purple-400/40' : 'border-sky-300 shadow-md ring-1 ring-sky-400/40'} shadow-inner group bg-stone-900">
+          <img src="${getDishImage(rec.name)}" alt="${rec.name}" class="w-full h-full object-cover object-center transform transition-transform duration-300 group-hover:scale-105" />
+          <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent pt-3 pb-1 px-2 flex items-center justify-between">
+            <span class="font-black text-[11px] text-white tracking-wider uppercase drop-shadow-md truncate">
+              ${rec.name}
+            </span>
+            <span class="text-[8px] font-bold text-amber-300 bg-black/60 px-1.5 py-0.2 rounded border border-amber-400/30 flex-shrink-0">
+              ${isGourmet ? '⭐ Thượng Hạng' : '🥢 Truyền Thống'}
+            </span>
+          </div>
+        </div>
+
+        <!-- Tactile Ingredient Slots -->
+        <div class="space-y-1 my-1">
+          <div class="text-[8px] font-black text-stone-400 uppercase tracking-wider text-center flex items-center justify-center gap-1.5">
+            <span class="h-[1px] w-5 bg-stone-300 inline-block"></span>
+            <span>NGUYÊN LIỆU BẮT BUỘC (${rec.requires ? rec.requires.length : 0})</span>
+            <span class="h-[1px] w-5 bg-stone-300 inline-block"></span>
+          </div>
+          ${ingSlotsHtml}
+        </div>
+
+        <!-- Bottom Tactical Dial Hint Ribbon -->
+        <div class="mt-1 ${isGourmet ? 'bg-purple-950 text-purple-200 border-purple-800' : 'bg-sky-950 text-sky-200 border-sky-800'} text-[9px] p-1 rounded-lg border font-medium text-center shadow-inner leading-tight">
+          ${tipText}
+        </div>
+      `;
+
+      if (isOwner) {
+        card.addEventListener('click', () => {
+          playSound('card');
+          zoomToPlayerMat();
+        });
+      }
+
+      return card;
+    }
+
     function updateRecipeUI() {
       // Sync quick recipe indicator in top header
       const quickRec = document.getElementById('quick-rec-summary');
@@ -4097,173 +4296,23 @@ const gameState = {
         });
       }
 
-
       // 2. Render Phase 1 display as authentic physical playing cards
       const p1Container = document.getElementById('phase1-recipes-display');
-      if (p1Container) {
+      if (p1Container && gameState.player && gameState.player.activeRecipes) {
         p1Container.innerHTML = '';
         gameState.player.activeRecipes.forEach(rec => {
-          const invNames = gameState.player.inventory.map(i => i.name.toLowerCase());
-          const canCook = canChefCook(gameState.player, rec);
-          const isGourmet = rec.isGourmet;
-
-          const cardBorder = isGourmet
-            ? (canCook ? 'border-4 border-amber-400 ring-4 ring-purple-500/50 shadow-2xl' : 'border-4 border-purple-600 shadow-2xl')
-            : (canCook ? 'border-4 border-amber-400 ring-4 ring-sky-500/50 shadow-2xl' : 'border-4 border-sky-500 shadow-2xl');
-
-          const bannerGrad = isGourmet ? 'from-purple-700 to-indigo-800' : 'from-sky-600 to-blue-700';
-          let dishEmoji = '🍲';
-          let dishLore = 'Hương vị truyền thống đậm đà bản sắc Việt';
-          if (rec.name.includes('Bánh Mì')) { dishEmoji = '🥖'; dishLore = 'Bánh mì giòn rụm kẹp nhân thịt nóng hổi và dưa leo mát lành'; }
-          else if (rec.name.includes('Phở Bò')) { dishEmoji = '🍲'; dishLore = 'Bánh phở mượt mà, bắp bò tái nạm hòa quyện hồi quế'; }
-          else if (rec.name.includes('Bún Bò')) { dishEmoji = '🍜'; dishLore = 'Bún bò bắp hoa giò heo thơm lừng mùi mắm ruốc sả cố đô'; }
-          else if (rec.name.includes('Chả Cua')) { dishEmoji = '🥣'; dishLore = 'Nước lèo thanh ngọt với chả cua béo ngậy và rau ghém'; }
-          else if (rec.name.includes('Cơm Tấm')) { dishEmoji = '🍚'; dishLore = 'Cơm tấm sườn nướng mỡ hành đậm đà hương vị Sài Gòn'; }
-          else if (rec.name.includes('Bánh Xèo')) { dishEmoji = '🥞'; dishLore = 'Vỏ bánh vàng ươm giòn rụm với tôm nhảy nước cốt dừa'; }
-          else if (rec.name.includes('Gỏi Cuốn') || rec.name.includes('Gỏi Tôm')) { dishEmoji = '🌯'; dishLore = 'Tôm tươi cuộn rau thơm thanh mát đậm đà'; }
-          else if (rec.name.includes('Nem Rán')) { dishEmoji = '🥟'; dishLore = 'Nem rán vàng giòn nhân thịt ba rọi, chấm nước mắm chua ngọt'; }
-          else if (rec.name.includes('Bánh Khọt')) { dishEmoji = '🧆'; dishLore = 'Bánh khọt giòn rụm, tôm đỏ au, cuốn rau sống Vũng Tàu'; }
-          else if (rec.name.includes('Lẩu Bò') || rec.name.includes('Bò Kho')) { dishEmoji = '🫕'; dishLore = 'Bò hầm hồi quế thảo mộc thơm lừng đậm vị'; }
-          else if (rec.name.includes('Cua Biển')) { dishEmoji = '🦀'; dishLore = 'Cua Cà Mau tươi ngon ngọt thịt đậm đà sông nước'; }
-          else if (rec.name.includes('Sườn Nướng')) { dishEmoji = '🍖'; dishLore = 'Sườn cốt lết nướng thơm lừng sốt xoài chua ngọt'; }
-
-          const card = document.createElement('div');
-          card.className = `relative flex-1 max-w-[340px] w-full bg-[#fffdfa] text-stone-900 rounded-xl p-2 ${cardBorder} shadow-2xl flex flex-col justify-between select-none transform transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl cursor-pointer ${rec.cooked ? 'opacity-60 grayscale-[30%]' : ''}`;
-
-          const missInfo = getMissingIngredients(gameState.player, rec);
-          const stillMissing = [...missInfo.missing];
-          let wildLeft = missInfo.wildCount;
-          const ingSlotsHtml = rec.requires.map(req => {
-            let hasIt = true, slotLabel = 'ĐÃ CÓ';
-            const mi = stillMissing.indexOf(req);
-            if (mi !== -1) {
-              stillMissing.splice(mi, 1);
-              if (wildLeft > 0) { wildLeft--; slotLabel = '✨ ẢO THUẬT'; } else hasIt = false;
-            }
-            let marketHint = 'Chợ Gạo & Bánh Phở 🌾';
-            let costHint = '$100';
-            let emoji = '📦';
-
-            if (gameState.markets) {
-              for (const [mKey, mData] of Object.entries(gameState.markets)) {
-                const match = mData.cards?.find(card => card.name === req);
-                if (match) {
-                  marketHint = mData.name;
-                  costHint = `$${match.cost}`;
-                  emoji = match.emoji || '📦';
-                  break;
-                }
-              }
-            }
-
-            if (hasIt) {
-              return `
-                <div class="flex items-center justify-between px-2 py-0.5 rounded-lg bg-emerald-50 border-2 border-emerald-500 text-stone-800 shadow-sm">
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-base">${emoji}</span>
-                    <div>
-                      <div class="font-black text-stone-900 text-[11px] leading-tight">${req}</div>
-                      <div class="text-[9px] text-emerald-700 font-bold">Chợ: ${marketHint}</div>
-                    </div>
-                  </div>
-                  <span class="text-[9px] bg-emerald-600 text-white font-black px-1.5 py-0.5 rounded shadow flex items-center gap-0.5">
-                    <span>✓</span> ${slotLabel}
-                  </span>
-                </div>
-              `;
-            } else {
-              return `
-                <div class="flex items-center justify-between px-2 py-0.5 rounded-lg bg-rose-50 border-2 border-dashed border-rose-400 text-stone-800 shadow-sm">
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-base">${emoji}</span>
-                    <div>
-                      <div class="font-black text-stone-900 text-[11px] leading-tight">${req} (${costHint})</div>
-                      <div class="text-[9px] text-rose-700 font-bold">Mua tại: ${marketHint}</div>
-                    </div>
-                  </div>
-                  <span class="text-[9px] bg-rose-500 text-white font-black px-1.5 py-0.5 rounded shadow animate-pulse flex items-center gap-0.5">
-                    <span>✕</span> THIẾU
-                  </span>
-                </div>
-              `;
-            }
-          }).join('');
-
-          let tipText = '';
-          const missing = canChefCook(gameState.player, rec) ? [] : missInfo.missing;
-          if (rec.cooked) {
-            tipText = '🎉 Món này đã nấu xong và phục vụ thành công!';
-          } else if (missing.length === 0) {
-            tipText = '🔥 ĐÃ ĐỦ NGUYÊN LIỆU! Sang Giai đoạn 3 là nấu được ngay!';
-          } else {
-            const firstMiss = missing[0];
-            let targetMarket = 'Chợ Gạo & Bánh Phở 🌾';
-            if (gameState.markets) {
-              for (const [mKey, mData] of Object.entries(gameState.markets)) {
-                if (mData.cards?.some(card => card.name === firstMiss)) {
-                  targetMarket = mData.name;
-                  break;
-                }
-              }
-            }
-            tipText = `👉 <b>Chiến lược:</b> Xoay Dial đến <b>${targetMarket}</b> để mua ${firstMiss}!`;
-          }
-
-          card.innerHTML = `
-            <!-- Top card header: Recipe Type Banner & Golden Likes Seal -->
-            <div class="flex items-center justify-between pb-1 border-b border-stone-200">
-              <span class="bg-gradient-to-r ${bannerGrad} text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
-                <span>${isGourmet ? '👑' : '🍳'}</span>
-                <span>${isGourmet ? 'Đặc Sản' : 'Cơ Bản'}</span>
-              </span>
-              <span class="bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-600 text-stone-950 font-black text-[11px] px-2 py-0.5 rounded-full border border-amber-300 shadow flex items-center gap-1">
-                <span>+${rec.likes}</span>
-                <span class="text-[8px] uppercase tracking-wide">Likes 👍</span>
-              </span>
-            </div>
-
-            <!-- Real Dish Photo Showcase -->
-            <div class="relative w-full h-24 rounded-lg overflow-hidden my-1 border-2 ${isGourmet ? 'border-purple-300 shadow-md ring-1 ring-purple-400/40' : 'border-sky-300 shadow-md ring-1 ring-sky-400/40'} shadow-inner group bg-stone-900">
-              <img src="${getDishImage(rec.name)}" alt="${rec.name}" class="w-full h-full object-cover object-center transform transition-transform duration-300 group-hover:scale-105" />
-              <!-- Sleek bottom overlay with dish title -->
-              <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent pt-3 pb-1 px-2 flex items-center justify-between">
-                <span class="font-black text-[11px] text-white tracking-wider uppercase drop-shadow-md truncate">
-                  ${rec.name}
-                </span>
-                <span class="text-[8px] font-bold text-amber-300 bg-black/60 px-1.5 py-0.2 rounded border border-amber-400/30 flex-shrink-0">
-                  ${isGourmet ? '⭐ Thượng Hạng' : '🥢 Truyền Thống'}
-                </span>
-              </div>
-            </div>
-
-            <!-- Tactile Ingredient Slots -->
-            <div class="space-y-1 my-1">
-              <div class="text-[8px] font-black text-stone-400 uppercase tracking-wider text-center flex items-center justify-center gap-1.5">
-                <span class="h-[1px] w-5 bg-stone-300 inline-block"></span>
-                <span>NGUYÊN LIỆU BẮT BUỘC (${rec.requires.length})</span>
-                <span class="h-[1px] w-5 bg-stone-300 inline-block"></span>
-              </div>
-              ${ingSlotsHtml}
-            </div>
-
-            <!-- Bottom Tactical Dial Hint Ribbon -->
-            <div class="mt-1 ${isGourmet ? 'bg-purple-950 text-purple-200 border-purple-800' : 'bg-sky-950 text-sky-200 border-sky-800'} text-[9px] p-1 rounded-lg border font-medium text-center shadow-inner leading-tight">
-              ${tipText}
-            </div>
-          `;
-
-          card.addEventListener('click', () => {
-            playSound('card');
-            zoomToPlayerMat();
-          });
-
-          p1Container.appendChild(card);
+          p1Container.appendChild(createDishCardElement(gameState.player, rec, true));
         });
       }
 
       // 3. Render Phase 3 Cooking Cards
       renderPhase3Recipes();
 
+      // 4. If Rival Kitchens modal is open, refresh it dynamically
+      const modalRk = document.getElementById('modal-rival-kitchens');
+      if (modalRk && !modalRk.classList.contains('hidden') && typeof renderRivalKitchenContent === 'function') {
+        renderRivalKitchenContent();
+      }
     }
 
     function renderPhase3Recipes() {
@@ -4901,7 +4950,7 @@ const gameState = {
       gameState.rivals.filter(r => !isHumanSeat(r)).forEach(riv => {
         const isSel = riv.id === selectedRivalId;
         const tab = document.createElement('button');
-        tab.className = `p-2 rounded-xl border flex items-center justify-between text-left transition-all ${isSel ? 'border-emerald-400 bg-emerald-950/80 shadow' : 'border-stone-800 bg-stone-900/60 hover:bg-stone-800'}`;
+        tab.className = `p-2 rounded-xl border flex items-center justify-between text-left transition-all flex-shrink-0 min-w-[150px] ${isSel ? 'border-emerald-400 bg-emerald-950/80 shadow' : 'border-stone-800 bg-stone-900/60 hover:bg-stone-800'}`;
         tab.innerHTML = `
           <div class="flex items-center gap-2">
             <span class="text-xl">${riv.avatar}</span>
@@ -4922,6 +4971,34 @@ const gameState = {
 
       // Current rival
       const curRival = gameState.rivals.find(r => r.id === selectedRivalId) || gameState.rivals[0];
+
+      // 1b. Render Rival recipes & needed ingredients preview
+      const barterRecPreview = document.getElementById('barter-rival-recipes-preview');
+      if (barterRecPreview && curRival) {
+        barterRecPreview.innerHTML = `
+          <div class="flex items-center justify-between text-xs font-black text-amber-300">
+            <span>🎯 THỰC ĐƠN ĐỐI THỦ ĐANG NẤU (${curRival.name}):</span>
+            <button id="btn-barter-view-full-kitchen" class="text-[10px] text-emerald-400 hover:underline font-bold cursor-pointer flex items-center gap-0.5">
+              <span>Xem chi tiết bếp đối thủ</span>
+              <span>↗</span>
+            </button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1" id="barter-rec-cards-mini"></div>
+        `;
+        const miniGrid = barterRecPreview.querySelector('#barter-rec-cards-mini');
+        if (miniGrid) {
+          (curRival.activeRecipes || []).forEach(rec => {
+            miniGrid.appendChild(createDishCardElement(curRival, rec, false));
+          });
+        }
+        const btnFull = barterRecPreview.querySelector('#btn-barter-view-full-kitchen');
+        if (btnFull) {
+          btnFull.addEventListener('click', () => {
+            closeBarterModal();
+            openRivalKitchensModal(curRival.id);
+          });
+        }
+      }
 
       // 2. Render Player offers
       barterPlayerOffers.innerHTML = '';
@@ -5112,6 +5189,186 @@ const gameState = {
         setToast(`❌ ${rival.name} đã từ chối lời đề nghị giao dịch!`, true);
       }
     });
+
+    // ==========================================
+    // RIVAL KITCHENS INSPECTOR (XEM BẾP ĐỐI THỦ)
+    // ==========================================
+    const modalRivalKitchens = document.getElementById('modal-rival-kitchens');
+    const btnOpenRivalKitchens = document.getElementById('btn-open-rival-kitchens');
+    const btnQuickViewRivals = document.getElementById('btn-quick-view-rivals');
+    const btnCloseRivalKitchens = document.getElementById('btn-close-rival-kitchens');
+    const rivalKitchenTabs = document.getElementById('rival-kitchen-tabs');
+    const rivalKitchenContent = document.getElementById('rival-kitchen-content');
+
+    let selectedRivalKitchenId = null;
+
+    function openRivalKitchensModal(chefId = null) {
+      if (!modalRivalKitchens) return;
+      const allChefs = allChefsUnique();
+      if (!allChefs.length) {
+        setToast('⚠️ Chưa có dữ liệu đối thủ.', true);
+        return;
+      }
+      modalRivalKitchens.classList.remove('hidden');
+
+      if (chefId && allChefs.some(c => c.id === chefId)) {
+        selectedRivalKitchenId = chefId;
+      } else if (!selectedRivalKitchenId || !allChefs.some(c => c.id === selectedRivalKitchenId)) {
+        const firstRival = gameState.rivals.find(r => r.id !== gameState.player.id);
+        selectedRivalKitchenId = firstRival ? firstRival.id : allChefs[0].id;
+      }
+
+      renderRivalKitchenTabs();
+      renderRivalKitchenContent();
+    }
+
+    function closeRivalKitchensModal() {
+      if (modalRivalKitchens) modalRivalKitchens.classList.add('hidden');
+    }
+
+    if (btnOpenRivalKitchens) btnOpenRivalKitchens.addEventListener('click', () => openRivalKitchensModal());
+    if (btnQuickViewRivals) btnQuickViewRivals.addEventListener('click', () => openRivalKitchensModal());
+    if (btnCloseRivalKitchens) btnCloseRivalKitchens.addEventListener('click', closeRivalKitchensModal);
+    if (modalRivalKitchens) {
+      modalRivalKitchens.addEventListener('click', (e) => {
+        if (e.target === modalRivalKitchens) closeRivalKitchensModal();
+      });
+    }
+
+    // Ribbon chef badges click handlers
+    ['lola', 'angus', 'chen', 'lucrezia'].forEach(id => {
+      const el = document.getElementById(`lead-chef-${id}`);
+      if (el) {
+        el.addEventListener('click', () => openRivalKitchensModal(id));
+      }
+    });
+
+    window.openRivalKitchensModal = openRivalKitchensModal;
+
+    function renderRivalKitchenTabs() {
+      if (!rivalKitchenTabs) return;
+      rivalKitchenTabs.innerHTML = '';
+
+      const allChefs = allChefsUnique();
+      allChefs.forEach(chef => {
+        const isPlayer = chef.id === gameState.player.id;
+        const isSel = chef.id === selectedRivalKitchenId;
+        const tab = document.createElement('button');
+        tab.className = `px-3 py-1.5 rounded-xl border flex items-center gap-2 cursor-pointer transition-all flex-shrink-0 min-w-[140px] select-none ${
+          isSel
+            ? 'border-amber-400 bg-amber-950/80 text-amber-200 shadow-lg ring-2 ring-amber-400/40'
+            : 'border-stone-800 bg-stone-900/60 hover:bg-stone-800 text-stone-300'
+        }`;
+        tab.innerHTML = `
+          <span class="text-xl">${chef.avatar}</span>
+          <div class="text-left">
+            <div class="text-xs font-black leading-tight flex items-center gap-1">
+              <span>${chef.name}</span>
+              ${isPlayer ? '<span class="text-[8px] bg-emerald-600 text-white px-1 py-0.2 rounded font-black">BẠN</span>' : ''}
+            </div>
+            <div class="text-[9px] text-stone-400">$${chef.money} • ${chef.likes}⭐</div>
+          </div>
+        `;
+        tab.addEventListener('click', () => {
+          selectedRivalKitchenId = chef.id;
+          renderRivalKitchenTabs();
+          renderRivalKitchenContent();
+        });
+        rivalKitchenTabs.appendChild(tab);
+      });
+    }
+
+    function renderRivalKitchenContent() {
+      if (!rivalKitchenContent) return;
+      rivalKitchenContent.innerHTML = '';
+
+      const chef = allChefsUnique().find(c => c.id === selectedRivalKitchenId) || gameState.rivals[0] || gameState.player;
+      if (!chef) return;
+
+      const isPlayer = chef.id === gameState.player.id;
+      const inv = chef.inventory || [];
+      const recipes = chef.activeRecipes || [];
+      const marketName = (gameState.markets && gameState.markets[chef.currentLocation]) ? gameState.markets[chef.currentLocation].name : 'Chưa vào chợ';
+
+      // 1. Chef Summary Header
+      const header = document.createElement('div');
+      header.className = 'flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-stone-950/80 border border-stone-800';
+      header.innerHTML = `
+        <div class="flex items-center gap-3">
+          <span class="text-3xl p-2 rounded-xl bg-stone-900 border border-stone-700">${chef.avatar}</span>
+          <div>
+            <div class="flex items-center gap-2">
+              <h4 class="text-sm font-black text-amber-300 uppercase">${chef.name}</h4>
+              ${isPlayer ? '<span class="text-[9px] bg-emerald-600 text-white font-black px-1.5 py-0.5 rounded">BẾP CỦA BẠN</span>' : '<span class="text-[9px] bg-purple-600 text-white font-black px-1.5 py-0.5 rounded">ĐỐI THỦ</span>'}
+            </div>
+            <div class="text-[11px] text-stone-400 font-medium">${chef.restaurant || 'Nhà Hàng Ẩm Thực'}</div>
+            <div class="text-[10px] text-amber-300/80 font-bold mt-0.5">⚡ ${chef.powerDesc || 'Kỹ năng nấu ăn đặc sắc'}</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <div class="px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-xs">
+            <span class="text-stone-400">Ví:</span> <b class="text-emerald-400 font-black">$${chef.money}</b>
+          </div>
+          <div class="px-2.5 py-1 rounded-lg bg-amber-950/60 border border-amber-500/40 text-xs">
+            <span class="text-stone-400">Likes:</span> <b class="text-amber-400 font-black">${chef.likes} / 20 ⭐</b>
+          </div>
+          <div class="px-2.5 py-1 rounded-lg bg-sky-950/60 border border-sky-500/40 text-xs">
+            <span class="text-stone-400">Vị trí:</span> <b class="text-sky-300 font-bold">📍 ${marketName}</b>
+          </div>
+        </div>
+      `;
+      rivalKitchenContent.appendChild(header);
+
+      // 2. Pantry Cards Section
+      const pantrySec = document.createElement('div');
+      pantrySec.className = 'flex flex-col gap-1.5 bg-stone-950/70 p-3 rounded-xl border border-stone-800';
+      pantrySec.innerHTML = `
+        <div class="flex items-center justify-between text-xs font-black text-amber-300 uppercase">
+          <span>📦 Kho Nguyên Liệu Hiện Có (${inv.length} thẻ):</span>
+          <span class="text-[10px] text-stone-400 font-normal">Sức chứa tối đa: ${getPantryCapacity(chef)} thẻ</span>
+        </div>
+        <div class="flex items-center gap-2 overflow-x-auto py-1">
+          ${
+            inv.length === 0
+              ? '<span class="text-xs text-stone-500 italic py-1">Kho đang trống, chưa có nguyên liệu nào.</span>'
+              : inv.map(item => `
+                  <div class="w-16 h-20 rounded-xl bg-stone-900 border border-amber-500/40 p-1.5 flex flex-col justify-between items-center text-center select-none shadow flex-shrink-0">
+                    <span class="self-end text-[8px] font-black text-amber-700 bg-amber-200/90 px-1 rounded-sm">$${item.cost}</span>
+                    <span class="text-2xl">${item.emoji || '📦'}</span>
+                    <span class="text-[9px] font-bold text-stone-200 truncate w-full leading-tight">${item.name}</span>
+                  </div>
+                `).join('')
+          }
+        </div>
+      `;
+      rivalKitchenContent.appendChild(pantrySec);
+
+      // 3. Active Recipes Section
+      const recipesSec = document.createElement('div');
+      recipesSec.className = 'flex flex-col gap-2';
+      recipesSec.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black text-amber-300 uppercase tracking-wide">
+            🍳 Thẻ Món Ăn Đang Nấu (${recipes.length} món):
+          </span>
+          <span class="text-[10px] text-stone-400">Hiển thị đầy đủ nguyên liệu bắt buộc & tiến độ thu thập</span>
+        </div>
+        <div class="flex flex-col sm:flex-row items-stretch justify-center gap-3 py-1" id="rival-kitchen-recipes-grid">
+        </div>
+      `;
+      rivalKitchenContent.appendChild(recipesSec);
+
+      const grid = recipesSec.querySelector('#rival-kitchen-recipes-grid');
+      if (grid) {
+        if (recipes.length === 0) {
+          grid.innerHTML = '<span class="text-xs text-stone-500 italic py-2">Đầu bếp này chưa có thẻ món ăn nào.</span>';
+        } else {
+          recipes.forEach(rec => {
+            grid.appendChild(createDishCardElement(chef, rec, isPlayer));
+          });
+        }
+      }
+    }
 
     // Proactive Bot Trade proposal banner
     const bannerBotTrade = document.getElementById('banner-bot-trade');
@@ -6115,6 +6372,6 @@ const gameState = {
       requestRender();
     });
   </script>
-  <script src="./hpvn.js?v=49f79ac82d"></script>
+  <script src="./hpvn.js?v=010a2f34c4"></script>
 </body>
 </html>
