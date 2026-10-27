@@ -271,6 +271,19 @@
     return STANDEES[id];
   }
 
+  const ALL_MARKET_KEYS = ['fruit', 'vegetable', 'carbs', 'chop', 'dairy', 'mystery', 'island'];
+  function getRandomMarketForDay(code, day, chefId, closedMarkets = []) {
+    let hash = 0;
+    const seed = `${code || 'VDB'}-day${day}-${chefId}`;
+    for (let i = 0; i < seed.length; i++) {
+      hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+      hash |= 0;
+    }
+    const open = ALL_MARKET_KEYS.filter(m => !closedMarkets.includes(m));
+    const list = open.length ? open : ALL_MARKET_KEYS;
+    return list[Math.abs(hash) % list.length];
+  }
+
   function enter(view) {
     if (seatBox) seatBox.style.display = 'none';
     if (typeof closeTransientUI === 'function') closeTransientUI();
@@ -288,11 +301,17 @@
     const me = view.myChef;
     const seated = ORDER.filter(id => st.chefs[id]);
     const myTurn = view.status === 'playing' && st.turnChef === me;
+    const isRandomMarketDay = T && view.status === 'playing' && st.day <= 5;
+    const closed = (st.closed || []).map(c => c.market);
+    const randomDest = isRandomMarketDay ? getRandomMarketForDay(T.code, st.day, me, closed) : null;
     for (const [id, chef] of Object.entries(st.chefs)) {
       const base = BASE[id];
-      const keepDial = id === me && myTurn && st.phase === 1 && !first ? base.selectedDestination : chef.currentLocation;
+      let dest = chef.currentLocation;
+      if (id === me && myTurn && st.phase === 1) {
+        dest = isRandomMarketDay ? randomDest : (!first ? base.selectedDestination : chef.currentLocation);
+      }
       Object.assign(base, chef, {
-        selectedDestination: keepDial, deliveryMarket: null,
+        selectedDestination: dest, deliveryMarket: null,
         upgrades: chef.upgrades.map(u => ({ ...(availableUpgradesDeck.find(x => x.id === u.id) || {}), ...u })),
         actionCards: id === me ? chef.actionCards : Array.from({ length: chef.actionCardCount }, (_, i) => ({ id: `hidden-${i}` })),
       });
@@ -324,6 +343,9 @@
         setDialNeedle(dialForChef(BASE[id]), now, !first);
         if (first) flipDial(dialForChef(BASE[id]), true);
       }
+    }
+    if (myTurn && st.phase === 1) {
+      setDialNeedle(dialForChef(gameState.player), gameState.player.selectedDestination, false);
     }
     updateHUDStats();
     updateRecipeUI();
@@ -531,6 +553,43 @@
     closeBarterModal();
     act(human ? 'offer' : 'trade', human ? { to: selectedRivalId, ...args } : { with: selectedRivalId, ...args })
       .then(result => { if (result && !human) setToast(result.accepted ? '🤝 Đối thủ đồng ý đổi!' : '❌ Đối thủ từ chối kèo này.', !result.accepted); });
+  });
+
+  // Phase 1: in multiplayer online mode during the first 5 days, market is assigned randomly and cannot be manually selected
+  const origSyncDestButtons = typeof syncDestButtons === 'function' ? syncDestButtons : null;
+  syncDestButtons = () => {
+    if (origSyncDestButtons) origSyncDestButtons();
+    const isRandomMarketDay = T && T.view?.status === 'playing' && T.view.state?.day <= 5 && T.view.state?.phase === 1;
+    const descEl = document.querySelector('#panel-phase-1 p');
+    const lbl = document.getElementById('selected-dest-label');
+    const destBtns = document.querySelectorAll('.dest-btn');
+    if (isRandomMarketDay) {
+      if (descEl) descEl.textContent = '🎲 Ngày 1–5: Chợ được chỉ định ngẫu nhiên, bấm nút Đi chợ!';
+      if (lbl && typeof destLabelText === 'function') {
+        lbl.innerText = `🎲 NGẪU NHIÊN: ${destLabelText(gameState.player.selectedDestination)}`;
+      }
+      destBtns.forEach(b => {
+        const isChosen = b.getAttribute('data-dest') === gameState.player.selectedDestination;
+        b.style.opacity = isChosen ? '1' : '0.4';
+        b.style.cursor = isChosen ? 'default' : 'not-allowed';
+      });
+    } else {
+      if (descEl) descEl.textContent = 'Chọn quầy chợ, sau đó bấm nút Đi chợ!';
+      destBtns.forEach(b => {
+        b.style.opacity = '';
+        b.style.cursor = '';
+      });
+    }
+  };
+
+  document.querySelectorAll('.dest-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      if (T && T.view?.status === 'playing' && T.view.state?.day <= 5 && T.view.state?.phase === 1) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        setToast('🎲 Trong 5 ngày đầu tiên, quầy chợ được chỉ định ngẫu nhiên!', true);
+      }
+    }, true);
   });
 
   showLobby();
