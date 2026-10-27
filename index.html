@@ -3431,7 +3431,8 @@ const gameState = {
     btnRevealDials.addEventListener('click', () => {
       playSound('bell');
       btnRevealDials.disabled = true;
-      setToast('🛎️ 3, 2, 1... ĐI CHỢ! Tất cả 4 đầu bếp cùng di chuyển!');
+      const totalChefs = [gameState.player, ...(gameState.rivals || [])].filter(Boolean).length;
+      setToast(`🛎️ 3, 2, 1... ĐI CHỢ! Tất cả ${totalChefs} đầu bếp cùng di chuyển!`);
 
       // AI destination selection (AI rivals only – the hot-seat human keeps the dial they set themselves)
       gameState.rivals.forEach(riv => {
@@ -3439,30 +3440,30 @@ const gameState = {
         riv.selectedDestination = chooseAiDestination(riv);
       });
 
-      // Rotate needles on all 3 rival dials
-      gameState.rivals.forEach(r => setDialNeedle(dialForChef(r), r.selectedDestination, false));
+      // Rotate needles on all rival dials
+      gameState.rivals.forEach(r => {
+        const d = dialForChef(r);
+        if (d) setDialNeedle(d, r.selectedDestination, false);
+      });
 
-      // Physically FLIP ALL 4 DIALS face up on the table!
+      // Physically FLIP ALL DIALS face up on the table!
       flipDial(playerDial, true);
-      flipDial(rivalDialAngus, true);
-      flipDial(rivalDialChen, true);
-      flipDial(rivalDialLucrezia, true);
+      if (rivalDialAngus) flipDial(rivalDialAngus, true);
+      if (rivalDialChen) flipDial(rivalDialChen, true);
+      if (rivalDialLucrezia) flipDial(rivalDialLucrezia, true);
 
       // Coordinates
       const pPos = gameState.markets[gameState.player.selectedDestination].pos;
-      const r1Pos = gameState.markets[gameState.rivals[0].selectedDestination].pos;
-      const r2Pos = gameState.markets[gameState.rivals[1].selectedDestination].pos;
-      const r3Pos = gameState.markets[gameState.rivals[2].selectedDestination].pos;
 
-      // Animate 4 standees hopping across the board
+      // Animate standees hopping across the board
       // Each chef's own standee hops to that chef's destination (works after hot-seat swaps too)
-      const standeeOffsets = { lola: [0, 0], angus: [1.2, 0], chen: [-1.2, 0], lucrezia: [0, 1.2] };
-      const movers = [gameState.player, ...gameState.rivals];
+      const standeeOffsets = { lola: [0, 0], angus: [1.2, 0], chen: [-1.2, 0], lucrezia: [0, 1.2], hai: [0, -1.2], sau: [1.2, 1.2], tam: [-1.2, 1.2], muoi: [1.2, -1.2] };
+      const movers = [gameState.player, ...(gameState.rivals || [])].filter(Boolean);
       const onAllLanded = () => {
         gameState.player.currentLocation = gameState.player.selectedDestination;
-        gameState.rivals[0].currentLocation = gameState.rivals[0].selectedDestination;
-        gameState.rivals[1].currentLocation = gameState.rivals[1].selectedDestination;
-        gameState.rivals[2].currentLocation = gameState.rivals[2].selectedDestination;
+        gameState.rivals.forEach(r => {
+          if (r) r.currentLocation = r.selectedDestination;
+        });
 
         // Check for Contested Market
         const contested = gameState.rivals.filter(r => r.currentLocation === gameState.player.currentLocation);
@@ -3470,7 +3471,7 @@ const gameState = {
           const names = contested.map(r => r.name + ' ' + r.avatar).join(', ');
           setToast(`⚔️ TRANH CHẤP QUẦY CHỢ: ${names} cũng đến ${gameState.markets[gameState.player.currentLocation].name}! Hãy nhanh tay tranh mua!`);
         } else {
-          setToast(`📍 Tất cả 4 đầu bếp đã đến các quầy chợ! Bắt đầu 60 giây mua sắm & đổi đồ!`);
+          setToast(`📍 Tất cả ${movers.length} đầu bếp đã đến các quầy chợ! Bắt đầu 60 giây mua sắm & đổi đồ!`);
         }
 
         setTimeout(startPhase2, 600);
