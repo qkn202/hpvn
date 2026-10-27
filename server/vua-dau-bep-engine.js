@@ -22,7 +22,8 @@ function newGame(seed, humans = ['lola', 'angus']) {
   for (const id of D.SEAT_PICK) if (seated.length < D.MIN_CHEFS && !seated.includes(id)) seated.push(id);
   const basics = R.shuffle(s, D.BASIC_RECIPES);
   const gourmets = R.shuffle(s, D.GOURMET_RECIPES);
-  D.TURN_ORDER.filter(id => seated.includes(id)).forEach((id, i) => {
+  s.turnOrder = D.TURN_ORDER.filter(id => seated.includes(id));
+  s.turnOrder.forEach((id, i) => {
     const basic = R.dealRecipe(s, basics[i]);
     const gourmet = R.dealRecipe(s, gourmets[i]);
     const first = basic.requires[0];
@@ -36,7 +37,7 @@ function newGame(seed, humans = ['lola', 'angus']) {
     };
   });
   s.dumpster = D.STARTING_DUMPSTER.map(R.ingredient);
-  R.say(s, `🎉 Ván mới! Mỗi ngày đi chợ lần lượt: ${R.order(s).map(id => `${R.chefName(id)}${s.humans.includes(id) ? '' : ' 🤖'}`).join(' → ')}. Ai đạt ${D.WIN_LIKES} ⭐ thắng vào cuối ngày!`);
+  R.say(s, `🎉 Ván mới! Mỗi ngày đi chợ lần lượt: ${R.order(s).map(id => `${R.chefName(id)}${s.humans.includes(id) ? '' : ' 🤖'}`).join(' → ')}. Ai đạt ${D.WIN_LIKES} ⭐ trước sẽ thắng ngay lập tức! Thứ tự lượt chơi sẽ random sau mỗi ngày.`);
   advance(s);
   return s;
 }
@@ -260,7 +261,8 @@ function endDay(s) {
   s.refused = [];
   s.day += 1;
   s.turn = 0;
-  R.say(s, `☀️ Ngày ${s.day}: mọi bếp nhận trợ cấp theo hạng danh tiếng.`);
+  s.turnOrder = R.shuffle(s, R.order(s));
+  R.say(s, `☀️ Ngày ${s.day}: mọi bếp nhận trợ cấp theo hạng danh tiếng. Thứ tự đi chợ hôm nay: ${R.order(s).map(id => `${R.chefName(id)}${s.humans.includes(id) ? '' : ' 🤖'}`).join(' → ')}.`);
 }
 
 // The chef whose turn ends: offers to them lapse, their ban is served, a round passes for claims/closures.
@@ -283,6 +285,7 @@ function advance(s) {
     chef.deliveryUsedToday = false;
     if (s.humans.includes(chef.id)) return;
     autoTurn(s, chef);
+    if (s.over) return;
     finishTurn(s);
   }
 }
@@ -301,6 +304,7 @@ function autoplay(s) {
   const chef = currentChef(s);
   R.say(s, `⏰ ${R.chefName(chef.id)} quá hạn lượt, quản lý quán đi chợ thay.`);
   autoTurn(s, chef);
+  if (s.over) return;
   finishTurn(s);
   advance(s);
 }
@@ -308,7 +312,7 @@ function autoplay(s) {
 function leave(s, chefId) {
   s.humans = s.humans.filter(id => id !== chefId);
   R.say(s, `🚪 ${R.chefName(chefId)} rời bàn, bếp chợ tiếp quản.`);
-  if (currentChef(s)?.id === chefId) { autoTurn(s, currentChef(s)); finishTurn(s); advance(s); }
+  if (currentChef(s)?.id === chefId) { autoTurn(s, currentChef(s)); if (s.over) return; finishTurn(s); advance(s); }
 }
 
 /** What a member sees: no seed, rivals' action cards only as a count. */

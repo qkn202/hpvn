@@ -180,7 +180,7 @@
   const when = millis => new Date(millis).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
   const inviteCode = (() => { try { return new URL(document.referrer).searchParams.get('room') || ''; } catch { return ''; } })();
 
-  const INTRO = 'Mỗi bàn 2–8 người, mỗi người một bếp. Mỗi ngày các bếp đi chợ lần lượt theo số thứ tự (bàn dưới 4 người có bếp máy chơi chen vào). Bạn đi lượt lúc nào cũng được; lỡ hạn thì quản lý quán đi chợ thay (bàn 2 người hạn 24 giờ, bàn đông hạn ngắn hơn, tối thiểu 8 giờ). Ai đạt 20 ⭐ thắng vào cuối ngày.';
+  const INTRO = 'Mỗi bàn 2–8 người, mỗi người một bếp. Thứ tự lượt đi chợ sẽ random sau khi kết thúc mỗi ngày. Bạn đi lượt lúc nào cũng được; lỡ hạn thì quản lý quán đi chợ thay (bàn 2 người hạn 24 giờ, bàn đông hạn ngắn hơn, tối thiểu 8 giờ). Ai giành được 20 ⭐ trước sẽ thắng ngay lập tức!';
   const chefLabel = id => `${BASE[id].avatar} ${BASE[id].name}`;
 
   async function showLobby(note = '') {
@@ -299,7 +299,7 @@
     T.view = view;
     const st = view.state;
     const me = view.myChef;
-    const seated = ORDER.filter(id => st.chefs[id]);
+    const seated = (st.turnOrder || ORDER).filter(id => st.chefs[id]);
     const myTurn = view.status === 'playing' && st.turnChef === me;
     const isRandomMarketDay = T && view.status === 'playing' && st.day <= 5;
     const closed = (st.closed || []).map(c => c.market);
@@ -414,7 +414,7 @@
           view.status !== 'over' ? el('button', { textContent: '🚪 Rời bàn', title: 'Bỏ bàn này, bếp máy chơi thay', onclick: leaveTable }) : '',
           el('button', { textContent: open ? '▾ Thu gọn' : '▴ Bàn', onclick: () => { turnBar.classList.toggle('open'); drawTurnBar(); } }))),
       el('div', { className: 'more' }, el('div', { textContent: `Bàn ${view.code} · Ngày ${st.day} · thứ tự đi chợ:` }),
-        el('div', { className: 'board' }, ...ORDER.filter(id => st.chefs[id]).map(id => el('span', { className: id === st.turnChef ? 'now' : '',
+        el('div', { className: 'board' }, ...(st.turnOrder || ORDER).filter(id => st.chefs[id]).map(id => el('span', { className: id === st.turnChef ? 'now' : '',
           textContent: `${id === st.turnChef ? '▶ ' : ''}${who(id)} · ${st.chefs[id].likes} ⭐${id === me ? ' (bạn)' : ''}` }))),
         buttons, ...offers));
     turnBar.style.display = 'block';
@@ -435,7 +435,8 @@
     const winner = BASE[st.winner];
     if (!winner || !modalVictory) return;
     const set = (id, text) => { const node = document.getElementById(id); if (node) node.innerText = text; };
-    set('victory-winner-text', `NHÀ HÀNG [${winner.restaurant.toUpperCase()}] THẮNG VỚI ${winner.likes} ĐIỂM DANH TIẾNG!`);
+    const likes = st.chefs[st.winner]?.likes ?? winner.likes;
+    set('victory-winner-text', `NHÀ HÀNG [${winner.restaurant.toUpperCase()}] THẮNG VỚI ${likes} ⭐ DANH TIẾNG!`);
     set('victory-stat-dishes', `${winner.cookedCount || 0} món`);
     set('victory-stat-money', `$${winner.money}`);
     set('victory-stat-upgrades', `${winner.upgrades.length}/4 nâng cấp`);
@@ -487,7 +488,7 @@
     if (!T?.view?.state) { original.updateLeaderboardUI(); return; }
     const st = T.view.state;
     ribbon?.replaceChildren(el('span', { className: 'text-stone-400 font-bold', textContent: '🏆' }),
-      ...ORDER.filter(id => st.chefs[id]).map(id => el('span', { className: 'font-bold cursor-pointer hover:underline', title: `${BASE[id].name} (Bấm để xem thẻ món & nguyên liệu)`, style: `color:${BASE[id].colorHex}`, onclick: () => typeof openRivalKitchensModal === 'function' && openRivalKitchensModal(id) },
+      ...(st.turnOrder || ORDER).filter(id => st.chefs[id]).map(id => el('span', { className: 'font-bold cursor-pointer hover:underline', title: `${BASE[id].name} (Bấm để xem thẻ món & nguyên liệu)`, style: `color:${BASE[id].colorHex}`, onclick: () => typeof openRivalKitchensModal === 'function' && openRivalKitchensModal(id) },
         `${BASE[id].avatar} `, el('b', { className: 'text-amber-400', textContent: st.chefs[id].likes }))));
     const actBadge = document.getElementById('header-action-badge');
     if (actBadge) actBadge.innerText = gameState.player.actionCards.length;

@@ -1870,7 +1870,7 @@
 
   <!-- FLOATING NOTIFICATION / EVENT TOAST (Bottom Center) -->
   <div id="event-toast" class="toast-floating hud-interactive max-w-xl text-center bg-stone-950/95 border border-amber-500/60 text-amber-200 text-xs lg:text-sm font-bold px-6 py-2 rounded-full shadow-2xl transition-all duration-300 transform" role="status" aria-live="polite">
-    🎉 VÁN MỚI BẮT ĐẦU: Bếp Cô Ba nhận 2 món (Bánh Mì Kẹp Thịt Chả & Phở Bò Tái Nạm Cung Đình) cùng $300. Ai đạt 20 ⭐ trước sẽ thắng vào cuối ngày!
+    🎉 VÁN MỚI BẮT ĐẦU: Bếp Cô Ba nhận 2 món (Bánh Mì Kẹp Thịt Chả & Phở Bò Tái Nạm Cung Đình) cùng $300. Ai đạt 20 ⭐ trước sẽ chiến thắng ngay lập tức!
   </div>
 
   <!-- ========================================== -->
@@ -3293,7 +3293,7 @@ const gameState = {
       if (toastEl && gameState.player && gameState.player.activeRecipes.length >= 2) {
         const r1 = gameState.player.activeRecipes[0].name;
         const r2 = gameState.player.activeRecipes[1].name;
-        toastEl.innerText = `🎉 VÁN MỚI BẮT ĐẦU: Bếp ${gameState.player.name} nhận 2 món ngẫu nhiên (${r1} & ${r2}) cùng $${gameState.player.money}. Ai đạt 20 ⭐ trước sẽ thắng vào cuối ngày!`;
+        toastEl.innerText = `🎉 VÁN MỚI BẮT ĐẦU: Bếp ${gameState.player.name} nhận 2 món ngẫu nhiên (${r1} & ${r2}) cùng $${gameState.player.money}. Ai đạt 20 ⭐ trước sẽ chiến thắng ngay lập tức!`;
       }
     }
     dealRandomStartingRecipesAndInventory();
@@ -4984,18 +4984,10 @@ const gameState = {
       });
     }
 
-    // Board-game rule: the game ends at the END of the day in which someone reaches 20.
-    // Mid-day calls only announce; the final call (from "next day") picks the highest score (tie → most money).
+    // Board-game rule: The winner is whoever reaches 20 stars first, immediately without waiting for the day to end.
     function checkWinCondition(final = false) {
       const contenders = allChefsUnique().filter(c => c.likes >= 20);
       if (!contenders.length || gameState.gameOver) return false;
-      if (!final) {
-        if (!gameState.finalDayAnnounced) {
-          gameState.finalDayAnnounced = true;
-          setToast(`🏁 ${contenders[0].name} đã đạt ${contenders[0].likes} điểm! Ván sẽ kết thúc vào CUỐI NGÀY – mọi người tranh thủ nấu nốt!`);
-        }
-        return false;
-      }
       const winner = contenders.sort((x, y) => (y.likes - x.likes) || (y.money - x.money))[0];
       if (winner && modalVictory) {
         gameState.gameOver = true;
@@ -5007,7 +4999,7 @@ const gameState = {
         const statUpgrades = document.getElementById('victory-stat-upgrades');
         const statLevel = document.getElementById('victory-stat-level');
 
-        if (winText) winText.innerText = `NHÀ HÀNG [${winner.restaurant.toUpperCase()}] ĐÃ ĐẠT ${winner.likes} ĐIỂM DANH TIẾNG!`;
+        if (winText) winText.innerText = `NHÀ HÀNG [${winner.restaurant.toUpperCase()}] ĐÃ ĐẠT ${winner.likes} ĐIỂM DANH TIẾNG VÀ CHIẾN THẮNG!`;
         if (statDishes) statDishes.innerText = `${winner.cookedCount || 0} món`;
         if (statMoney) statMoney.innerText = `$${winner.money}`;
         if (statUpgrades) statUpgrades.innerText = `${(winner.upgrades || []).length}/4 nâng cấp`;
@@ -6484,6 +6476,6 @@ const gameState = {
       requestRender();
     });
   </script>
-  <script src="./hpvn.js?v=a9f99f9046"></script>
+  <script src="./hpvn.js?v=fe3c809d50"></script>
 </body>
 </html>

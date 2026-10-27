@@ -47,7 +47,7 @@ const dealRecipe = (s, template) => ({
 const actionCard = (s, type) => ({ id: newId(s, 'act'), ...D.ACTION_CARDS.find(c => c.type === type) });
 
 // the chefs at this table in turn order (tables from before 2–8 seats have the first four)
-const order = s => D.TURN_ORDER.filter(id => s.chefs[id]);
+const order = s => (Array.isArray(s.turnOrder) && s.turnOrder.length ? s.turnOrder.filter(id => s.chefs[id]) : D.TURN_ORDER.filter(id => s.chefs[id]));
 const round = s => order(s).length;
 
 const hasUpgrade = (chef, id) => chef.upgrades.some(u => u.id === id);
@@ -141,9 +141,10 @@ function cook(s, chef, recipe) {
   const pool = deck.filter(r => !active.includes(r.name));
   chef.activeRecipes[chef.activeRecipes.indexOf(recipe)] = dealRecipe(s, pick(s, pool.length ? pool : deck));
   say(s, `🍳 ${chefName(chef.id)} nấu xong ${recipe.name} (+${gained} ⭐, tổng ${chef.likes}).`);
-  if (chef.likes >= D.WIN_LIKES && !s.finalDay) {
-    s.finalDay = true;
-    say(s, `🏁 ${chefName(chef.id)} đạt ${chef.likes} ⭐! Ván kết thúc vào cuối ngày ${s.day}.`);
+  if (chef.likes >= D.WIN_LIKES && !s.over) {
+    s.over = true;
+    s.winner = chef.id;
+    say(s, `🏆 ${chefName(chef.id)} đạt ${chef.likes} ⭐ và CHIẾN THẮNG NGAY LẬP TỨC! Ván đấu kết thúc! 🎉`);
   }
   return gained;
 }
