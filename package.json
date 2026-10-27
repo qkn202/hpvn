@@ -1,0 +1,10 @@
+{
+  "name": "vua-dau-bep-hpvn",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-hpvn.mjs",
+    "test:hpvn": "node scripts/test-hpvn-core.mjs",
+    "test:engine": "node --test \"server/*.test.js\""
+  }
+}

@@ -48,9 +48,14 @@ hpvn/
 ├── index.html           # Toàn bộ mã nguồn giao diện, 3D Canvas và logic game
 ├── images/
 │   └── dishes/          # Hình ảnh minh họa 11 món ăn đặc sắc
+├── hpvn.js              # Lớp HPVN: bàn chơi nhiều người qua máy chủ HPVN (chỉ bật khi mở trong HPVN)
+├── server/              # Engine lượt chơi bàn HPVN chạy trên máy chủ (data, rules, bots, engine + test)
+├── scripts/             # build-hpvn (xuất dist/) và test-hpvn-core (kiểm tra lớp HPVN)
 ├── .gitignore           # Cấu hình bỏ qua tệp rác hệ thống
 └── README.md            # Tài liệu giới thiệu và hướng dẫn chơi
 ```
+
+Kiểm tra: `npm run test:hpvn` (lớp HPVN), `npm run test:engine` (engine máy chủ, Node ≥ 22). Mỗi lần sửa `hpvn.js` phải cập nhật `?v=` trong `index.html` (10 ký tự đầu sha256 của `hpvn.js`), `test:hpvn` báo giá trị đúng.
 
 ---
 
