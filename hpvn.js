@@ -181,7 +181,27 @@
   const inviteCode = (() => { try { return new URL(document.referrer).searchParams.get('room') || ''; } catch { return ''; } })();
 
   const INTRO = 'Mỗi bàn 2–8 người, mỗi người một bếp. Thứ tự lượt đi chợ sẽ random sau khi kết thúc mỗi ngày. Bạn đi lượt lúc nào cũng được; lỡ hạn thì quản lý quán đi chợ thay (bàn 2 người hạn 24 giờ, bàn đông hạn ngắn hơn, tối thiểu 8 giờ). Ai giành được 20 ⭐ trước sẽ thắng ngay lập tức!';
-  const chefLabel = id => `${BASE[id].avatar} ${BASE[id].name}`;
+  let T = null; // { code, view }
+  let busy = false;
+  const BASE = Object.fromEntries([gameState.player, ...gameState.rivals].map(chef => [chef.id, chef]));
+  for (const [id, chef] of Object.entries(NEW_CHEFS)) BASE[id] = { id, ...chef, level: 1, upgrades: [], inventory: [], actionCards: [], activeRecipes: [], garbageCan: [] };
+  const chefLabel = id => `${BASE[id]?.avatar || ''} ${BASE[id]?.name || id}`;
+
+  function getPlayerName(id, seatsObj = T?.view?.seats) {
+    if (!seatsObj) return '';
+    const seat = seatsObj[id];
+    if (!seat) return '';
+    if (typeof seat === 'string') return seat;
+    return seat.name || seat.username || seat.displayName || seat.nick || '';
+  }
+
+  function who(id, seatsObj = T?.view?.seats) {
+    const pName = getPlayerName(id, seatsObj);
+    const cName = BASE[id]?.name || id;
+    if (pName) return `${pName} (${cName})`;
+    const isHuman = T?.view?.state?.humans?.includes(id);
+    return isHuman ? cName : `${cName} 🤖`;
+  }
 
   async function showLobby(note = '') {
     T = null;
@@ -194,9 +214,16 @@
     let mine = [];
     try { mine = (await call({ op: 'mine' })).tables || []; } catch (error) { note = error.message; }
     const tableRows = mine.map(t => {
-      const who = t.status === 'waiting' ? `${t.seated}/${t.size} người` : t.others.length ? `với ${t.others.join(', ')}` : 'với bếp máy';
-      const label = `${t.code} · ${BASE[t.myChef]?.avatar || ''} · ${who}${t.day ? ` · ngày ${t.day}` : ''}`;
-      const state = t.status === 'over' ? (t.winner ? 'Đã xong' : 'Đã đóng') : t.myTurn ? 'Đến lượt bạn!' : t.status === 'waiting' ? 'Chờ người vào' : 'Chờ người khác';
+      const whoLabel = t.status === 'waiting' ? `${t.seated}/${t.size} người` : t.others.length ? `với ${t.others.join(', ')}` : 'với bếp máy';
+      const label = `${t.code} · ${BASE[t.myChef]?.avatar || ''} · ${whoLabel}${t.day ? ` · ngày ${t.day}` : ''}`;
+      let state = t.status === 'over' ? (t.winner ? 'Đã xong' : 'Đã đóng') : t.status === 'waiting' ? 'Chờ người vào' : 'Chờ người khác';
+      if (t.myTurn) {
+        state = `Đến lượt bạn! (${BASE[t.myChef]?.name || ''})`;
+      } else if (t.status === 'playing' && (t.turnPlayer || t.turnChef)) {
+        const turnP = t.turnPlayer || '';
+        const turnC = BASE[t.turnChef]?.name || t.turnChef || '';
+        state = turnP && turnC ? `Lượt: ${turnP} (${turnC})` : turnP ? `Lượt: ${turnP}` : `Lượt: ${turnC}`;
+      }
       return el('button', { className: 'table', onclick: () => openTable(t.code) }, el('span', { textContent: label }),
         el('span', { className: t.myTurn ? 'hpvn-badge' : '', textContent: state }));
     });
@@ -228,7 +255,7 @@
       el('div', { className: 'box' }, el('h2', { textContent: `Bàn ${view.code} · đang chờ ${seated}/${view.size} người` }),
         el('p', { textContent: view.isHost ? `Mời bạn bè qua Floo. Đủ ${view.size} người là bàn tự bắt đầu, hoặc bạn bắt đầu ngay khi có từ 2 người; bếp không có người sẽ bỏ qua (bàn dưới 4 người có bếp máy).` : 'Chờ chủ bàn bắt đầu, hoặc bàn tự bắt đầu khi đủ người.' }),
         ...ORDER.filter(id => view.seats[id]).map(id => el('div', { className: 'seat' }, el('span', { textContent: chefLabel(id) }),
-          el('span', { textContent: `${view.seats[id].name}${id === view.myChef ? ' (bạn)' : ''}` }))),
+          el('span', { textContent: `${who(id, view.seats)}${id === view.myChef ? ' (bạn)' : ''}` }))),
         el('div', { className: 'row', style: 'margin-top:10px' },
           el('button', { className: 'primary', textContent: 'Mời qua Floo', onclick: () => request('vdb-invite', { code: view.code }).catch(() => {}) }),
           view.isHost ? el('button', { className: 'primary', textContent: `Bắt đầu với ${seated} người`, disabled: seated < 2, onclick: startTable }) : '',
@@ -252,10 +279,6 @@
   }
 
   // ---------- online table ----------
-  let T = null; // { code, view }
-  let busy = false;
-  const BASE = Object.fromEntries([gameState.player, ...gameState.rivals].map(chef => [chef.id, chef]));
-  for (const [id, chef] of Object.entries(NEW_CHEFS)) BASE[id] = { id, ...chef, level: 1, upgrades: [], inventory: [], actionCards: [], activeRecipes: [], garbageCan: [] };
   const seatBox = document.getElementById('btn-seat-lola')?.parentElement;
   // board pieces: the page has standees for its four chefs and dials for the three rivals; the new chefs get
   // standees on first use, and any chef without a dial of its own uses one that is never on the board
@@ -306,6 +329,7 @@
     const randomDest = isRandomMarketDay ? getRandomMarketForDay(T.code, st.day, me, closed) : null;
     for (const [id, chef] of Object.entries(st.chefs)) {
       const base = BASE[id];
+      base.playerName = getPlayerName(id);
       let dest = chef.currentLocation;
       if (id === me && myTurn && st.phase === 1) {
         dest = isRandomMarketDay ? randomDest : (!first ? base.selectedDestination : chef.currentLocation);
@@ -390,10 +414,9 @@
     const { view } = T;
     const st = view.state;
     const me = view.myChef;
-    const who = id => (view.seats[id] ? `${view.seats[id].name} (${BASE[id]?.name || id})` : `${BASE[id]?.name || id} 🤖`);
     let status;
     if (view.status === 'over') status = `Ván đã kết thúc: ${BASE[st.winner]?.name || ''} thắng.`;
-    else if (st.turnChef === me) status = `Đến lượt bạn${view.deadline ? ` · hạn ${when(view.deadline)}` : ''}`;
+    else if (st.turnChef === me) status = `Đến lượt bạn: ${who(me)}${view.deadline ? ` · hạn ${when(view.deadline)}` : ''}`;
     else status = `Đang chờ ${who(st.turnChef)} đi lượt${view.deadline ? ` · hạn ${when(view.deadline)}, quá hạn quản lý quán đi thay` : ''}`;
     const buttons = el('span', { className: 'row' },
       el('button', { textContent: '📜 Nhật ký', onclick: () => { if (logModal.style.display === 'flex') closeLog(); else openLog(); } }),
@@ -488,8 +511,16 @@
     if (!T?.view?.state) { original.updateLeaderboardUI(); return; }
     const st = T.view.state;
     ribbon?.replaceChildren(el('span', { className: 'text-stone-400 font-bold', textContent: '🏆' }),
-      ...(st.turnOrder || ORDER).filter(id => st.chefs[id]).map(id => el('span', { className: 'font-bold cursor-pointer hover:underline', title: `${BASE[id].name} (Bấm để xem thẻ món & nguyên liệu)`, style: `color:${BASE[id].colorHex}`, onclick: () => typeof openRivalKitchensModal === 'function' && openRivalKitchensModal(id) },
-        `${BASE[id].avatar} `, el('b', { className: 'text-amber-400', textContent: st.chefs[id].likes }))));
+      ...(st.turnOrder || ORDER).filter(id => st.chefs[id]).map(id => {
+        const isCurrentTurn = id === st.turnChef;
+        return el('span', {
+          className: `font-bold cursor-pointer hover:underline ${isCurrentTurn ? 'ring-2 ring-amber-400 rounded-lg px-1.5 py-0.5 bg-amber-950/80 shadow' : ''}`,
+          title: `${isCurrentTurn ? '▶ ĐANG ĐI LƯỢT: ' : ''}${who(id)} (Bấm để xem thẻ món & nguyên liệu)`,
+          style: `color:${BASE[id].colorHex}`,
+          onclick: () => typeof openRivalKitchensModal === 'function' && openRivalKitchensModal(id)
+        },
+        `${isCurrentTurn ? '▶ ' : ''}${BASE[id].avatar} `, el('b', { className: 'text-amber-400', textContent: st.chefs[id].likes }));
+      }));
     const actBadge = document.getElementById('header-action-badge');
     if (actBadge) actBadge.innerText = gameState.player.actionCards.length;
   };
@@ -511,8 +542,9 @@
     actionTargetLabel.innerText = 'CHỌN ĐỐI THỦ BỊ CẤM VÀO QUẦY BẠN ĐANG ĐỨNG Ở LƯỢT TỚI CỦA HỌ:';
     actionTargetsButtons.innerHTML = '';
     gameState.rivals.forEach(riv => {
+      const label = riv.playerName ? `${riv.playerName} (${riv.name})` : riv.name;
       const btn = el('button', { className: 'p-2 rounded-lg border border-stone-700 bg-stone-900 hover:border-amber-400 text-xs font-bold flex flex-col items-center gap-1 cursor-pointer' },
-        el('span', { className: 'text-lg', textContent: riv.avatar }), el('span', { textContent: riv.name }));
+        el('span', { className: 'text-lg', textContent: riv.avatar }), el('span', { textContent: label }));
       btn.addEventListener('click', () => {
         selectedActionTarget = riv;
         actionTargetsButtons.querySelectorAll('button').forEach(b => b.classList.remove('border-amber-400', 'bg-amber-950/80'));

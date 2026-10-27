@@ -5059,7 +5059,7 @@ const gameState = {
           <div class="flex items-center gap-2">
             <span class="text-xl">${riv.avatar}</span>
             <div>
-              <div class="text-[11px] font-black text-stone-100">${riv.name}</div>
+              <div class="text-[11px] font-black text-stone-100">${riv.playerName ? `${riv.playerName} (${riv.name})` : riv.name}</div>
               <div class="text-[9px] text-stone-400">$${riv.money} • ${riv.likes}👍</div>
             </div>
           </div>
@@ -5367,7 +5367,7 @@ const gameState = {
           <span class="text-xl">${chef.avatar}</span>
           <div class="text-left">
             <div class="text-xs font-black leading-tight flex items-center gap-1">
-              <span>${chef.name}</span>
+              <span>${chef.playerName ? `${chef.playerName} (${chef.name})` : chef.name}</span>
               ${isPlayer ? '<span class="text-[8px] bg-emerald-600 text-white px-1 py-0.2 rounded font-black">BẠN</span>' : ''}
             </div>
             <div class="text-[9px] text-stone-400">$${chef.money} • ${chef.likes}⭐</div>
@@ -5402,7 +5402,7 @@ const gameState = {
           <span class="text-3xl p-2 rounded-xl bg-stone-900 border border-stone-700">${chef.avatar}</span>
           <div>
             <div class="flex items-center gap-2">
-              <h4 class="text-sm font-black text-amber-300 uppercase">${chef.name}</h4>
+              <h4 class="text-sm font-black text-amber-300 uppercase">${chef.playerName ? `${chef.playerName} (${chef.name})` : chef.name}</h4>
               ${isPlayer ? '<span class="text-[9px] bg-emerald-600 text-white font-black px-1.5 py-0.5 rounded">BẾP CỦA BẠN</span>' : '<span class="text-[9px] bg-purple-600 text-white font-black px-1.5 py-0.5 rounded">ĐỐI THỦ</span>'}
             </div>
             <div class="text-[11px] text-stone-400 font-medium">${chef.restaurant || 'Nhà Hàng Ẩm Thực'}</div>
@@ -5609,7 +5609,8 @@ const gameState = {
         gameState.rivals.forEach(riv => {
           const btn = document.createElement('button');
           btn.className = 'p-2 rounded-lg border border-stone-700 bg-stone-900 hover:border-amber-400 text-xs font-bold flex flex-col items-center gap-1 cursor-pointer';
-          btn.innerHTML = `<span class="text-lg">${riv.avatar}</span><span>${riv.name}</span><span class="text-[9px] text-emerald-400">$${riv.money}</span>`;
+          const rName = riv.playerName ? `${riv.playerName} (${riv.name})` : riv.name;
+          btn.innerHTML = `<span class="text-lg">${riv.avatar}</span><span>${rName}</span><span class="text-[9px] text-emerald-400">$${riv.money}</span>`;
           btn.addEventListener('click', () => {
             selectedActionTarget = riv;
             actionTargetsButtons.querySelectorAll('button').forEach(b => b.classList.remove('border-amber-400', 'bg-amber-950/80'));
@@ -5624,7 +5625,8 @@ const gameState = {
         gameState.rivals.forEach(riv => {
           const btn = document.createElement('button');
           btn.className = 'p-2 rounded-lg border border-stone-700 bg-stone-900 hover:border-amber-400 text-xs font-bold flex flex-col items-center gap-1 cursor-pointer';
-          btn.innerHTML = `<span class="text-lg">${riv.avatar}</span><span>${riv.name}</span><span class="text-[9px] text-amber-300 font-bold">${riv.inventory.length} thẻ kho</span>`;
+          const rName = riv.playerName ? `${riv.playerName} (${riv.name})` : riv.name;
+          btn.innerHTML = `<span class="text-lg">${riv.avatar}</span><span>${rName}</span><span class="text-[9px] text-amber-300 font-bold">${riv.inventory.length} thẻ kho</span>`;
           btn.addEventListener('click', () => {
             selectedActionTarget = riv;
             actionTargetsButtons.querySelectorAll('button').forEach(b => b.classList.remove('border-amber-400', 'bg-amber-950/80'));
@@ -5661,7 +5663,8 @@ const gameState = {
         sameMarket.forEach(riv => {
           const btn = document.createElement('button');
           btn.className = 'p-2 rounded-lg border border-stone-700 bg-stone-900 hover:border-amber-400 text-xs font-bold flex flex-col items-center gap-1 cursor-pointer';
-          btn.innerHTML = `<span class="text-lg">${riv.avatar}</span><span>${riv.name}</span><span class="text-[9px] text-stone-400">${gameState.markets[riv.currentLocation]?.name || 'Chợ'}</span>`;
+          const rName = riv.playerName ? `${riv.playerName} (${riv.name})` : riv.name;
+          btn.innerHTML = `<span class="text-lg">${riv.avatar}</span><span>${rName}</span><span class="text-[9px] text-stone-400">${gameState.markets[riv.currentLocation]?.name || 'Chợ'}</span>`;
           btn.addEventListener('click', () => {
             selectedActionTarget = riv;
             actionTargetsButtons.querySelectorAll('button').forEach(b => b.classList.remove('border-amber-400', 'bg-amber-950/80'));
@@ -6488,6 +6491,6 @@ const gameState = {
       requestRender();
     });
   </script>
-  <script src="./hpvn.js?v=fe3c809d50"></script>
+  <script src="./hpvn.js?v=712cb4f93a"></script>
 </body>
 </html>
