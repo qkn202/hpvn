@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Vua Đầu Bếp Việt Nam - Đại Chiến Ẩm Thực 3D</title>
   <!-- Tailwind CSS v3.4.17, pre-built from the classes used in this file (no CDN → works offline).
        Rebuild after adding new classes: npx tailwindcss@3.4.17 --content index.html -o out.css --minify -->
@@ -1103,6 +1103,16 @@
       pointer-events: none !important;
       transform: translateX(-50%) translateY(12px) !important;
     }
+    :root {
+      --sat: env(safe-area-inset-top, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left, 0px);
+      --sar: env(safe-area-inset-right, 0px);
+    }
+    button, [role="button"], a {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
     .hud-layer {
       position: fixed;
       inset: 0;
@@ -1116,7 +1126,7 @@
       flex-direction: column;
       justify-content: flex-start;
       align-items: center;
-      padding: 4px 10px;
+      padding: max(4px, var(--sat)) max(6px, var(--sar)) max(4px, var(--sab)) max(6px, var(--sal));
       gap: 2px;
       overflow: hidden;
       box-sizing: border-box;
@@ -1151,14 +1161,41 @@
       width: 100%;
       box-sizing: border-box;
     }
-    .hud-tabs { display: none; width: 100%; box-sizing: border-box; }
-    .hud-tabs button {
-      flex: 1; padding: 8px 10px; border-radius: 10px; font-weight: 900; font-size: 13px;
-      color: #fde68a; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(245, 158, 11, 0.4);
-      display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px;
+    .hud-tabs {
+      display: none;
+      width: 100%;
+      box-sizing: border-box;
     }
-    .hud-tabs button[aria-selected="true"] { background: #f59e0b; color: #1c1917; border-color: #fbbf24; }
-    .hud-tab-badge { font-size: 11px; padding: 1px 6px; border-radius: 999px; background: rgba(0,0,0,0.35); }
+    .hud-tabs button {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-weight: 900;
+      font-size: 13px;
+      color: #fde68a;
+      background: rgba(12, 10, 9, 0.65);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 42px;
+      touch-action: manipulation;
+      transition: all 0.2s ease;
+    }
+    .hud-tabs button[aria-selected="true"] {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #1c1917;
+      border-color: #fbbf24;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+    }
+    .hud-tab-badge {
+      font-size: 11px;
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.35);
+      color: inherit;
+    }
 
     /* Dial buttons grid: always symmetrical and centered */
     .dial-buttons-grid {
@@ -1178,7 +1215,17 @@
     }
 
     @media (max-width: 1023px), (max-height: 620px) {
-      .hud-tabs { display: flex; gap: 6px; position: sticky; top: -8px; z-index: 6; padding: 2px 0 6px; background: inherit; }
+      .hud-tabs {
+        display: flex;
+        gap: 6px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        padding: 2px 0 6px;
+        background: rgba(24, 14, 8, 0.95);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
       #hud-main-deck[data-tab="controls"] #hud-mat-section { display: none !important; }
       #hud-main-deck[data-tab="mat"] #mat-phase-controller-area { display: none !important; }
       #mat-phase-controller-area { position: static; box-shadow: none; border-top: 0 !important; padding-top: 0.5rem; }
@@ -1191,9 +1238,9 @@
 
     /* Phones in portrait: bottom sheet, compact header */
     @media (max-width: 640px) {
-      .hud-layer { padding: 6px; gap: 4px; }
+      .hud-layer { padding: max(4px, var(--sat)) max(6px, var(--sar)) max(4px, var(--sab)) max(6px, var(--sal)); gap: 4px; }
       #hud-main-deck {
-        max-height: min(calc(100dvh - var(--hdr-h, 90px) - 10px), 64dvh) !important;
+        max-height: min(calc(100dvh - var(--hdr-h, 85px) - 8px), 72dvh) !important;
         border-width: 3px;
         width: 100% !important;
         margin-inline: auto !important;
@@ -1202,34 +1249,89 @@
         justify-content: space-between;
         align-items: center;
         width: 100%;
+        padding: 4px 8px !important;
       }
       header .ph-label { display: none !important; }
-      #btn-seat-lola, #btn-seat-angus { font-size: 11px; padding: 3px 6px; }
+      #btn-seat-lola, #btn-seat-angus { font-size: 11px; padding: 3px 6px; min-height: 28px; }
       #btn-seat-lola > span:first-child, #btn-seat-angus > span:first-child { display: none; }
-      /* 2 header rows: [logo + wallet | quick buttons]  /  [seat switch | phase steps] */
+      /* 2 header rows: [logo + wallet | quick buttons]  /  [seat switch | phase steps | leaderboard] */
       header > div:nth-child(2) {
         order: 3;
         width: 100%;
         justify-content: center;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 4px 6px;
+        margin-top: 2px;
       }
-      header > div:nth-child(3) { order: 2; }
-      #mat-phase-controller-area button.dest-btn { min-height: 48px; }
+      header > div:nth-child(3) { order: 2; gap: 4px !important; }
+      #btn-open-rival-kitchens, #btn-open-actions, #btn-open-barter, #btn-toggle-hud {
+        padding: 4px 7px !important;
+        min-height: 34px !important;
+        font-size: 11px !important;
+      }
+      #header-action-badge {
+        font-size: 9px !important;
+        padding: 1px 5px !important;
+      }
+      #mat-phase-controller-area button.dest-btn { min-height: 50px; }
+      .dial-buttons-grid {
+        gap: 6px !important;
+      }
       .dial-buttons-grid button.dest-btn {
-        flex: 1 1 calc(33.33% - 6px);
-        min-width: 70px;
-        padding: 4px 2px;
-        font-size: 10px;
+        flex: 1 1 calc(50% - 4px) !important;
+        min-width: 120px !important;
+        max-width: 100% !important;
+        min-height: 52px !important;
+        padding: 6px 4px !important;
+        font-size: 11px !important;
+        border-radius: 10px !important;
       }
-      .dial-buttons-grid button.dest-btn span.text-base { font-size: 14px; }
-      .dial-buttons-grid button.dest-btn span.text-[11px] { font-size: 9.5px; }
-      .dial-buttons-grid button.dest-btn span.text-[9px] { font-size: 8.5px; }
+      .dial-buttons-grid button.dest-btn[data-dest="island"] {
+        flex: 1 1 100% !important;
+        max-width: 100% !important;
+        min-height: 46px !important;
+        flex-direction: row !important;
+        justify-content: center !important;
+        gap: 8px !important;
+      }
+      .dial-buttons-grid button.dest-btn span.text-base { font-size: 16px; }
+      .dial-buttons-grid button.dest-btn span.text-[11px] { font-size: 10.5px; font-weight: 800; }
+      .dial-buttons-grid button.dest-btn span.text-[9px] { font-size: 9.5px; }
+
+      /* Mobile recipe card adjustments */
+      #phase1-recipes-display {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 10px !important;
+      }
+      #phase1-recipes-display > div {
+        max-width: 100% !important;
+      }
+      #mat-pantry-cards, #barter-rival-tabs, #rival-kitchen-tabs {
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+      }
+      #mat-pantry-cards::-webkit-scrollbar, #barter-rival-tabs::-webkit-scrollbar, #rival-kitchen-tabs::-webkit-scrollbar {
+        display: none;
+      }
+    }
+
+    /* Modal Mobile Optimization */
+    .modal-mobile-fit {
+      max-height: min(92dvh, calc(100dvh - var(--sat) - var(--sab) - 18px)) !important;
+      overscroll-behavior: contain !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+    .btn-close-modal {
+      min-width: 36px !important;
+      min-height: 36px !important;
+      touch-action: manipulation;
     }
 
     /* Phones in landscape: keep HUD centered, compact and never docked/skewed to one side */
     @media (orientation: landscape) and (max-height: 560px) {
-      .hud-layer { padding: 3px 8px !important; gap: 2px !important; }
+      .hud-layer { padding: max(2px, var(--sat)) max(8px, var(--sar)) max(2px, var(--sab)) max(8px, var(--sal)) !important; gap: 2px !important; }
       header h1 .sm\:inline { display: none !important; }
       header .ph-label { display: none !important; }
       header .md\:flex { display: none !important; }   /* camera presets */
@@ -1252,6 +1354,17 @@
         padding: 6px !important;
       }
       .hud-layer > footer { display: none !important; }
+      .dial-buttons-grid button.dest-btn {
+        flex: 1 1 calc(14.28% - 6px) !important;
+        min-width: 68px !important;
+        min-height: 44px !important;
+        padding: 3px 2px !important;
+      }
+      .dial-buttons-grid button.dest-btn[data-dest="island"] {
+        flex: 1 1 calc(14.28% - 6px) !important;
+        max-width: 145px !important;
+        flex-direction: column !important;
+      }
     }
 
     footer.glass-card {
@@ -1428,7 +1541,7 @@
         </div>
 
         <!-- 4-Player Leaderboard Ribbon (Ultra-compact Icon-based) -->
-        <div class="hidden lg:flex items-center gap-1.5 bg-stone-900/90 border border-stone-800 px-2.5 py-0.5 rounded-xl text-[11px] font-semibold" title="Bảng xếp hạng Likes (Bấm vào bếp để xem thẻ món ăn & nguyên liệu)">
+        <div class="flex items-center gap-1 sm:gap-1.5 bg-stone-900/90 border border-stone-800 px-2 sm:px-2.5 py-0.5 rounded-xl text-[10px] sm:text-[11px] font-semibold" title="Bảng xếp hạng Likes (Bấm vào bếp để xem thẻ món ăn & nguyên liệu)">
           <span class="text-stone-400 font-bold">🏆</span>
           <span class="text-pink-300 font-bold cursor-pointer hover:underline" id="lead-chef-lola" title="Cô Ba (Bấm để xem thẻ món)">🍲 <b id="lead-p-likes" class="text-amber-400">0</b></span>
           <span class="text-stone-600">•</span>
@@ -1667,9 +1780,9 @@
 
         <!-- PHASE 2 CONTROLLER: 60-Second Real-Time Buy & Barter Timer & Market Counter -->
         <div id="panel-phase-2" class="flex flex-col gap-2.5 hidden">
-          <div class="flex items-center justify-between border-b border-stone-800 pb-1.5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-stone-800 pb-1.5 gap-2">
             <div class="flex items-center gap-3">
-              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-red-950/70 border border-red-500/50 text-red-300 font-mono text-sm font-black">
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-red-950/70 border border-red-500/50 text-red-300 font-mono text-sm font-black flex-shrink-0">
                 <span>⏱️</span>
                 <span id="timer-display" class="timer-pulse">01:00</span>
               </div>
@@ -1680,7 +1793,7 @@
                 </p>
               </div>
             </div>
-            <button id="btn-done-buying" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow flex items-center gap-1.5 cursor-pointer">
+            <button id="btn-done-buying" class="w-full sm:w-auto px-4 py-2 sm:py-1.5 min-h-[42px] rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95">
               <span>🔔 Xong lượt sớm (Rung chuông)</span>
             </button>
           </div>
@@ -1708,11 +1821,11 @@
           </div>
 
           <!-- Real-Time Competition Actions Bar in Phase 2 -->
-          <div class="flex items-center gap-2 pt-1 border-t border-stone-800">
-            <button id="btn-panel-barter" class="flex-1 py-1.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs uppercase tracking-wide flex items-center justify-center gap-2 shadow cursor-pointer transition-all">
-              <span>🤝 Mở Sàn Thương Lượng & Đổi Đồ (3 Đối Thủ)</span>
+          <div class="flex flex-col sm:flex-row items-center gap-2 pt-1 border-t border-stone-800">
+            <button id="btn-panel-barter" class="w-full sm:flex-1 py-2 sm:py-1.5 px-3 min-h-[42px] rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs uppercase tracking-wide flex items-center justify-center gap-2 shadow cursor-pointer transition-all active:scale-95">
+              <span>🤝 Mở Sàn Thương Lượng & Đổi Đồ</span>
             </button>
-            <button id="btn-panel-actions" class="py-1.5 px-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-500 hover:to-indigo-600 text-white font-black text-xs uppercase tracking-wide flex items-center justify-center gap-2 shadow cursor-pointer transition-all">
+            <button id="btn-panel-actions" class="w-full sm:w-auto py-2 sm:py-1.5 px-4 min-h-[42px] rounded-xl bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-500 hover:to-indigo-600 text-white font-black text-xs uppercase tracking-wide flex items-center justify-center gap-2 shadow cursor-pointer transition-all active:scale-95">
               <span>⚡ Thẻ Phá Hoại</span>
             </button>
           </div>
@@ -1720,7 +1833,7 @@
 
         <!-- PHASE 3 CONTROLLER: Cook Recipes & Move Popularity Tracker -->
         <div id="panel-phase-3" class="flex flex-col gap-2 hidden">
-          <div class="flex items-center justify-between border-b border-stone-800 pb-1.5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-stone-800 pb-1.5 gap-2">
             <div class="flex items-center gap-2">
               <span class="text-lg">🍳</span>
               <div>
@@ -1728,7 +1841,7 @@
                 <p class="text-[11px] text-stone-300">Bấm nút "Nấu Món" trực tiếp trên thẻ bài đã đủ nguyên liệu trên thảm bếp!</p>
               </div>
             </div>
-            <button id="btn-next-day" class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-stone-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-2 cursor-pointer transition-all">
+            <button id="btn-next-day" class="w-full sm:w-auto px-5 py-2.5 min-h-[44px] rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-stone-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95">
               <span>☀️ Kết Thúc Ngày (Sang Ngày Mới)</span>
             </button>
           </div>
@@ -1761,17 +1874,17 @@
   <!-- ========================================== -->
   <!-- MODAL: SÀN THƯƠNG LƯỢNG & ĐỔI ĐỒ (BARTER SYSTEM) -->
   <!-- ========================================== -->
-  <div id="modal-barter" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="glass-card max-h-[92vh] overflow-y-auto w-full max-w-2xl rounded-2xl border-2 border-emerald-500/60 p-5 flex flex-col gap-3 text-stone-100 shadow-2xl">
-      <div class="flex items-center justify-between border-b border-stone-800 pb-2.5">
-        <div class="flex items-center gap-2.5">
-          <span class="text-2xl">🤝</span>
+  <div id="modal-barter" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="glass-card modal-mobile-fit max-h-[92vh] overflow-y-auto w-full max-w-2xl rounded-2xl border-2 border-emerald-500/60 p-3.5 sm:p-5 flex flex-col gap-3 text-stone-100 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-stone-800 pb-2">
+        <div class="flex items-center gap-2 sm:gap-2.5">
+          <span class="text-xl sm:text-2xl">🤝</span>
           <div>
-            <h3 class="text-sm font-black text-emerald-300 uppercase tracking-wide">Sàn Thương Lượng & Đổi Đồ</h3>
-            <p class="text-xs text-stone-400">Trao đổi thẻ nguyên liệu và tiền mặt tự do với 3 đối thủ trong 60 giây!</p>
+            <h3 class="text-xs sm:text-sm font-black text-emerald-300 uppercase tracking-wide">Sàn Thương Lượng & Đổi Đồ</h3>
+            <p class="text-[11px] sm:text-xs text-stone-400">Trao đổi thẻ nguyên liệu và tiền mặt tự do trong 60 giây!</p>
           </div>
         </div>
-        <button id="btn-close-barter" class="w-8 h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center cursor-pointer text-sm">✕</button>
+        <button id="btn-close-barter" class="btn-close-modal w-9 h-9 sm:w-8 sm:h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center cursor-pointer text-sm active:scale-90 transition-all">✕</button>
       </div>
 
       <!-- Rivals Selection Tabs -->
@@ -1780,12 +1893,12 @@
       </div>
 
       <!-- Rival Target Recipes & Required Ingredients Preview -->
-      <div id="barter-rival-recipes-preview" class="bg-stone-950/70 p-2.5 rounded-xl border border-stone-800 flex flex-col gap-1.5">
+      <div id="barter-rival-recipes-preview" class="bg-stone-950/70 p-2 sm:p-2.5 rounded-xl border border-stone-800 flex flex-col gap-1.5">
         <!-- populated dynamically by renderBarterUI() -->
       </div>
 
       <!-- Trade Desk: You Offer vs You Request -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-stone-950/70 p-3 rounded-xl border border-stone-800">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 bg-stone-950/70 p-2.5 sm:p-3 rounded-xl border border-stone-800">
         <!-- Left: You Offer -->
         <div class="flex flex-col gap-1.5">
           <div class="flex items-center justify-between text-xs font-black text-amber-300">
@@ -1810,13 +1923,13 @@
       </div>
 
       <!-- AI Response Bubble & Action Button -->
-      <div id="barter-response-box" class="p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-xs text-stone-300 italic min-h-[36px] flex items-center">
+      <div id="barter-response-box" class="p-2 sm:p-2.5 rounded-xl bg-stone-900 border border-stone-800 text-xs text-stone-300 italic min-h-[36px] flex items-center">
         💬 Hãy chọn nguyên liệu bạn muốn đổi và nguyên liệu muốn nhận từ đối thủ...
       </div>
 
-      <div class="flex items-center justify-between pt-1">
-        <span class="text-[11px] text-stone-400 font-medium">💡 Mẹo: Đưa nguyên liệu đối thủ đang cần nấu sẽ dễ được đồng ý!</span>
-        <button id="btn-submit-trade" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-stone-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-1.5 cursor-pointer transition-all">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1">
+        <span class="text-[10px] sm:text-[11px] text-stone-400 font-medium text-center sm:text-left">💡 Mẹo: Đưa nguyên liệu đối thủ đang cần nấu sẽ dễ được đồng ý!</span>
+        <button id="btn-submit-trade" class="w-full sm:w-auto px-5 py-2.5 min-h-[42px] rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-stone-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95">
           <span>🤝 GỬI ĐỀ NGHỊ GIAO DỊCH</span>
         </button>
       </div>
@@ -1826,18 +1939,18 @@
   <!-- ========================================== -->
   <!-- MODAL: XEM THỰC ĐƠN & BẾP ĐỐI THỦ (RIVAL KITCHENS) -->
   <!-- ========================================== -->
-  <div id="modal-rival-kitchens" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4">
-    <div class="glass-card max-h-[92vh] overflow-y-auto w-full max-w-4xl rounded-2xl border-2 border-amber-500/60 p-4 sm:p-5 flex flex-col gap-3 text-stone-100 shadow-2xl">
+  <div id="modal-rival-kitchens" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="glass-card modal-mobile-fit max-h-[92vh] overflow-y-auto w-full max-w-4xl rounded-2xl border-2 border-amber-500/60 p-3.5 sm:p-5 flex flex-col gap-3 text-stone-100 shadow-2xl">
       <!-- Header -->
-      <div class="flex items-center justify-between border-b border-stone-800 pb-2.5">
-        <div class="flex items-center gap-2.5">
-          <span class="text-2xl">👨‍🍳</span>
+      <div class="flex items-center justify-between border-b border-stone-800 pb-2">
+        <div class="flex items-center gap-2 sm:gap-2.5">
+          <span class="text-xl sm:text-2xl">👨‍🍳</span>
           <div>
-            <h3 class="text-sm font-black text-amber-300 uppercase tracking-wide">Thực Đơn & Thẻ Món Ăn Đối Thủ</h3>
-            <p class="text-xs text-stone-400">Xem chi tiết các món ăn đang nấu, nguyên liệu hiện có và nguyên liệu đối thủ đang cần</p>
+            <h3 class="text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wide">Thực Đơn & Thẻ Món Ăn Đối Thủ</h3>
+            <p class="text-[11px] sm:text-xs text-stone-400">Xem chi tiết các món ăn đang nấu, nguyên liệu hiện có và nguyên liệu đối thủ đang cần</p>
           </div>
         </div>
-        <button id="btn-close-rival-kitchens" class="w-8 h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center cursor-pointer text-sm">✕</button>
+        <button id="btn-close-rival-kitchens" class="btn-close-modal w-9 h-9 sm:w-8 sm:h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center cursor-pointer text-sm active:scale-90 transition-all">✕</button>
       </div>
 
       <!-- Chef Selection Tabs -->
@@ -1855,17 +1968,17 @@
   <!-- ========================================== -->
   <!-- MODAL: KHO THẺ HÀNH ĐỘNG PHÁ HOẠI (ACTION CARDS) -->
   <!-- ========================================== -->
-  <div id="modal-action-cards" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="glass-card max-h-[92vh] overflow-y-auto w-full max-w-xl rounded-2xl border-2 border-purple-500/60 p-5 flex flex-col gap-3 text-stone-100 shadow-2xl">
-      <div class="flex items-center justify-between border-b border-stone-800 pb-2.5">
-        <div class="flex items-center gap-2.5">
-          <span class="text-2xl">⚡</span>
+  <div id="modal-action-cards" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="glass-card modal-mobile-fit max-h-[92vh] overflow-y-auto w-full max-w-xl rounded-2xl border-2 border-purple-500/60 p-3.5 sm:p-5 flex flex-col gap-3 text-stone-100 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-stone-800 pb-2">
+        <div class="flex items-center gap-2 sm:gap-2.5">
+          <span class="text-xl sm:text-2xl">⚡</span>
           <div>
-            <h3 class="text-sm font-black text-purple-300 uppercase tracking-wide">Kho Thẻ Hành Động</h3>
-            <p class="text-xs text-stone-400">Sử dụng để triệt hạ, cướp tài nguyên hoặc kìm chân đối thủ!</p>
+            <h3 class="text-xs sm:text-sm font-black text-purple-300 uppercase tracking-wide">Kho Thẻ Hành Động</h3>
+            <p class="text-[11px] sm:text-xs text-stone-400">Sử dụng để triệt hạ, cướp tài nguyên hoặc kìm chân đối thủ!</p>
           </div>
         </div>
-        <button id="btn-close-actions" class="w-8 h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center cursor-pointer text-sm">✕</button>
+        <button id="btn-close-actions" class="btn-close-modal w-9 h-9 sm:w-8 sm:h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center cursor-pointer text-sm active:scale-90 transition-all">✕</button>
       </div>
 
       <!-- Action Cards Grid -->
@@ -1881,9 +1994,9 @@
         </div>
       </div>
 
-      <div class="flex items-center justify-between pt-1">
-        <span class="text-[11px] text-stone-400">Ghé Chợ Bến Thành 🏮 trong Giai đoạn 2 để bốc thêm thẻ ($100)!</span>
-        <button id="btn-execute-action" disabled class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 opacity-50 cursor-not-allowed text-stone-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-1.5 transition-all">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1">
+        <span class="text-[10px] sm:text-[11px] text-stone-400 text-center sm:text-left">Ghé Chợ Bến Thành 🏮 trong Giai đoạn 2 để bốc thêm thẻ ($100)!</span>
+        <button id="btn-execute-action" disabled class="w-full sm:w-auto px-5 py-2.5 min-h-[42px] rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 opacity-50 cursor-not-allowed text-stone-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5 transition-all active:scale-95">
           <span>💥 KÍCH HOẠT THẺ BÀI</span>
         </button>
       </div>
@@ -1893,26 +2006,26 @@
   <!-- ========================================== -->
   <!-- MODAL: CỬA HÀNG NÂNG CẤP BẾP (4 Ô UPG) -->
   <!-- ========================================== -->
-  <div id="modal-upgrades" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="glass-card max-h-[92vh] overflow-y-auto w-full max-w-xl rounded-2xl border-2 border-amber-400 p-5 flex flex-col gap-3 text-stone-100 shadow-2xl animate-in zoom-in-95 duration-200">
-      <div class="flex items-center justify-between border-b border-stone-800 pb-2.5">
-        <div class="flex items-center gap-2.5">
-          <span class="text-2xl animate-bounce">🛠️</span>
+  <div id="modal-upgrades" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="glass-card modal-mobile-fit max-h-[92vh] overflow-y-auto w-full max-w-xl rounded-2xl border-2 border-amber-400 p-3.5 sm:p-5 flex flex-col gap-3 text-stone-100 shadow-2xl animate-in zoom-in-95 duration-200">
+      <div class="flex items-center justify-between border-b border-stone-800 pb-2">
+        <div class="flex items-center gap-2 sm:gap-2.5">
+          <span class="text-xl sm:text-2xl animate-bounce">🛠️</span>
           <div>
-            <h3 class="text-sm font-black text-amber-300 uppercase tracking-wide">Cửa Hàng Nâng Cấp Bếp (4 Ô UPG)</h3>
-            <p class="text-xs text-stone-400">Chọn 1 nâng cấp vĩnh viễn ($200–$450) để lắp vào 4 ô UPG trên bảng bếp!</p>
+            <h3 class="text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wide">Cửa Hàng Nâng Cấp Bếp (4 Ô UPG)</h3>
+            <p class="text-[11px] sm:text-xs text-stone-400">Chọn 1 nâng cấp vĩnh viễn ($200–$450) để lắp vào 4 ô UPG trên bảng bếp!</p>
           </div>
         </div>
-        <button id="btn-close-upgrades" class="w-8 h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center cursor-pointer text-sm">✕</button>
+        <button id="btn-close-upgrades" class="btn-close-modal w-9 h-9 sm:w-8 sm:h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center cursor-pointer text-sm active:scale-90 transition-all">✕</button>
       </div>
 
       <div id="upgrades-shop-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1">
         <!-- populated dynamically -->
       </div>
 
-      <div class="flex items-center justify-between pt-1 border-t border-stone-800">
-        <span class="text-[11px] text-stone-400 font-medium">💡 Tối đa 4 nâng cấp cùng lúc. Bùa lợi có hiệu lực vĩnh viễn!</span>
-        <button id="btn-buy-upgrade" disabled class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 opacity-50 cursor-not-allowed text-stone-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-1.5 transition-all">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1 border-t border-stone-800">
+        <span class="text-[10px] sm:text-[11px] text-stone-400 font-medium text-center sm:text-left">💡 Tối đa 4 nâng cấp cùng lúc. Bùa lợi có hiệu lực vĩnh viễn!</span>
+        <button id="btn-buy-upgrade" disabled class="w-full sm:w-auto px-5 py-2.5 min-h-[42px] rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 opacity-50 cursor-not-allowed text-stone-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5 transition-all active:scale-95">
           <span>🛠️ MUA NÂNG CẤP</span>
         </button>
       </div>
@@ -1922,21 +2035,21 @@
   <!-- ========================================== -->
   <!-- MODAL: BẾP TRƯỞNG TIẾN HÓA (CHEF LEVEL UP) -->
   <!-- ========================================== -->
-  <div id="modal-level-up" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="glass-card max-h-[92vh] overflow-y-auto w-full max-w-md rounded-2xl border-2 border-yellow-400 p-6 flex flex-col items-center text-center gap-3 text-stone-100 shadow-2xl animate-in zoom-in-95 duration-300">
-      <span class="text-5xl animate-bounce">👑</span>
-      <h2 class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-400 uppercase tracking-widest">
+  <div id="modal-level-up" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="glass-card modal-mobile-fit max-h-[92vh] overflow-y-auto w-full max-w-md rounded-2xl border-2 border-yellow-400 p-4 sm:p-6 flex flex-col items-center text-center gap-3 text-stone-100 shadow-2xl animate-in zoom-in-95 duration-300">
+      <span class="text-4xl sm:text-5xl animate-bounce">👑</span>
+      <h2 class="text-base sm:text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-400 uppercase tracking-widest">
         BẾP TRƯỞNG TIẾN HÓA!
       </h2>
       <p class="text-xs text-amber-200 font-bold" id="level-up-chef-name">Cô Ba Sài Gòn đã đạt CẤP 2 (Master Chef)!</p>
       
-      <div class="w-full p-4 rounded-xl bg-stone-900/90 border border-yellow-500/50 flex flex-col gap-2 my-1">
+      <div class="w-full p-3 sm:p-4 rounded-xl bg-stone-900/90 border border-yellow-500/50 flex flex-col gap-2 my-1">
         <div class="text-[10px] uppercase font-black text-stone-400">KỸ NĂNG ĐƯỢC CƯỜNG HÓA VĨNH VIỄN:</div>
         <div class="text-sm font-black text-amber-300" id="level-up-power-title">NỮ HOÀNG ẨM THỰC ĐƯỜNG PHỐ</div>
         <div class="text-xs text-stone-300" id="level-up-power-desc">Nhận thêm +$100 mỗi sáng và mua được 3 thẻ/ngày!</div>
       </div>
 
-      <button id="btn-close-level-up" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-stone-950 font-black text-xs uppercase tracking-wider shadow-xl cursor-pointer transition-all">
+      <button id="btn-close-level-up" class="w-full py-2.5 min-h-[44px] rounded-xl bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-stone-950 font-black text-xs uppercase tracking-wider shadow-xl cursor-pointer transition-all active:scale-95">
         <span>🚀 TIẾP TỤC ĐẠI CHIẾN!</span>
       </button>
     </div>
@@ -1945,17 +2058,17 @@
   <!-- ========================================== -->
   <!-- MODAL: VINH DANH VÔ ĐỊCH (20 LIKES WIN CONDITION) -->
   <!-- ========================================== -->
-  <div id="modal-victory" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-lg hidden flex items-center justify-center p-4">
-    <div class="glass-card max-h-[92vh] overflow-y-auto w-full max-w-lg rounded-3xl border-4 border-amber-400 p-7 flex flex-col items-center text-center gap-4 text-stone-100 shadow-2xl animate-in zoom-in-95 duration-400">
-      <span class="text-6xl animate-bounce">🏆</span>
-      <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-500 uppercase tracking-widest">
+  <div id="modal-victory" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-lg hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="glass-card modal-mobile-fit max-h-[92vh] overflow-y-auto w-full max-w-lg rounded-3xl border-4 border-amber-400 p-4 sm:p-7 flex flex-col items-center text-center gap-3 sm:gap-4 text-stone-100 shadow-2xl animate-in zoom-in-95 duration-400">
+      <span class="text-5xl sm:text-6xl animate-bounce">🏆</span>
+      <h1 class="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-500 uppercase tracking-widest">
         VUA ĐẦU BẾP VIỆT NAM!
       </h1>
-      <div class="text-sm font-black text-emerald-300" id="victory-winner-text">
+      <div class="text-xs sm:text-sm font-black text-emerald-300" id="victory-winner-text">
         NHÀ HÀNG BẾP CÔ BA ĐÃ ĐẠT 20 ĐIỂM DANH TIẾNG!
       </div>
       
-      <div class="w-full grid grid-cols-2 gap-2 text-left bg-stone-900/80 p-3 rounded-2xl border border-stone-800 text-xs">
+      <div class="w-full grid grid-cols-2 gap-2 text-left bg-stone-900/80 p-2.5 sm:p-3 rounded-2xl border border-stone-800 text-xs">
         <div class="p-2 rounded-lg bg-black/40">
           <span class="text-stone-400 block text-[10px]">🍲 Món Đã Nấu:</span>
           <b class="text-amber-300 text-sm" id="victory-stat-dishes">4 món</b>
@@ -1974,7 +2087,7 @@
         </div>
       </div>
 
-      <button id="btn-restart-game" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-amber-400 hover:from-amber-300 hover:to-orange-400 text-stone-950 font-black text-sm uppercase tracking-wider shadow-2xl cursor-pointer transition-all transform hover:scale-105">
+      <button id="btn-restart-game" class="w-full py-3 min-h-[46px] rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-amber-400 hover:from-amber-300 hover:to-orange-400 text-stone-950 font-black text-sm uppercase tracking-wider shadow-2xl cursor-pointer transition-all transform active:scale-95 hover:scale-105">
         <span>🔄 CHƠI VÁN MỚI</span>
       </button>
     </div>
@@ -1983,26 +2096,26 @@
   <!-- ========================================== -->
   <!-- MODAL: BỚI BÃI RÁC CHỢ ĐẢO (DUMPSTER DIVING) -->
   <!-- ========================================== -->
-  <div id="modal-dumpster" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="glass-card max-h-[92vh] overflow-y-auto w-full max-w-md rounded-2xl border-2 border-stone-500 p-5 flex flex-col gap-3 text-stone-100 shadow-2xl">
-      <div class="flex items-center justify-between border-b border-stone-800 pb-2.5">
-        <div class="flex items-center gap-2.5">
-          <span class="text-2xl">🗑️</span>
+  <div id="modal-dumpster" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="glass-card modal-mobile-fit max-h-[92vh] overflow-y-auto w-full max-w-md rounded-2xl border-2 border-stone-500 p-3.5 sm:p-5 flex flex-col gap-3 text-stone-100 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-stone-800 pb-2">
+        <div class="flex items-center gap-2 sm:gap-2.5">
+          <span class="text-xl sm:text-2xl">🗑️</span>
           <div>
-            <h3 class="text-sm font-black text-stone-200 uppercase tracking-wide">Bãi Rác Chợ Bến Thành</h3>
-            <p class="text-xs text-stone-400">Nhặt miễn phí ($0) các nguyên liệu bị bỏ lại!</p>
+            <h3 class="text-xs sm:text-sm font-black text-stone-200 uppercase tracking-wide">Bãi Rác Chợ Bến Thành</h3>
+            <p class="text-[11px] sm:text-xs text-stone-400">Nhặt miễn phí ($0) các nguyên liệu bị bỏ lại!</p>
           </div>
         </div>
-        <button id="btn-close-dumpster" class="w-8 h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center cursor-pointer text-sm">✕</button>
+        <button id="btn-close-dumpster" class="btn-close-modal w-9 h-9 sm:w-8 sm:h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold flex items-center justify-center cursor-pointer text-sm active:scale-90 transition-all">✕</button>
       </div>
 
       <div id="dumpster-items-list" class="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
         <!-- items -->
       </div>
 
-      <div class="flex items-center justify-between pt-1 border-t border-stone-800">
-        <span class="text-[11px] text-stone-400">💡 Chọn 1 món để nhặt về kho của bạn miễn phí!</span>
-        <button id="btn-claim-dumpster" disabled class="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 opacity-50 cursor-not-allowed text-stone-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-1.5 transition-all">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1 border-t border-stone-800">
+        <span class="text-[10px] sm:text-[11px] text-stone-400 text-center sm:text-left">💡 Chọn 1 món để nhặt về kho của bạn miễn phí!</span>
+        <button id="btn-claim-dumpster" disabled class="w-full sm:w-auto px-4 py-2 min-h-[42px] rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 opacity-50 cursor-not-allowed text-stone-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5 transition-all active:scale-95">
           <span>🤲 NHẶT VỀ KHO ($0)</span>
         </button>
       </div>
@@ -2012,31 +2125,31 @@
   <!-- ========================================== -->
   <!-- MODAL: BƠM TIỀN TRANH MUA (SNATCH & BRIBE) -->
   <!-- ========================================== -->
-  <div id="modal-snatch" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="glass-card max-h-[92vh] overflow-y-auto w-full max-w-md rounded-2xl border-2 border-amber-400 p-5 flex flex-col gap-3.5 text-stone-100 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-      <div class="flex items-center justify-between border-b border-stone-800 pb-2.5">
-        <div class="flex items-center gap-2.5">
-          <span class="text-2xl animate-bounce">💰</span>
+  <div id="modal-snatch" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="glass-card modal-mobile-fit max-h-[92vh] overflow-y-auto w-full max-w-md rounded-2xl border-2 border-amber-400 p-3.5 sm:p-5 flex flex-col gap-3.5 text-stone-100 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      <div class="flex items-center justify-between border-b border-stone-800 pb-2">
+        <div class="flex items-center gap-2 sm:gap-2.5">
+          <span class="text-xl sm:text-2xl animate-bounce">💰</span>
           <div>
-            <h3 class="text-base font-black text-amber-300 uppercase tracking-wide">Bơm Tiền Tranh Mua</h3>
-            <p class="text-xs text-stone-400">Trả thêm hoa hồng để nẫng tay trên món của đối thủ!</p>
+            <h3 class="text-sm sm:text-base font-black text-amber-300 uppercase tracking-wide">Bơm Tiền Tranh Mua</h3>
+            <p class="text-[11px] sm:text-xs text-stone-400">Trả thêm hoa hồng để nẫng tay trên món của đối thủ!</p>
           </div>
         </div>
-        <button id="btn-close-snatch" class="w-8 h-8 rounded-full bg-stone-800 hover:bg-stone-700 flex items-center justify-center text-stone-400 hover:text-white cursor-pointer text-sm font-bold">✕</button>
+        <button id="btn-close-snatch" class="btn-close-modal w-9 h-9 sm:w-8 sm:h-8 rounded-full bg-stone-800 hover:bg-stone-700 flex items-center justify-center text-stone-400 hover:text-white cursor-pointer text-sm font-bold active:scale-90 transition-all">✕</button>
       </div>
 
       <!-- Item to Snatch Preview -->
-      <div class="p-3.5 rounded-xl bg-amber-950/40 border border-amber-500/50 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <span class="text-4xl" id="snatch-item-emoji">🥑</span>
+      <div class="p-3 sm:p-3.5 rounded-xl bg-amber-950/40 border border-amber-500/50 flex items-center justify-between">
+        <div class="flex items-center gap-2.5 sm:gap-3">
+          <span class="text-3xl sm:text-4xl" id="snatch-item-emoji">🥑</span>
           <div>
-            <div class="text-sm font-black text-white" id="snatch-item-name">Avocado</div>
-            <div class="text-xs text-rose-400 font-bold" id="snatch-item-owner">Đã bị đối thủ mua ()</div>
+            <div class="text-xs sm:text-sm font-black text-white" id="snatch-item-name">Avocado</div>
+            <div class="text-[11px] sm:text-xs text-rose-400 font-bold" id="snatch-item-owner">Đã bị đối thủ mua ()</div>
           </div>
         </div>
         <div class="text-right">
           <div class="text-[10px] text-stone-400 uppercase font-bold">Giá Gốc</div>
-          <div class="text-sm font-black text-emerald-400" id="snatch-item-cost"></div>
+          <div class="text-xs sm:text-sm font-black text-emerald-400" id="snatch-item-cost"></div>
         </div>
       </div>
 
@@ -2044,11 +2157,11 @@
       <div class="flex flex-col gap-2">
         <div class="text-xs font-black text-amber-300 uppercase">Chọn mức tiền bơm thêm:</div>
         <div class="grid grid-cols-2 gap-2" id="snatch-bribe-tiers">
-          <button id="bribe-tier-50" data-bribe="50" class="btn-bribe-tier p-2.5 rounded-xl border-2 border-amber-400 bg-amber-900/50 text-amber-200 font-bold text-xs flex flex-col items-center gap-1 cursor-pointer transition-all">
+          <button id="bribe-tier-50" data-bribe="50" class="btn-bribe-tier p-2.5 rounded-xl border-2 border-amber-400 bg-amber-900/50 text-amber-200 font-bold text-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95">
             <span class="text-sm">💵 + Hoa Hồng</span>
             <span class="text-[10px] text-stone-400">Tổng trả: <b class="text-emerald-300" id="preview-cost-50"></b></span>
           </button>
-          <button id="bribe-tier-100" data-bribe="100" class="btn-bribe-tier p-2.5 rounded-xl border border-stone-700 bg-stone-900 text-stone-300 font-bold text-xs flex flex-col items-center gap-1 cursor-pointer hover:border-amber-400 transition-all">
+          <button id="bribe-tier-100" data-bribe="100" class="btn-bribe-tier p-2.5 rounded-xl border border-stone-700 bg-stone-900 text-stone-300 font-bold text-xs flex flex-col items-center gap-1 cursor-pointer hover:border-amber-400 transition-all active:scale-95">
             <span class="text-sm">👑 + Đè Bẹp</span>
             <span class="text-[10px] text-stone-400">Tổng trả: <b class="text-emerald-300" id="preview-cost-100"></b></span>
           </button>
@@ -2076,8 +2189,8 @@
 
       <!-- Action Button -->
       <div class="flex items-center justify-end gap-2 pt-1">
-        <button id="btn-cancel-snatch" class="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-bold cursor-pointer">Hủy Bỏ</button>
-        <button id="btn-confirm-snatch" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-stone-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center gap-1.5 cursor-pointer transform hover:scale-105 transition-all">
+        <button id="btn-cancel-snatch" class="px-4 py-2 min-h-[42px] rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-bold cursor-pointer active:scale-95">Hủy Bỏ</button>
+        <button id="btn-confirm-snatch" class="w-full sm:w-auto px-5 py-2.5 min-h-[42px] rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-stone-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5 cursor-pointer transform active:scale-95 hover:scale-105 transition-all">
           <span>💥 BƠM TIỀN CƯỚP NGAY!</span>
         </button>
       </div>
@@ -3325,18 +3438,15 @@ const gameState = {
     const toggleHudIcon = document.getElementById('toggle-hud-icon');
     const toggleHudText = document.getElementById('toggle-hud-text');
 
-    // Isolate mouse wheel and touch gestures inside HUD from Three.js OrbitControls
-    if (hudMainDeck) {
-      hudMainDeck.addEventListener('wheel', (e) => {
-        e.stopPropagation();
-      }, { passive: true });
-      hudMainDeck.addEventListener('touchstart', (e) => {
-        e.stopPropagation();
-      }, { passive: true });
-      hudMainDeck.addEventListener('touchmove', (e) => {
-        e.stopPropagation();
-      }, { passive: true });
-    }
+    // Isolate mouse wheel and touch gestures inside HUD, Header and Modals from Three.js OrbitControls
+    const uiContainers = [hudMainDeck, document.querySelector('header'), ...document.querySelectorAll('[id^="modal-"]')].filter(Boolean);
+    uiContainers.forEach(el => {
+      ['wheel', 'touchstart', 'touchmove', 'touchend'].forEach(evt => {
+        el.addEventListener(evt, (e) => {
+          e.stopPropagation();
+        }, { passive: true });
+      });
+    });
 
     let isHudCollapsed = false;
     // ----- HUD tabs (compact screens) -----
