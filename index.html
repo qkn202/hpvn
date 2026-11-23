@@ -1077,12 +1077,19 @@
       position: fixed;
       inset: 0;
       width: 100vw;
+      width: 100dvw;
       height: 100vh;
+      height: 100dvh;
       z-index: 1;
+    }
+    #webgl-canvas canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
     }
     #event-toast.toast-floating {
       position: fixed !important;
-      bottom: 20px !important;
+      bottom: max(20px, var(--sab, 0px)) !important;
       top: auto !important;
       left: 50% !important;
       right: auto !important;
@@ -1145,6 +1152,7 @@
     #hud-main-deck {
       max-height: min(calc(100vh - var(--hdr-h, 46px) - 8px), 82vh) !important;
       max-height: min(calc(100dvh - var(--hdr-h, 46px) - 8px), 82dvh) !important;
+      min-height: 0;
       width: 100% !important;
       max-width: min(100%, 1024px) !important;
       margin-left: auto !important;
@@ -1153,6 +1161,15 @@
       margin-top: 1px !important;
       margin-bottom: auto !important;
       box-sizing: border-box !important;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(245, 158, 11, 0.45) transparent;
+      padding-right: 2px;
+      padding-bottom: max(68px, calc(var(--sab, 0px) + 64px));
+      scroll-behavior: smooth;
     }
     #mat-phase-controller-area {
       position: sticky; bottom: 0; z-index: 5;
@@ -1244,7 +1261,7 @@
         border-width: 3px;
         width: 100% !important;
         margin-inline: auto !important;
-        padding-bottom: max(84px, calc(var(--sab, 0px) + 80px)) !important;
+        padding-bottom: max(92px, calc(var(--sab, 0px) + 86px)) !important;
       }
       header {
         justify-content: space-between;
@@ -1353,6 +1370,7 @@
         max-height: min(calc(100dvh - var(--hdr-h, 44px) - 6px), 82dvh) !important;
         border-width: 3px;
         padding: 6px !important;
+        padding-bottom: max(68px, calc(var(--sab, 0px) + 64px)) !important;
       }
       .hud-layer > footer { display: none !important; }
       .dial-buttons-grid button.dest-btn {
@@ -1435,19 +1453,6 @@
       box-shadow: 0 8px 18px rgba(0,0,0,0.8);
     }
 
-    #hud-main-deck {
-      max-height: calc(100vh - 120px);
-      min-height: 0;
-      overflow-y: auto;
-      overflow-x: hidden;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(245, 158, 11, 0.45) transparent;
-      padding-right: 2px;
-      padding-bottom: max(68px, calc(var(--sab, 0px) + 64px)) !important;
-      scroll-behavior: smooth;
-    }
     #hud-main-deck::-webkit-scrollbar {
       width: 6px;
     }
@@ -1465,19 +1470,13 @@
 
     @media (max-height: 760px) {
       .hud-layer {
-        padding: 4px 8px;
+        padding: max(4px, var(--sat)) max(8px, var(--sar)) max(4px, var(--sab)) max(8px, var(--sal));
         gap: 2px;
-      }
-      #hud-main-deck {
-        max-height: calc(100vh - var(--hdr-h, 46px) - 8px);
       }
     }
     @media (max-height: 620px) {
       .hud-layer > footer {
         display: none;
-      }
-      #hud-main-deck {
-        max-height: calc(100vh - var(--hdr-h, 46px) - 6px);
       }
     }
   </style>
@@ -6396,7 +6395,7 @@ const gameState = {
     // ♿ ACCESSIBILITY: dialogs, Esc, focus, keyboard, accessible names
     // ==========================================
     (function setupAccessibility() {
-      const MODAL_IDS = ['modal-barter', 'modal-action-cards', 'modal-snatch', 'modal-upgrades', 'modal-dumpster', 'modal-level-up', 'modal-victory'];
+      const MODAL_IDS = ['modal-barter', 'modal-rival-kitchens', 'modal-action-cards', 'modal-snatch', 'modal-upgrades', 'modal-dumpster', 'modal-level-up', 'modal-victory'];
       let lastFocus = null;
       MODAL_IDS.forEach(id => {
         const el = document.getElementById(id);
@@ -6424,7 +6423,7 @@ const gameState = {
         if (e.key === 'Escape') {
           const lvl = document.getElementById('modal-level-up');
           if (lvl && !lvl.classList.contains('hidden')) { lvl.classList.add('hidden'); return; }
-          const open = ['modal-snatch', 'modal-upgrades', 'modal-dumpster', 'modal-action-cards', 'modal-barter']
+          const open = ['modal-snatch', 'modal-upgrades', 'modal-dumpster', 'modal-action-cards', 'modal-rival-kitchens', 'modal-barter']
             .map(id => document.getElementById(id)).find(m => m && !m.classList.contains('hidden'));
           if (open) { if (open.id === 'modal-snatch') closeSnatchModal(); else open.classList.add('hidden'); }
           return;   // the victory screen is intentionally not dismissable
@@ -6484,13 +6483,24 @@ const gameState = {
         setTimeout(runBotGame, 1500);
       }
 
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+    function handleViewportResize() {
+      const w = Math.max(1, Math.round(container.clientWidth || (window.visualViewport ? window.visualViewport.width : window.innerWidth)));
+      const h = Math.max(1, Math.round(container.clientHeight || (window.visualViewport ? window.visualViewport.height : window.innerHeight)));
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      requestRender();
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+      renderer.setSize(w, h, false);
+      syncHeaderHeight();
+      requestRender(3);
+    }
+    window.addEventListener('resize', handleViewportResize);
+    window.addEventListener('orientationchange', () => {
+      handleViewportResize();
+      setTimeout(handleViewportResize, 250);
     });
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', handleViewportResize);
+    handleViewportResize();
   </script>
-  <script src="./hpvn.js?v=712cb4f93a"></script>
+  <script src="./hpvn.js?v=869e53eef6"></script>
 </body>
 </html>

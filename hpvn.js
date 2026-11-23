@@ -42,11 +42,11 @@
   const css = document.createElement('style');
   css.textContent = `
     html.hpvn-framed header { margin-left: 52px; width: calc(100% - 52px); }
-    .hpvn-panel { position: fixed; z-index: 60; background: rgba(12,10,9,.96); color: #fde68a; border: 1px solid rgba(245,158,11,.55); border-radius: 16px; font: 600 13px/1.4 system-ui, sans-serif; box-shadow: 0 20px 50px rgba(0,0,0,.6); }
+    .hpvn-panel { position: fixed; z-index: 40; background: rgba(12,10,9,.96); color: #fde68a; border: 1px solid rgba(245,158,11,.55); border-radius: 16px; font: 600 13px/1.4 system-ui, sans-serif; box-shadow: 0 20px 50px rgba(0,0,0,.6); }
     .hpvn-panel button { font: inherit; cursor: pointer; border-radius: 10px; padding: 7px 12px; border: 1px solid rgba(245,158,11,.6); background: #1c1917; color: #fde68a; }
     .hpvn-panel button.primary { background: #f59e0b; color: #0c0a09; border-color: #f59e0b; font-weight: 800; }
     .hpvn-panel button:disabled { opacity: .45; cursor: default; }
-    #hpvn-lobby { inset: 0; border-radius: 0; overflow-y: auto; padding: 64px 16px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    #hpvn-lobby { inset: 0; z-index: 60; border-radius: 0; overflow-y: auto; padding: 64px 16px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
     #hpvn-lobby .box { width: min(560px, 100%); border: 1px solid #44403c; border-radius: 14px; padding: 14px; background: #0c0a09; }
     #hpvn-lobby h2 { margin: 0 0 6px; font-size: 18px; color: #fbbf24; }
     #hpvn-lobby p { margin: 0 0 10px; color: #d6d3d1; font-weight: 500; }
@@ -65,7 +65,7 @@
     #hpvn-turn .more { display: none; margin-top: 6px; }
     #hpvn-turn.open .more { display: block; }
     #hpvn-turn .more > * + * { margin-top: 6px; }
-    html.hpvn-framed #event-toast.toast-floating { bottom: 64px; }
+    html.hpvn-framed #event-toast.toast-floating { bottom: max(68px, calc(env(safe-area-inset-bottom, 8px) + 60px)) !important; }
     #hpvn-turn .line { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; }
     #hpvn-turn .status { color: #fff; }
     #hpvn-turn .row { display: inline-flex; flex-wrap: wrap; gap: 6px; }
