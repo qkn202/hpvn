@@ -32,7 +32,6 @@ function playOneCard(s, chef) {
   const others = Object.values(s.chefs).filter(c => c !== chef);
   const byLeader = [...others].sort((a, b) => b.likes - a.likes);
   const find = (...types) => chef.actionCards.find(c => types.includes(c.type));
-  const canHit = c => !R.hasUpgrade(c, 'upg_bouncer');
   let card = null;
   let text = '';
   if ((card = find('lucky_money'))) {
@@ -125,7 +124,10 @@ function shop(s, chef) {
 }
 
 function cookAll(s, chef) {
-  for (const recipe of [...chef.activeRecipes]) if (R.canCook(chef, recipe)) R.cook(s, chef, recipe);
+  for (const recipe of [...chef.activeRecipes]) {
+    if (s.over) break;
+    if (R.canCook(chef, recipe)) R.cook(s, chef, recipe);
+  }
 }
 
 /** Plays what is left of this chef's turn; the caller ends the turn. */

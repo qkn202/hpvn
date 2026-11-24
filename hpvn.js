@@ -65,7 +65,8 @@
     #hpvn-turn .more { display: none; margin-top: 6px; }
     #hpvn-turn.open .more { display: block; }
     #hpvn-turn .more > * + * { margin-top: 6px; }
-    html.hpvn-framed #event-toast.toast-floating { bottom: max(68px, calc(env(safe-area-inset-bottom, 8px) + 60px)) !important; }
+    html.hpvn-framed #event-toast.toast-floating { bottom: calc(var(--hpvn-bar-h, 60px) + max(16px, env(safe-area-inset-bottom, 8px))) !important; }
+    html.hpvn-framed #hud-main-deck { padding-bottom: calc(var(--hpvn-bar-h, 64px) + max(24px, env(safe-area-inset-bottom, 8px))) !important; }
     #hpvn-turn .line { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; }
     #hpvn-turn .status { color: #fff; }
     #hpvn-turn .row { display: inline-flex; flex-wrap: wrap; gap: 6px; }
@@ -159,6 +160,27 @@
   document.body.append(lobby, turnBar, soloBar, logModal);
   for (const box of [lobby, turnBar, soloBar, logModal]) for (const type of ['wheel', 'touchstart', 'touchmove', 'pointerdown']) box.addEventListener(type, e => e.stopPropagation(), { passive: true });
 
+  function syncBottomBarClearance() {
+    let h = 0;
+    if (turnBar.style.display !== 'none') {
+      if (turnBar.classList.contains('open')) {
+        const line = turnBar.querySelector(':scope > .line');
+        h = line ? Math.ceil(line.getBoundingClientRect().height + 16) : 56;
+      } else {
+        h = Math.ceil(turnBar.getBoundingClientRect().height);
+      }
+    } else if (soloBar.style.display !== 'none') {
+      h = Math.ceil(soloBar.getBoundingClientRect().height);
+    }
+    document.documentElement.style.setProperty('--hpvn-bar-h', `${Math.max(44, h)}px`);
+  }
+  if (typeof ResizeObserver === 'function') {
+    const barRo = new ResizeObserver(syncBottomBarClearance);
+    barRo.observe(turnBar);
+    barRo.observe(soloBar);
+  }
+  window.addEventListener('resize', syncBottomBarClearance);
+
   // turn order of the day (same as the server's TURN_ORDER); the four chefs below exist only at HPVN tables
   const ORDER = ['lola', 'chen', 'lucrezia', 'hai', 'sau', 'tam', 'muoi', 'angus'];
   const NEW_CHEFS = {
@@ -183,7 +205,23 @@
   const INTRO = 'Mỗi bàn 2–8 người, mỗi người một bếp. Thứ tự lượt đi chợ sẽ random sau khi kết thúc mỗi ngày. Bạn đi lượt lúc nào cũng được; lỡ hạn thì quản lý quán đi chợ thay (bàn 2 người hạn 24 giờ, bàn đông hạn ngắn hơn, tối thiểu 8 giờ). Ai giành được 20 ⭐ trước sẽ thắng ngay lập tức!';
   let T = null; // { code, view }
   let busy = false;
+  let usedOnlineTable = false;
   const BASE = Object.fromEntries([gameState.player, ...gameState.rivals].map(chef => [chef.id, chef]));
+  const soloBtnNextDayText = typeof btnNextDay !== 'undefined' && btnNextDay ? btnNextDay.textContent : '☀️ Kết Thúc Ngày (Sang Ngày Mới)';
+  const btnRestartEl = document.getElementById('btn-restart-game');
+  const soloBtnRestartText = btnRestartEl ? btnRestartEl.textContent : '🔄 CHƠI VÁN MỚI';
+  const soloStateSnapshot = JSON.stringify({
+    playerId: gameState.player.id,
+    rivalIds: gameState.rivals.map(r => r.id),
+    chefs: Object.fromEntries([gameState.player, ...gameState.rivals].map(c => [c.id, {
+      money: c.money, likes: c.likes, tierIdx: c.tierIdx, level: c.level, cookedCount: c.cookedCount,
+      currentLocation: c.currentLocation, selectedDestination: c.selectedDestination,
+      inventory: c.inventory, activeRecipes: c.activeRecipes, actionCards: c.actionCards,
+      upgrades: c.upgrades, garbageCan: c.garbageCan, boughtCountToday: c.boughtCountToday,
+      deliveryUsedToday: c.deliveryUsedToday, isDialFaceUp: c.isDialFaceUp,
+    }])),
+    dumpster: gameState.dumpster || [],
+  });
   for (const [id, chef] of Object.entries(NEW_CHEFS)) BASE[id] = { id, ...chef, level: 1, upgrades: [], inventory: [], actionCards: [], activeRecipes: [], garbageCan: [] };
   const chefLabel = id => `${BASE[id]?.avatar || ''} ${BASE[id]?.name || id}`;
 
@@ -208,6 +246,8 @@
     turnBar.style.display = 'none';
     soloBar.style.display = 'none';
     closeLog();
+    if (typeof closeTransientUI === 'function') closeTransientUI();
+    if (typeof modalVictory !== 'undefined' && modalVictory) modalVictory.classList.add('hidden');
     lobby.style.display = 'flex';
     lobby.replaceChildren(el('div', { className: 'box' }, el('h2', { textContent: '🍲 Vua Đầu Bếp: bàn lệch giờ' }), el('p', { textContent: INTRO }),
       note ? el('p', { textContent: note, style: 'color:#fca5a5' }) : '', el('p', { textContent: 'Đang tải bàn của bạn…' })));
@@ -243,7 +283,70 @@
         el('div', { className: 'row' }, codeInput, el('button', { className: 'primary', textContent: 'Vào bàn', onclick: () => joinTable(codeInput.value.trim().toUpperCase()) }))),
       el('div', { className: 'box' }, el('h2', { textContent: 'Chơi thử' }),
         el('p', { textContent: 'Một mình với 3 bếp máy trên máy này, không lưu.' }),
-        el('button', { textContent: 'Chơi thử với bếp máy', onclick: () => { lobby.style.display = 'none'; soloBar.style.display = 'block'; } })));
+        el('button', { textContent: 'Chơi thử với bếp máy', onclick: () => enterSoloMode() })));
+  }
+
+  function enterSoloMode() {
+    T = null;
+    lobby.style.display = 'none';
+    turnBar.style.display = 'none';
+    closeLog();
+    if (typeof closeTransientUI === 'function') closeTransientUI();
+    if (typeof modalVictory !== 'undefined' && modalVictory) modalVictory.classList.add('hidden');
+    soloBar.style.display = 'block';
+    if (btnRestartEl) btnRestartEl.textContent = soloBtnRestartText;
+    if (usedOnlineTable) {
+      usedOnlineTable = false;
+      if (seatBox) seatBox.style.display = '';
+      if (ribbon && soloRibbonNodes.length) ribbon.replaceChildren(...soloRibbonNodes);
+      const snap = JSON.parse(soloStateSnapshot);
+      for (const [id, data] of Object.entries(snap.chefs)) {
+        if (BASE[id]) {
+          delete BASE[id].playerName;
+          Object.assign(BASE[id], data, { deliveryMarket: null });
+        }
+      }
+      gameState.player = BASE[snap.playerId];
+      gameState.rivals = snap.rivalIds.map(id => BASE[id]);
+      if (gameState.chefs) {
+        gameState.chefs.lola = BASE.lola;
+        gameState.chefs.angus = BASE.angus;
+      }
+      gameState.activeChefId = 'lola';
+      gameState.day = 1;
+      gameState.phase = 1;
+      gameState.closedMarkets = [];
+      gameState.dumpster = snap.dumpster;
+      gameState.hotSeat = false;
+      gameState.gameOver = false;
+      gameState.winner = null;
+      for (const market of Object.values(gameState.markets)) {
+        for (const card of market.cards || []) card.claimedBy = null;
+      }
+      for (const id of ORDER) {
+        const isBase = snap.playerId === id || snap.rivalIds.includes(id);
+        if (STANDEES[id]) {
+          STANDEES[id].visible = isBase;
+          if (isBase && BASE[id] && gameState.markets[BASE[id].currentLocation]) {
+            const pos = gameState.markets[BASE[id].currentLocation].pos;
+            const [ox, oz] = OFFSETS[id];
+            animateStandeeTo(STANDEES[id], { x: pos.x + ox, z: pos.z + oz });
+          }
+        }
+        if (DIALS[id]) DIALS[id].visible = isBase && id !== snap.playerId;
+      }
+      [tab1, tab2, tab3].forEach((tab, i) => { tab.className = i === 0 ? TAB_ON[0] : TAB_OFF; });
+      [panel1, panel2, panel3].forEach((panel, i) => panel.classList.toggle('hidden', i !== 0));
+      if (btnRevealDials) btnRevealDials.disabled = false;
+      if (btnNextDay) btnNextDay.textContent = soloBtnNextDayText;
+      if (typeof timerDisplay !== 'undefined' && timerDisplay) timerDisplay.innerText = '01:00';
+      syncDestButtons();
+      updateHUDStats();
+      updateRecipeUI();
+      updateLeaderboardUI();
+      if (typeof tweenCamera === 'function') tweenCamera(0, 42, 28, 0, 0, 3.0);
+    }
+    syncBottomBarClearance();
   }
 
   // a table that has not started: who sits where, invite, the host may start early
@@ -295,19 +398,21 @@
   }
 
   const ALL_MARKET_KEYS = ['fruit', 'vegetable', 'carbs', 'chop', 'dairy', 'mystery', 'island'];
-  function getRandomMarketForDay(code, day, chefId, closedMarkets = []) {
+  function getRandomMarketForDay(code, day, chefId, closedMarkets = [], bannedMarkets = []) {
     let hash = 0;
     const seed = `${code || 'VDB'}-day${day}-${chefId}`;
     for (let i = 0; i < seed.length; i++) {
       hash = ((hash << 5) - hash) + seed.charCodeAt(i);
       hash |= 0;
     }
-    const open = ALL_MARKET_KEYS.filter(m => !closedMarkets.includes(m));
-    const list = open.length ? open : ALL_MARKET_KEYS;
+    const open = ALL_MARKET_KEYS.filter(m => !closedMarkets.includes(m) && !bannedMarkets.includes(m));
+    const allowed = open.length ? open : ALL_MARKET_KEYS.filter(m => !bannedMarkets.includes(m));
+    const list = allowed.length ? allowed : ['island'];
     return list[Math.abs(hash) % list.length];
   }
 
   function enter(view) {
+    usedOnlineTable = true;
     if (seatBox) seatBox.style.display = 'none';
     if (typeof closeTransientUI === 'function') closeTransientUI();
     const first = !T || T.code !== view.code || !T.view?.state;
@@ -326,7 +431,8 @@
     const myTurn = view.status === 'playing' && st.turnChef === me;
     const isRandomMarketDay = T && view.status === 'playing' && st.day <= 5;
     const closed = (st.closed || []).map(c => c.market);
-    const randomDest = isRandomMarketDay ? getRandomMarketForDay(T.code, st.day, me, closed) : null;
+    const banned = (st.bans || []).filter(b => b.chef === me).map(b => b.market);
+    const randomDest = isRandomMarketDay ? getRandomMarketForDay(T.code, st.day, me, closed, banned) : null;
     for (const [id, chef] of Object.entries(st.chefs)) {
       const base = BASE[id];
       base.playerName = getPlayerName(id);
@@ -441,6 +547,7 @@
           textContent: `${id === st.turnChef ? '▶ ' : ''}${who(id)} · ${st.chefs[id].likes} ⭐${id === me ? ' (bạn)' : ''}` }))),
         buttons, ...offers));
     turnBar.style.display = 'block';
+    syncBottomBarClearance();
   }
 
   function drawLog() {
@@ -464,6 +571,7 @@
     set('victory-stat-money', `$${winner.money}`);
     set('victory-stat-upgrades', `${winner.upgrades.length}/4 nâng cấp`);
     set('victory-stat-level', winner.level === 2 ? '👑 Cấp 2 (Master Chef)' : '⭐ Cấp 1');
+    if (btnRestartEl) btnRestartEl.textContent = '🏠 VỀ SẢNH BÀN ONLINE';
     modalVictory.classList.remove('hidden');
   }
 
@@ -507,6 +615,7 @@
   dialForChef = chef => (!T ? original.dialForChef(chef) : chef === gameState.player ? playerDial : DIALS[chef?.id] || spareDial);
   // the header ribbon lists every chef at the table, in turn order
   const ribbon = document.getElementById('lead-p-likes')?.closest('div');
+  const soloRibbonNodes = ribbon ? [...ribbon.childNodes] : [];
   updateLeaderboardUI = () => {
     if (!T?.view?.state) { original.updateLeaderboardUI(); return; }
     const st = T.view.state;
@@ -571,6 +680,10 @@
     if (card) act('buy', { market: marketKeyOf(card), name: card.name, bribe });
   });
   intercept(btnNextDay, () => act('end'));
+  intercept(btnRestartEl, () => {
+    if (typeof modalVictory !== 'undefined' && modalVictory) modalVictory.classList.add('hidden');
+    showLobby();
+  });
   intercept(btnBuyUpgrade, () => { const upgrade = selectedUpgrade; closeUpgradeShop(); if (upgrade) act('upgrade', { id: upgrade.id }); });
   intercept(btnClaimDumpster, () => { const index = selectedDumpsterItem; closeDumpsterModal(); if (index !== null) act('dumpster', { index }); });
   intercept(btnExecuteAction, () => {

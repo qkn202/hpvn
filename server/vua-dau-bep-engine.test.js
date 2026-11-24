@@ -217,3 +217,18 @@ test('the new chefs\' powers: Bà Tám pays less for seafood, Út Mười has a 
   R.cook(s, sau, sau.activeRecipes[0]);
   assert.equal(sau.money, money + 50);
 });
+
+test('bot stops cooking immediately after reaching 20 stars and does not cook a second dish', () => {
+  const s = E.newGame(39, ['lola', 'angus']);
+  const bot = s.chefs.chen;
+  bot.likes = 18;
+  const r0 = R.dealRecipe(s, D.BASIC_RECIPES[0]);
+  const r1 = R.dealRecipe(s, D.BASIC_RECIPES[1]);
+  bot.activeRecipes = [r0, r1];
+  bot.inventory = [...r0.requires, ...r1.requires].map(name => R.item(s, name));
+  // End lola's turn so chen (bot) runs autoTurn
+  E.act(s, 'lola', 'end');
+  assert.equal(s.over, true);
+  assert.equal(s.winner, 'chen');
+  assert.equal(bot.cookedCount, 1);
+});
