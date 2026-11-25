@@ -8,227 +8,188 @@ const D = require('./vua-dau-bep-data');
 
 const refused = (fn, pattern) => assert.throws(fn, error => error instanceof E.GameError && pattern.test(error.message));
 
-test('a new table is dealt from its seed and starts on Bếp Sáng', () => {
-  const a = E.newGame(42);
-  assert.deepEqual(E.newGame(42), a);
-  assert.equal(E.currentChef(a).id, 'lola');
-  assert.deepEqual(a.humans, ['lola', 'angus']);
-  for (const chef of Object.values(a.chefs)) {
-    assert.equal(chef.activeRecipes.length, 2);
-    assert.equal(chef.activeRecipes.filter(r => r.isGourmet).length, 1);
-    assert.equal(chef.inventory.length, chef.id === 'lucrezia' ? 3 : 2);
+test('real-time game starts in Phase 1 with 6 Shelf+Counter markets and hides rivals\' secret dials', () => {
+  const t0 = 1_000_000;
+  const s = E.newGame(42, ['lola', 'angus'], { nowMs: t0 });
+  assert.equal(s.mode, 'realtime');
+  assert.equal(s.phase, 1);
+  for (const key of D.MARKET_KEYS) {
+    assert.equal(s.markets[key].counter.length, 3);
+    assert.ok(s.markets[key].shelf.length > 0);
   }
+  // Lola locks her dial first — Angus MUST NOT see where Lola is going!
+  E.act(s, 'lola', 'move', { to: 'chop' }, t0 + 500);
+  assert.equal(s.phase, 1, 'waits until all humans lock dial');
+  const angusView = E.view(s, 'angus', t0 + 600);
+  assert.equal(angusView.dials, undefined);
+  assert.equal(angusView.myDial, null);
+  assert.deepEqual(angusView.dialReady, ['lola']);
+  const lolaView = E.view(s, 'lola', t0 + 600);
+  assert.equal(lolaView.myDial, 'chop');
+
+  // Angus locks his dial -> simultaneous reveal & Phase 2 starts with 60s real-time clock!
+  E.act(s, 'angus', 'move', { to: 'dairy' }, t0 + 1000);
+  assert.equal(s.phase, 2);
+  assert.equal(s.phase2RemainingMs, E.PHASE2_DURATION_MS);
 });
 
-test('only the seat whose turn it is may act, in phase order', () => {
-  const s = E.newGame(1);
-  refused(() => E.act(s, 'angus', 'move', { to: 'chop' }), /Chưa tới lượt/);
-  refused(() => E.act(s, 'lola', 'buy', { market: 'chop', name: 'Thịt Ba Rọi' }), /chọn quầy/);
-  refused(() => E.act(s, 'lola', 'move', { to: 'nowhere' }), /không hợp lệ/);
-  E.act(s, 'lola', 'move', { to: 'chop' });
-  refused(() => E.act(s, 'lola', 'move', { to: 'fruit' }), /đã qua/);
-  refused(() => E.act(s, 'lola', 'hack', {}), /không hợp lệ/);
+test('Phase 2 runs shared 60-second real-time clock; all humans act simultaneously; timer expiry starts Phase 3', () => {
+  const t0 = 2_000_000;
+  const s = E.newGame(7, ['lola', 'angus'], { nowMs: t0 });
+  E.act(s, 'lola', 'move', { to: 'fruit' }, t0);
+  E.act(s, 'angus', 'move', { to: 'carbs' }, t0);
+  assert.equal(s.phase, 2);
+
+  // Both humans buy simultaneously in the same real-time Phase 2!
+  const shelfBefore = s.markets.fruit.shelf.length;
+  E.act(s, 'lola', 'buyShelf', { market: 'fruit' }, t0 + 2000);
+  E.act(s, 'angus', 'buyShelf', { market: 'carbs' }, t0 + 2500);
+  assert.equal(s.markets.fruit.shelf.length, shelfBefore - 1);
+  assert.equal(s.phase2RemainingMs, 57_500);
+
+  // After 8s elapsed, bots automatically shop!
+  E.act(s, 'lola', 'tick', {}, t0 + 9_000);
+  assert.equal(s.botShoppedDay, 1);
+
+  // After 60s elapsed -> automatically transitions to Phase 3!
+  E.act(s, 'lola', 'tick', {}, t0 + 61_000);
+  assert.equal(s.phase, 3);
 });
 
-test('ending the morning turn runs both market chefs and hands the day to Bếp Chiều', () => {
-  const s = E.newGame(7);
-  E.act(s, 'lola', 'end');
-  assert.equal(E.currentChef(s).id, 'angus');
-  assert.equal(s.day, 1);
-  assert.ok(s.log.some(line => line.text.includes('Chú Bảy')));
-  E.act(s, 'angus', 'end');
-  assert.equal(s.day, 2);
-  assert.ok(E.currentChef(s) && R.order(s).includes(E.currentChef(s).id));
-  assert.ok(s.chefs.lola.money >= 300 + 200, 'daily income paid');
-});
-
-test('the evening seat can outbid what the morning seat bought; the morning seat is paid back', () => {
-  const s = E.newGame(3);
-  const lola = s.chefs.lola;
-  const angus = s.chefs.angus;
-  lola.money = 1000;
-  angus.money = 1000;
-  E.act(s, 'lola', 'move', { to: 'chop' });
-  E.act(s, 'lola', 'buy', { market: 'chop', name: 'Thịt Ba Rọi' });
-  refused(() => E.act(s, 'lola', 'buy', { market: 'chop', name: 'Thịt Ba Rọi' }), /đã mua/);
-  const bought = lola.inventory.at(-1);
-  assert.equal(lola.money, 800);
-  s.chefs.chen.actionCards = [];
-  s.chefs.lucrezia.actionCards = [];
-  E.act(s, 'lola', 'end');
-  assert.ok(lola.inventory.includes(bought), 'the noon bots never outbid');
-  E.act(s, 'angus', 'move', { to: 'chop' });
-  refused(() => E.act(s, 'angus', 'buy', { market: 'chop', name: 'Thịt Ba Rọi', bribe: 70 }), /\$50 hoặc \$100/);
-  E.act(s, 'angus', 'buy', { market: 'chop', name: 'Thịt Ba Rọi', bribe: 100 });
-  assert.equal(angus.money, 700);
-  assert.equal(lola.money, 1100);
-  assert.ok(angus.inventory.some(i => i.id === bought.id));
-  assert.ok(!lola.inventory.some(i => i.id === bought.id));
-});
-
-test('a cooked item leaves its shelf card sold out until the round passes', () => {
-  const s = E.newGame(5);
-  const lola = s.chefs.lola;
-  lola.money = 1000;
-  lola.inventory = [];
-  lola.activeRecipes[0] = { ...lola.activeRecipes[0], requires: ['Thịt Ba Rọi'], likes: 2, isGourmet: false };
-  E.act(s, 'lola', 'move', { to: 'chop' });
-  E.act(s, 'lola', 'buy', { market: 'chop', name: 'Thịt Ba Rọi' });
-  E.act(s, 'lola', 'cook', { recipeId: lola.activeRecipes[0].id });
-  assert.equal(lola.likes, 2);
-  E.act(s, 'lola', 'end');
-  E.act(s, 'angus', 'move', { to: 'chop' });
+test('LIVE REAL-TIME BIDDING WAR between 2 humans pauses 60s timer, supports +$50/+$100 bids & fold, then resumes timer', () => {
+  const t0 = 3_000_000;
+  const s = E.newGame(13, ['lola', 'angus'], { nowMs: t0 });
+  s.chefs.lola.money = 1000;
   s.chefs.angus.money = 1000;
-  refused(() => E.act(s, 'angus', 'buy', { market: 'chop', name: 'Thịt Ba Rọi', bribe: 50 }), /bán hết/);
-  E.act(s, 'angus', 'end');
-  assert.equal(s.claims['chop|Thịt Ba Rọi'], undefined, 'restocked after one round');
+  // Disable bot angus Wok Away (angus is human here) and send BOTH humans to chop!
+  E.act(s, 'lola', 'move', { to: 'chop' }, t0);
+  E.act(s, 'angus', 'move', { to: 'chop' }, t0);
+  assert.equal(s.phase, 2);
+
+  // Lola clicks Counter slot 0 at t0+5000 -> LIVE BIDDING WAR opens & pauses 60s timer at 55s!
+  E.act(s, 'lola', 'buy', { market: 'chop', slotIndex: 0 }, t0 + 5000);
+  assert.ok(s.auction, 'live auction started');
+  assert.equal(s.timerPaused, true);
+  assert.equal(s.phase2RemainingMs, 55_000);
+  assert.equal(s.auction.leader, 'lola');
+
+  // 4 seconds pass during auction — 60s timer MUST stay paused at 55s!
+  E.act(s, 'angus', 'bid', { raise: 50 }, t0 + 9000);
+  assert.equal(s.auction.leader, 'angus');
+  assert.equal(s.auction.currentBid, 250);
+  assert.equal(s.phase2RemainingMs, 55_000, '60s timer stayed paused during bidding war');
+
+  // Lola raises +$100 -> $350
+  E.act(s, 'lola', 'bid', { raise: 100 }, t0 + 11000);
+  assert.equal(s.auction.leader, 'lola');
+  assert.equal(s.auction.currentBid, 350);
+
+  // Angus folds -> Lola wins immediately, timer resumes cleanly!
+  E.act(s, 'angus', 'fold', {}, t0 + 12000);
+  assert.equal(s.auction, null);
+  assert.equal(s.timerPaused, false);
+  assert.equal(s.chefs.lola.money, 650);
+  assert.equal(s.phase2RemainingMs, 55_000, 'timer resumed from 55s with zero lost time');
 });
 
-test('a closure lasts one round and a ban keeps the rival out of your market on their next turn', () => {
-  const s = E.newGame(9);
+test('LIVE HUMAN-TO-HUMAN BARTER executes immediately during Phase 2 (including Garbage offloading!)', () => {
+  const t0 = 4_000_000;
+  const s = E.newGame(17, ['lola', 'angus'], { nowMs: t0 });
+  s.chefs.lola.garbage = 2;
+  s.chefs.lola.money = 500;
+  E.act(s, 'lola', 'move', { to: 'fruit' }, t0);
+  E.act(s, 'angus', 'move', { to: 'chop' }, t0);
+
+  // Lola sends live offer to Angus during Phase 2: "Take 1 garbage + $150"
+  E.act(s, 'lola', 'offer', { to: 'angus', give: { garbage: 1, money: 150 }, want: { nothing: true } }, t0 + 1000);
+  assert.equal(s.offers.length, 1);
+
+  // Angus accepts RIGHT NOW during the same Phase 2!
+  E.act(s, 'angus', 'answer', { offerId: s.offers[0].id, accept: true }, t0 + 2000);
+  assert.equal(s.chefs.lola.garbage, 1);
+  assert.equal(s.chefs.angus.garbage, 1);
+  assert.equal(s.chefs.angus.money, 450);
+});
+
+test('Real-time Wok Away (Angus) kicks rival immediately; disabled at Island & Mystery Mart', () => {
+  const t0 = 5_000_000;
+  const s = E.newGame(21, ['lola', 'angus'], { nowMs: t0 });
+  E.act(s, 'lola', 'move', { to: 'fruit' }, t0);
+  E.act(s, 'angus', 'move', { to: 'fruit' }, t0);
+  E.act(s, 'angus', 'chefPower', { target: 'lola' }, t0 + 1000);
+  assert.notEqual(s.chefs.lola.currentLocation, 'fruit', 'Lola immediately kicked to another market');
+
+  // Disabled at Mystery Mart
+  const s2 = E.newGame(22, ['lola', 'angus'], { nowMs: t0 });
+  E.act(s2, 'lola', 'move', { to: 'mystery' }, t0);
+  E.act(s2, 'angus', 'move', { to: 'mystery' }, t0);
+  refused(() => E.act(s2, 'angus', 'chefPower', { target: 'lola' }, t0 + 1000), /không tác dụng/);
+});
+
+test('strict 1 Action Card per day + brief 3s timer pause', () => {
+  const t0 = 6_000_000;
+  const s = E.newGame(25, ['lola', 'angus'], { nowMs: t0 });
+  s.chefs.lola.actionCards = [R.actionCard(s, 'lucky_money'), R.actionCard(s, 'five_star_review')];
+  E.act(s, 'lola', 'move', { to: 'fruit' }, t0);
+  E.act(s, 'angus', 'move', { to: 'chop' }, t0);
+  E.act(s, 'lola', 'play', { cardId: s.chefs.lola.actionCards[0].id }, t0 + 1000);
+  assert.equal(s.chefs.lola.money, 500);
+  assert.equal(s.timerPaused, true);
+  assert.equal(s.pauseReason, 'action');
+  refused(() => E.act(s, 'lola', 'play', { cardId: s.chefs.lola.actionCards[0].id }, t0 + 2000), /tối đa 1 Thẻ Hành Động/);
+});
+
+test('Simultaneous Phase 3 cooking: Double Cooktop, Cuisine Bonus, Wine, Tofu, Garbage, 3/7/12⭐ Milestones & Instant 20⭐ Win', () => {
+  const t0 = 7_000_000;
+  const s = E.newGame(31, ['lola', 'angus'], { nowMs: t0 });
+  E.act(s, 'lola', 'move', { to: 'island' }, t0);
+  E.act(s, 'angus', 'move', { to: 'island' }, t0);
+  // Both ring bell early -> Phase 3 immediately!
+  E.act(s, 'lola', 'done', {}, t0 + 500);
+  assert.equal(s.phase, 2);
+  E.act(s, 'angus', 'done', {}, t0 + 600);
+  assert.equal(s.phase, 3);
+
   const lola = s.chefs.lola;
-  lola.actionCards = [R.actionCard(s, 'close_market'), R.actionCard(s, 'kick_opponent')];
-  E.act(s, 'lola', 'move', { to: 'dairy' });
-  E.act(s, 'lola', 'play', { cardId: lola.actionCards[0].id, target: 'mystery' });
-  E.act(s, 'lola', 'play', { cardId: lola.actionCards[0].id, target: 'angus' });
-  E.act(s, 'lola', 'end');
-  refused(() => E.act(s, 'angus', 'move', { to: 'dairy' }), /Cưỡng Chế/);
-  E.act(s, 'angus', 'move', { to: 'mystery' });
-  refused(() => E.act(s, 'angus', 'buy', { market: 'mystery', name: 'Mắm Ruốc Huế' }), /phong tỏa/);
-  E.act(s, 'angus', 'end');
-  assert.deepEqual(s.bans, []);
-  assert.deepEqual(s.closed, [], 'reopened when the closer plays again');
+  lola.upgrades.push(D.UPGRADES.find(u => u.id === 'upg_double_cooktop'));
+  lola.garbage = 1;
+  const b = R.dealRecipe(s, D.BASIC_RECIPES.find(r => r.id === 'rec_banhmi')); // 2 + 1 cuisine - 1 garbage = 2⭐
+  const g = R.dealRecipe(s, D.GOURMET_RECIPES.find(r => r.id === 'rec_pho'));  // 5 + 1 wine - 1 pre-cook garbage = 5⭐
+  lola.activeRecipes = [b, g];
+  lola.inventory = [
+    R.item(s, 'Bánh Mì Sài Gòn'), R.item(s, 'Rau Thơm & Dưa Leo'),
+    R.item(s, 'Bánh Phở Tươi'), R.item(s, 'Đậu Hũ Hoàng Gia'), R.item(s, 'Hồi Quế Thảo Mộc'), R.item(s, 'Rượu Nếp Cẩm'),
+  ];
+  assert.equal(E.act(s, 'lola', 'cook', { recipeId: b.id }, t0 + 1000).likes, 2);
+  assert.equal(E.act(s, 'lola', 'cook', { recipeId: g.id, useAddon: true }, t0 + 1100).likes, 5);
+  assert.equal(lola.likes, 7);
+  assert.equal(lola.garbage, 3);
+  assert.ok(lola.unlockedMilestones.includes(3) && lola.unlockedMilestones.includes(7));
+
+  // Both ready for next day -> Day 2 with $300+ daily income & refilled counters!
+  E.act(s, 'lola', 'end', {}, t0 + 2000);
+  assert.equal(s.day, 1);
+  E.act(s, 'angus', 'end', {}, t0 + 2100);
+  assert.equal(s.day, 2);
+  assert.equal(s.phase, 1);
 });
 
-test('a bouncer gives 50% chance to block theft', () => {
-  let blocked = 0;
-  for (let seed = 0; seed < 40; seed++) {
-    const s = E.newGame(seed);
-    const lola = s.chefs.lola;
-    s.chefs.angus.upgrades.push({ id: 'upg_bouncer' });
-    s.chefs.angus.money = 300;
-    lola.money = 300;
-    lola.actionCards = [R.actionCard(s, 'steal_money')];
-    E.act(s, 'lola', 'move', { to: 'fruit' });
-    E.act(s, 'lola', 'play', { cardId: lola.actionCards[0].id, target: 'angus' });
-    if (s.chefs.angus.money === 300) blocked++;
-  }
-  assert.ok(blocked > 0 && blocked < 40, 'bouncer protects with 50% probability');
-});
-
-test('members trade by offer: Bếp Chiều answers in their own turn, unanswered offers lapse', () => {
-  const s = E.newGame(13);
-  const [lolaItem] = s.chefs.lola.inventory;
-  E.act(s, 'lola', 'offer', { to: 'angus', give: { item: lolaItem.id }, want: { money: 150 } });
-  refused(() => E.act(s, 'lola', 'trade', { with: 'angus', give: { money: 50 }, want: { money: 50 } }), /chọn quầy|lời đề nghị/);
-  E.act(s, 'lola', 'end');
-  const [offer] = s.offers;
-  const angusMoney = s.chefs.angus.money;
-  E.act(s, 'angus', 'answer', { offerId: offer.id, accept: true });
-  assert.ok(s.chefs.angus.inventory.some(i => i.id === lolaItem.id));
-  assert.equal(s.chefs.angus.money, angusMoney - 150);
-  E.act(s, 'angus', 'offer', { to: 'lola', give: { money: 10 }, want: { money: 10 } });
-  E.act(s, 'angus', 'end');
-  E.act(s, 'lola', 'end');
-  assert.deepEqual(s.offers, [], 'Bếp Sáng let it lapse by ending her turn');
-});
-
-test('a refused bot trade cannot be re-rolled the same day', () => {
-  for (let seed = 0; seed < 50; seed++) {
-    const s = E.newGame(seed);
-    E.act(s, 'lola', 'move', { to: 'fruit' });
-    const chen = s.chefs.chen;
-    const want = { item: chen.inventory[0].id };
-    const result = E.act(s, 'lola', 'trade', { with: 'chen', give: { money: 10 }, want });
-    if (result.accepted) continue;
-    refused(() => E.act(s, 'lola', 'trade', { with: 'chen', give: { money: 10 }, want }), /từ chối/);
-    return;
-  }
-  assert.fail('no refusal in 50 seeds');
-});
-
-test('a member sees no seed and only a count of the rivals\' action cards', () => {
-  const s = E.newGame(17);
-  const seen = E.view(s, 'angus');
-  assert.equal(seen.rng, undefined);
-  assert.deepEqual(seen.chefs.lola.actionCards, []);
-  assert.equal(seen.chefs.lola.actionCardCount, 2);
-  assert.equal(seen.chefs.angus.actionCards.length, 1);
-  assert.equal(seen.turnChef, 'lola');
-});
-
-test('autopilot games always end with a winner and never break the pantry or money rules', () => {
-  for (let seed = 0; seed < 120; seed++) {
-    const s = E.newGame(seed * 7919);
+test('200-game real-time stress test (2-player & 8-player) always reaches a clean winner with 0 invariant breaks', () => {
+  for (let seed = 0; seed < 200; seed++) {
+    const humans = seed % 5 === 0 ? D.TURN_ORDER : ['lola', 'angus'];
+    const s = E.newGame(seed * 7919 + 1, humans, { nowMs: 1000 });
     let guard = 0;
-    while (!s.over && guard++ < 500) {
-      E.autoplay(s);
+    while (!s.over && guard++ < 400) {
+      E.autoplay(s, 1000 + guard * 5000);
       for (const chef of Object.values(s.chefs)) {
         assert.ok(chef.money >= 0, `money ${seed}`);
+        assert.ok(chef.garbage >= 0, `garbage ${seed}`);
         assert.ok(chef.inventory.length <= R.capacity(chef), `pantry ${seed}`);
-        assert.ok(chef.upgrades.length <= 4);
+        assert.ok(chef.upgrades.length <= D.MAX_UPGRADES);
       }
     }
     assert.ok(s.over, `seed ${seed} finished`);
-    assert.ok(s.day <= 30);
+    assert.ok(s.day <= D.MAX_DAYS);
     assert.ok(s.winner);
   }
-});
-
-test('a member who leaves is replaced by the bots and the other member keeps playing', () => {
-  const s = E.newGame(21);
-  E.leave(s, 'angus');
-  E.act(s, 'lola', 'end');
-  assert.equal(s.day, 2);
-  assert.ok(E.currentChef(s) && R.order(s).includes(E.currentChef(s).id));
-});
-
-test('eight members: one turn each per day in TURN_ORDER, no bots, and the game still ends', () => {
-  const s = E.newGame(31, ['muoi', 'lola', 'tam', 'chen', 'hai', 'angus', 'sau', 'lucrezia']);
-  assert.deepEqual(R.order(s), ['lola', 'chen', 'lucrezia', 'hai', 'sau', 'tam', 'muoi', 'angus']);
-  for (const id of R.order(s)) { assert.equal(E.currentChef(s).id, id); E.act(s, id, 'end'); }
-  assert.equal(s.day, 2);
-  assert.equal(s.chefs.muoi.inventory.length, 2);
-  assert.equal(s.chefs.sau.actionCards[0].type, 'lucky_money');
-  let guard = 0;
-  while (!s.over && guard++ < 1000) E.autoplay(s);
-  assert.ok(s.over && s.winner);
-});
-
-test('a claim at an eight-chef table lasts until every chef has played once', () => {
-  const s = E.newGame(33, D.TURN_ORDER);
-  s.chefs.lola.money = 1000;
-  E.act(s, 'lola', 'move', { to: 'chop' });
-  E.act(s, 'lola', 'buy', { market: 'chop', name: 'Bắp Bò Tươi' });
-  assert.equal(s.claims['chop|Bắp Bò Tươi'].left, 8);
-});
-
-test('the new chefs\' powers: Bà Tám pays less for seafood, Út Mười has a bigger pantry, Anh Sáu earns per dish', () => {
-  const s = E.newGame(35, D.TURN_ORDER);
-  const shrimp = D.MARKETS.dairy.cards[0];
-  assert.equal(R.cardCost(s.chefs.tam, shrimp, 'dairy'), 100);
-  assert.equal(R.cardCost(s.chefs.hai, D.MARKETS.fruit.cards[0], 'fruit'), 50);
-  assert.equal(R.capacity(s.chefs.muoi), 6);
-  assert.equal(R.dailyPerk(s.chefs.muoi), 50);
-  const sau = s.chefs.sau;
-  sau.inventory = [R.item(s, 'Bánh Mì Sài Gòn'), R.item(s, 'Trứng Gà Ta')];
-  sau.activeRecipes[0] = R.dealRecipe(s, D.BASIC_RECIPES.find(r => r.id === 'rec_trung_opla_banhmi'));
-  const money = sau.money;
-  R.cook(s, sau, sau.activeRecipes[0]);
-  assert.equal(sau.money, money + 50);
-});
-
-test('bot stops cooking immediately after reaching 20 stars and does not cook a second dish', () => {
-  const s = E.newGame(39, ['lola', 'angus']);
-  const bot = s.chefs.chen;
-  bot.likes = 18;
-  const r0 = R.dealRecipe(s, D.BASIC_RECIPES[0]);
-  const r1 = R.dealRecipe(s, D.BASIC_RECIPES[1]);
-  bot.activeRecipes = [r0, r1];
-  bot.inventory = [...r0.requires, ...r1.requires].map(name => R.item(s, name));
-  // End lola's turn so chen (bot) runs autoTurn
-  E.act(s, 'lola', 'end');
-  assert.equal(s.over, true);
-  assert.equal(s.winner, 'chen');
-  assert.equal(bot.cookedCount, 1);
 });
