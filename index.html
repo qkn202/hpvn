@@ -2971,6 +2971,480 @@
       display: none !important;
     }
 
+    /* ==========================================
+       AAA START / TITLE SCREEN OVER LIVE 3D BOARD (#start-screen)
+       ========================================== */
+    body.rr-start-open #hud-top-chrome,
+    body.rr-start-open #hud-main-deck,
+    body.rr-start-open #tt-rivals-left,
+    body.rr-start-open #tt-rivals-right,
+    body.rr-start-open #event-toast,
+    body.rr-start-open #vdb-3d-badges-layer,
+    body.rr-start-open #resume-save-banner,
+    body.rr-start-open #coachmark-banner,
+    body.rr-start-open #contested-market-alert,
+    body.rr-start-open footer.glass-card {
+      display: none !important;
+    }
+    html.hpvn-framed #start-screen,
+    html.hpvn-framed #btn-open-start-screen,
+    html.hpvn-framed #btn-victory-home {
+      display: none !important;
+    }
+    .rr-start-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 55;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: max(10px, env(safe-area-inset-top, 10px)) max(10px, env(safe-area-inset-right, 10px)) max(10px, env(safe-area-inset-bottom, 10px)) max(10px, env(safe-area-inset-left, 10px));
+      background: radial-gradient(ellipse at 50% 42%, rgba(20, 12, 7, 0.56), rgba(8, 5, 3, 0.86));
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    body.rr-start-open .rr-start-overlay {
+      display: flex;
+    }
+    .rr-start-card {
+      width: min(680px, 100%);
+      max-height: calc(100dvh - max(20px, env(safe-area-inset-top, 10px) + env(safe-area-inset-bottom, 10px)));
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      background: linear-gradient(168deg, rgba(28, 17, 10, 0.94) 0%, rgba(15, 9, 6, 0.97) 100%);
+      border: 2px solid rgba(251, 191, 36, 0.72);
+      border-radius: 22px;
+      box-shadow: 0 28px 64px rgba(0, 0, 0, 0.82), inset 0 1px 0 rgba(254, 240, 138, 0.16), 0 0 42px rgba(245, 158, 11, 0.2);
+      padding: 16px 18px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      color: #f5f5f4;
+      box-sizing: border-box;
+      min-width: 0;
+    }
+    .rr-start-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 4px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(251, 191, 36, 0.24);
+    }
+    .rr-start-crest {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 35% 28%, #fef08a 0%, #f59e0b 48%, #92400e 100%);
+      border: 2px solid #fef9c3;
+      box-shadow: 0 6px 18px rgba(245, 158, 11, 0.45), inset 0 -4px 8px rgba(69, 26, 3, 0.55);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .rr-start-title-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      max-width: 100%;
+    }
+    .rr-start-title {
+      margin: 0;
+      font-size: clamp(18px, 4.4vw, 26px);
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      line-height: 1.12;
+      background: linear-gradient(90deg, #fef08a 0%, #fbbf24 45%, #fb923c 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-transform: uppercase;
+    }
+    .rr-start-sub {
+      margin: 0;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #d6d3d1;
+      line-height: 1.3;
+    }
+    .rr-start-career {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: rgba(245, 158, 11, 0.16);
+      border: 1px solid rgba(251, 191, 36, 0.48);
+      color: #fde68a;
+      font-size: 10.5px;
+      font-weight: 800;
+    }
+    .rr-start-career.hidden {
+      display: none;
+    }
+    .rr-start-section {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+    .rr-start-label {
+      font-size: 10.5px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #fbbf24;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .rr-start-chef-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 7px;
+      width: 100%;
+    }
+    .rr-start-chef-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-height: 60px;
+      padding: 6px 4px 5px;
+      border-radius: 12px;
+      background: rgba(28, 20, 14, 0.82);
+      border: 1.5px solid rgba(120, 113, 108, 0.45);
+      color: #e7e5e4;
+      font: inherit;
+      cursor: pointer;
+      user-select: none;
+      box-sizing: border-box;
+      transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;
+    }
+    .rr-start-chef-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(251, 191, 36, 0.72);
+      background: rgba(41, 27, 17, 0.92);
+    }
+    .rr-start-chef-card.selected {
+      background: linear-gradient(160deg, rgba(120, 53, 15, 0.52) 0%, rgba(41, 22, 10, 0.94) 100%);
+      border-color: #fbbf24;
+      box-shadow: 0 0 0 1.5px rgba(251, 191, 36, 0.55), 0 6px 16px rgba(245, 158, 11, 0.28);
+      color: #fef3c7;
+    }
+    .rr-start-chef-check {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 15px;
+      height: 15px;
+      border-radius: 999px;
+      background: #fbbf24;
+      color: #1c1917;
+      font-size: 9px;
+      font-weight: 900;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+    }
+    .rr-start-chef-card.selected .rr-start-chef-check {
+      display: inline-flex;
+    }
+    .rr-start-chef-av {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 2px solid var(--chef-ring, #fbbf24);
+      background: #1c1917;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+    }
+    .rr-start-chef-av img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .rr-start-chef-fb {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .rr-start-chef-name {
+      font-size: 10.5px;
+      font-weight: 900;
+      line-height: 1.15;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .rr-start-chef-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 7px 10px;
+      border-radius: 12px;
+      background: rgba(12, 10, 9, 0.72);
+      border: 1px solid rgba(251, 191, 36, 0.34);
+      min-width: 0;
+    }
+    .rr-start-info-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px 8px;
+      font-size: 11px;
+    }
+    .rr-start-info-rest {
+      font-weight: 900;
+      color: #fef3c7;
+    }
+    .rr-start-info-spec {
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid rgba(251, 191, 36, 0.5);
+      color: #fde68a;
+      font-size: 10px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .rr-start-info-skill {
+      font-size: 10.5px;
+      color: #d6d3d1;
+      line-height: 1.3;
+    }
+    .rr-start-options-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      width: 100%;
+    }
+    .rr-start-opt-box {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+    .rr-start-seg {
+      display: flex;
+      gap: 4px;
+      padding: 3px;
+      border-radius: 12px;
+      background: rgba(12, 10, 9, 0.8);
+      border: 1px solid rgba(68, 64, 60, 0.85);
+      box-sizing: border-box;
+    }
+    .rr-start-seg-btn {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 36px;
+      padding: 4px 6px;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #a8a29e;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.15;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+    }
+    .rr-start-seg-btn:hover {
+      color: #f5f5f4;
+      background: rgba(41, 37, 36, 0.7);
+    }
+    .rr-start-seg-btn.active {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      border-color: #fef08a;
+      color: #0c0a09;
+      font-weight: 900;
+      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+    }
+    .rr-start-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      width: 100%;
+    }
+    .rr-start-cta-primary {
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 16px;
+      border-radius: 14px;
+      border: 1.5px solid #fef08a;
+      background: linear-gradient(90deg, #fbbf24 0%, #f97316 52%, #fbbf24 100%);
+      color: #1c1917;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 10px 26px rgba(245, 158, 11, 0.42);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.14s ease, filter 0.14s ease, box-shadow 0.14s ease;
+    }
+    .rr-start-cta-primary:hover {
+      transform: translateY(-1.5px);
+      filter: brightness(1.07);
+      box-shadow: 0 14px 30px rgba(245, 158, 11, 0.56);
+    }
+    .rr-start-cta-resume {
+      width: 100%;
+      min-height: 44px;
+      padding: 8px 14px;
+      border-radius: 13px;
+      border: 1.5px solid #6ee7b7;
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      color: #ecfdf5;
+      font: inherit;
+      font-size: 12.5px;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(5, 150, 105, 0.38);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      transition: transform 0.14s ease, filter 0.14s ease;
+    }
+    .rr-start-cta-resume:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+    }
+    .rr-start-cta-resume.hidden {
+      display: none;
+    }
+    .rr-start-cta-sub {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #a7f3d0;
+    }
+    .rr-start-utils {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding-top: 2px;
+    }
+    .rr-start-util-btn {
+      min-height: 34px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(120, 113, 108, 0.6);
+      background: rgba(28, 25, 23, 0.85);
+      color: #e7e5e4;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: border-color 0.14s ease, background 0.14s ease, color 0.14s ease;
+    }
+    .rr-start-util-btn:hover {
+      border-color: #fbbf24;
+      color: #fef3c7;
+      background: rgba(41, 37, 36, 0.95);
+    }
+    .rr-start-util-btn.active {
+      border-color: #fbbf24;
+      background: rgba(245, 158, 11, 0.22);
+      color: #fde68a;
+    }
+    .rr-start-util-btn.muted {
+      border-color: rgba(248, 113, 113, 0.65);
+      background: rgba(127, 29, 29, 0.55);
+      color: #fecaca;
+    }
+    .rr-victory-home-btn {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(251, 191, 36, 0.5);
+      background: rgba(28, 25, 23, 0.92);
+      color: #fde68a;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.14s ease, border-color 0.14s ease;
+    }
+    .rr-victory-home-btn:hover {
+      background: rgba(41, 37, 36, 0.98);
+      border-color: #fbbf24;
+    }
+    @media (max-height: 660px) {
+      .rr-start-card { padding: 11px 15px 10px; gap: 7px; border-radius: 18px; }
+      .rr-start-hero { flex-direction: row; text-align: left; justify-content: center; gap: 10px; padding-bottom: 6px; }
+      .rr-start-title-wrap { align-items: flex-start; }
+      .rr-start-crest { width: 38px; height: 38px; font-size: 20px; }
+      .rr-start-chef-card { min-height: 52px; padding: 4px 3px; }
+      .rr-start-chef-av { width: 28px; height: 28px; }
+      .rr-start-chef-info { padding: 5px 8px; }
+      .rr-start-cta-primary { min-height: 42px; padding: 8px 14px; }
+      .rr-start-cta-resume { min-height: 40px; padding: 6px 12px; }
+    }
+    @media (max-width: 580px) {
+      .rr-start-card { padding: 13px 12px 12px; gap: 9px; border-radius: 18px; }
+      .rr-start-options-row { grid-template-columns: 1fr; gap: 7px; }
+      .rr-start-chef-grid { gap: 5px; }
+      .rr-start-chef-card { min-height: 58px; padding: 5px 2px; }
+      .rr-start-chef-av { width: 30px; height: 30px; }
+      .rr-start-chef-name { font-size: 10px; }
+    }
+    @media (max-width: 360px) {
+      .rr-start-chef-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (pointer: coarse) {
+      .rr-start-seg-btn { min-height: 44px; }
+      .rr-start-util-btn { min-height: 44px; padding: 6px 13px; }
+      .rr-start-cta-primary { min-height: 46px; }
+      .rr-start-cta-resume { min-height: 44px; }
+      .rr-victory-home-btn { min-height: 44px; }
+    }
+
     /* Authentic Physical Restaurant Mat Popularity Track 0..20 */
     .rr-pop-track-wrap {
       background: rgba(9, 8, 7, 0.92);
@@ -4349,8 +4823,9 @@
         </button>
       </div>
 
-      <!-- UTILITY CONTROLS: Mute, Music, Peek 3D, Activity Log, Quick Rules -->
+      <!-- UTILITY CONTROLS: Home, Mute, Music, Peek 3D, Activity Log, Quick Rules -->
       <div class="rr-util-group hud-interactive" role="toolbar" aria-label="Tiện ích âm thanh, 3D và hướng dẫn">
+        <button id="btn-open-start-screen" type="button" class="rr-util-btn" title="Về Màn Hình Mở Đầu" aria-label="Về màn hình mở đầu">🏠</button>
         <button id="btn-toggle-mute" type="button" class="rr-util-btn" aria-pressed="false" title="Bật / Tắt âm thanh" aria-label="Bật hoặc tắt âm thanh">🔊</button>
         <button id="btn-toggle-music" type="button" class="rr-util-btn" aria-pressed="false" title="Nhạc nền Chợ Việt (Pentatonic)" aria-label="Bật hoặc tắt nhạc nền">🎵</button>
         <button id="btn-peek-3d" type="button" class="rr-util-btn" aria-pressed="false" title="Ngắm Bàn Cờ 3D (Thu gọn HUD & xoay tự do)" aria-label="Ngắm bàn cờ 3D">👁️</button>
@@ -5009,6 +5484,68 @@
       <button id="btn-restart-game" class="rr-touch-btn w-full py-2.5 min-h-[44px] rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-amber-400 hover:from-amber-300 hover:to-orange-400 text-stone-950 font-black text-xs sm:text-sm uppercase tracking-wider shadow-2xl cursor-pointer transition-all">
         <span>🔄 CHƠI VÁN MỚI</span>
       </button>
+      <button id="btn-victory-home" type="button" class="rr-touch-btn rr-victory-home-btn">
+        <span>🏠 Về Màn Hình Mở Đầu</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- AAA START / TITLE SCREEN OVER LIVE 3D BOARD -->
+  <!-- ========================================== -->
+  <div id="start-screen" class="rr-start-overlay hud-interactive" role="dialog" aria-modal="true" aria-labelledby="start-screen-title">
+    <div class="rr-start-card">
+      <div class="rr-start-hero">
+        <div class="rr-start-crest" aria-hidden="true">🍲</div>
+        <div class="rr-start-title-wrap">
+          <h1 id="start-screen-title" class="rr-start-title">VUA ĐẦU BẾP VIỆT NAM</h1>
+          <p class="rr-start-sub">Đại Chiến Ẩm Thực 3D · Luật Chuẩn Rival Restaurants</p>
+          <div id="start-career-pill" class="rr-start-career hidden"></div>
+        </div>
+      </div>
+
+      <div class="rr-start-section">
+        <div class="rr-start-label">
+          <span>👨‍🍳 1. Chọn Đầu Bếp</span>
+          <span id="start-chef-count-hint">8 đầu bếp đặc trưng</span>
+        </div>
+        <div id="start-chef-grid" class="rr-start-chef-grid" role="radiogroup" aria-label="Chọn Đầu Bếp"></div>
+        <div id="start-chef-info" class="rr-start-chef-info" aria-live="polite"></div>
+      </div>
+
+      <div class="rr-start-options-row">
+        <div class="rr-start-opt-box">
+          <div class="rr-start-label"><span>🎮 2. Chế Độ Chơi</span></div>
+          <div id="start-mode-group" class="rr-start-seg" role="group" aria-label="Chọn chế độ chơi">
+            <button type="button" class="rr-start-seg-btn active" data-mode="solo" aria-pressed="true">🤖 1 Người vs 3 Bot</button>
+            <button type="button" class="rr-start-seg-btn" data-mode="hotseat" aria-pressed="false">👥 2 Người Chung Máy</button>
+          </div>
+        </div>
+        <div class="rr-start-opt-box">
+          <div class="rr-start-label"><span>🤖 3. Độ Khó AI</span></div>
+          <div id="start-diff-group" class="rr-start-seg" role="group" aria-label="Chọn độ khó AI">
+            <button type="button" class="rr-start-seg-btn" data-diff="easy" aria-pressed="false">🌱 Dễ</button>
+            <button type="button" class="rr-start-seg-btn active" data-diff="normal" aria-pressed="true">⚖️ Chuẩn</button>
+            <button type="button" class="rr-start-seg-btn" data-diff="master" aria-pressed="false">🔥 Cao Thủ</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rr-start-actions">
+        <button id="btn-start-new-game" type="button" class="rr-start-cta-primary">
+          <span>🍳 BẮT ĐẦU VÁN MỚI</span>
+        </button>
+        <button id="btn-start-resume-save" type="button" class="rr-start-cta-resume hidden">
+          <span id="start-resume-title">▶️ TIẾP TỤC VÁN DỞ</span>
+          <span id="start-resume-sub" class="rr-start-cta-sub"></span>
+        </button>
+      </div>
+
+      <div class="rr-start-utils">
+        <button id="btn-start-rules" type="button" class="rr-start-util-btn">📖 Luật Chơi &amp; Thành Tích</button>
+        <button id="btn-start-mute" type="button" class="rr-start-util-btn" aria-pressed="false">🔊 Âm Thanh</button>
+        <button id="btn-start-music" type="button" class="rr-start-util-btn" aria-pressed="false">🎵 Nhạc Nền</button>
+      </div>
     </div>
   </div>
 
@@ -6317,7 +6854,7 @@
           { id: uid('ing_start_1') + '_' + chef.id, ...findIngredientTemplate(ing1) },
           { id: uid('ing_start_2') + '_' + chef.id, ...findIngredientTemplate(ing2) },
         ];
-        if (chef.id === 'lucrezia') {
+        if (chefPowerId(chef) === 'lucrezia') {
           chef.inventory.push({ id: uid('ing_start_3') + '_' + chef.id, ...findIngredientTemplate('Rau Thơm & Dưa Leo') });
         }
       });
@@ -7054,12 +7591,17 @@
           const pos = gameState.markets[c.currentLocation]?.pos;
           const [ox, oz] = standeeOffsets[c.id] || [0, 0];
           if (st && pos) st.position.set(pos.x + ox, boardHeight, pos.z + oz);
+          if (st && window.VdbAAA?.upgradeChefStandee) {
+            const cid = getChefPortraitId(c);
+            window.VdbAAA.upgradeChefStandee(st, cid, c.short || c.name, c.avatar, c.colorHex || CHEFS_CATALOG[cid]?.colorHex || '#fbbf24');
+          }
           const d = dialForChef(c);
           if (d) {
             setDialNeedle(d, c.selectedDestination || c.currentLocation, false);
             d.rotation.x = (gameState.phase >= 2 || c === gameState.player) ? 0 : Math.PI;
           }
         });
+        if (typeof syncHeaderChefLabels === 'function') syncHeaderChefLabels();
 
         // Switch UI panels cleanly to saved phase
         const ph = gameState.phase;
@@ -7385,6 +7927,7 @@
     }
 
     function isAnyModalOpen() {
+      if (document.body.classList.contains('rr-start-open')) return true;
       if (isDesktopDockMode() && hudMainDeck?.dataset.tab === 'mat') return true;
       if (document.querySelector('dialog[open]')) return true;
       const reveal = document.getElementById('dial-reveal-banner');
@@ -9189,6 +9732,7 @@
         if (st && window.VdbAAA?.upgradeChefStandee) {
           window.VdbAAA.upgradeChefStandee(st, chosenChefId, chefMeta.short, chefMeta.avatar, chefMeta.colorHex);
         }
+        if (typeof syncHeaderChefLabels === 'function') syncHeaderChefLabels();
         updateHUDStats();
         updateRecipeUI();
         addSoloLog('🏪', `Ghép bếp: ${chefMeta.name} × ${rest.shortName}`);
@@ -10404,6 +10948,18 @@
         btnToggleMusic.setAttribute('aria-pressed', String(musicOn));
         btnToggleMusic.classList.toggle('active', musicOn && !muted);
       }
+      const startMuteBtn = document.getElementById('btn-start-mute');
+      if (startMuteBtn) {
+        startMuteBtn.textContent = muted ? '🔇 Đã Tắt Tiếng' : '🔊 Âm Thanh';
+        startMuteBtn.setAttribute('aria-pressed', String(muted));
+        startMuteBtn.classList.toggle('muted', muted);
+      }
+      const startMusicBtn = document.getElementById('btn-start-music');
+      if (startMusicBtn) {
+        startMusicBtn.textContent = (musicOn && !muted) ? '🎵 Nhạc Nền: Bật' : '🎵 Nhạc Nền';
+        startMusicBtn.setAttribute('aria-pressed', String(musicOn));
+        startMusicBtn.classList.toggle('active', musicOn && !muted);
+      }
     }
 
     function setPeek3D(enabled) {
@@ -10507,6 +11063,11 @@
     function syncAiDifficultyUI() {
       const cur = gameState.aiDifficulty || 'normal';
       document.querySelectorAll('#solo-difficulty-bar .rr-diff-btn').forEach(btn => {
+        const active = btn.dataset.diff === cur;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-pressed', String(active));
+      });
+      document.querySelectorAll('#start-diff-group .rr-start-seg-btn').forEach(btn => {
         const active = btn.dataset.diff === cur;
         btn.classList.toggle('active', active);
         btn.setAttribute('aria-pressed', String(active));
@@ -11766,18 +12327,440 @@
       } catch (e) { console.warn('VdbAAA.setInteractiveContext:', e); }
     }
 
+    // ==========================================
+    // 15E. AAA START / TITLE SCREEN OVER LIVE 3D BOARD (#start-screen)
+    // ==========================================
+    const startScreenEl = document.getElementById('start-screen');
+    const startChefGridEl = document.getElementById('start-chef-grid');
+    const startChefInfoEl = document.getElementById('start-chef-info');
+    const startCareerPillEl = document.getElementById('start-career-pill');
+    const btnStartNewGame = document.getElementById('btn-start-new-game');
+    const btnStartResumeSave = document.getElementById('btn-start-resume-save');
+    const startResumeTitleEl = document.getElementById('start-resume-title');
+    const startResumeSubEl = document.getElementById('start-resume-sub');
+    const btnStartRules = document.getElementById('btn-start-rules');
+    const btnStartMute = document.getElementById('btn-start-mute');
+    const btnStartMusic = document.getElementById('btn-start-music');
+    const btnOpenStartScreen = document.getElementById('btn-open-start-screen');
+    const btnVictoryHome = document.getElementById('btn-victory-home');
+
+    const START_CHEF_IDS = Object.keys(CHEFS_CATALOG);
+    let startSelectedChefId = 'lola';
+    let startSelectedMode = 'solo';
+    let startSelectedDiff = gameState.aiDifficulty || 'normal';
+    let hasStartedSoloSession = false;
+
+    function isStandaloneSoloEnv() {
+      return !BOT_MODE
+        && !document.documentElement.classList.contains('hpvn-framed')
+        && !location.hash.includes('hpvn-ticket=');
+    }
+
+    function readMeaningfulSoloSave() {
+      if (!isStandaloneSoloEnv()) return null;
+      try {
+        const raw = localStorage.getItem(AUTOSAVE_KEY);
+        if (!raw) return null;
+        const snap = JSON.parse(raw);
+        if (!snap || snap.v !== 3 || !snap.player || !Array.isArray(snap.rivals)) return null;
+        const meaningful = (snap.day || 1) > 1 || (snap.phase || 1) > 1 || (snap.player.likes || 0) > 0 || (snap.player.boughtCountToday || 0) > 0;
+        return meaningful ? snap : null;
+      } catch { return null; }
+    }
+
+    function syncHeaderChefLabels() {
+      const lolaSeat = allChefsUnique().find(c => c.id === 'lola') || gameState.player;
+      const angusSeat = allChefsUnique().find(c => c.id === 'angus') || gameState.rivals[0];
+      const seatBtnLola = document.getElementById('btn-seat-lola');
+      const seatBtnAngus = document.getElementById('btn-seat-angus');
+      if (seatBtnLola && lolaSeat) {
+        const spans = seatBtnLola.querySelectorAll('span');
+        const rest = restaurantOf(lolaSeat);
+        if (spans[0]) spans[0].textContent = rest.icon || lolaSeat.avatar || '🍲';
+        if (spans[1]) spans[1].textContent = lolaSeat.short || lolaSeat.name;
+        seatBtnLola.title = `Bếp ${lolaSeat.name} - Lượt 1`;
+      }
+      if (seatBtnAngus && angusSeat) {
+        const spans = seatBtnAngus.querySelectorAll('span');
+        const rest = restaurantOf(angusSeat);
+        if (spans[0]) spans[0].textContent = rest.icon || angusSeat.avatar || '🍜';
+        if (spans[1]) spans[1].textContent = angusSeat.short || angusSeat.name;
+        seatBtnAngus.title = `${angusSeat.name} (${angusSeat.powerName}) - Bật 2 người chung máy`;
+      }
+      [
+        ['lead-chef-lola', 'lead-p-likes', 'lola'],
+        ['lead-chef-angus', 'lead-r1-likes', 'angus'],
+        ['lead-chef-chen', 'lead-r2-likes', 'chen'],
+        ['lead-chef-lucrezia', 'lead-r3-likes', 'lucrezia'],
+      ].forEach(([wrapId, likesId, slotId]) => {
+        const wrap = document.getElementById(wrapId);
+        const likesEl = document.getElementById(likesId);
+        const chef = allChefsUnique().find(c => c.id === slotId);
+        if (!wrap || !likesEl || !chef) return;
+        const rest = restaurantOf(chef);
+        wrap.title = `${chef.name} (${rest.shortName})`;
+        if (wrap.firstChild && wrap.firstChild.nodeType === 3) {
+          wrap.firstChild.nodeValue = `${rest.icon || chef.avatar || '🍲'} `;
+        }
+      });
+    }
+
+    function applyCatalogChefToSlot(slotChef, catalogId) {
+      const c = CHEFS_CATALOG[catalogId] || CHEFS_CATALOG.lola;
+      const r = RESTAURANTS[c.defaultRestaurant] || RESTAURANTS.rest_pho_saigon;
+      slotChef.powerChefId = catalogId;
+      slotChef.name = c.name;
+      slotChef.short = c.short;
+      slotChef.avatar = c.avatar;
+      slotChef.colorHex = c.colorHex;
+      slotChef.powerName = c.powerName;
+      slotChef.powerDesc = c.powerDesc;
+      slotChef.restaurantId = r.id;
+      slotChef.restaurant = r.name;
+      const st = getStandeeForChef(slotChef);
+      if (st && window.VdbAAA?.upgradeChefStandee) {
+        window.VdbAAA.upgradeChefStandee(st, catalogId, c.short, c.avatar, c.colorHex);
+      }
+    }
+
+    function renderStartChefInfo() {
+      if (!startChefInfoEl) return;
+      const c = CHEFS_CATALOG[startSelectedChefId] || CHEFS_CATALOG.lola;
+      const rest = RESTAURANTS[c.defaultRestaurant] || RESTAURANTS.rest_pho_saigon;
+
+      const top = document.createElement('div');
+      top.className = 'rr-start-info-top';
+      const restEl = document.createElement('span');
+      restEl.className = 'rr-start-info-rest';
+      restEl.textContent = `${c.avatar} ${c.name} · ${rest.icon} ${rest.name}`;
+      const specEl = document.createElement('span');
+      specEl.className = 'rr-start-info-spec';
+      specEl.textContent = `✨ +1⭐ ${rest.cuisineLabel}`;
+      top.append(restEl, specEl);
+
+      const skillEl = document.createElement('div');
+      skillEl.className = 'rr-start-info-skill';
+      const b = document.createElement('strong');
+      b.style.color = '#fbbf24';
+      b.textContent = `⚡ ${c.powerName}: `;
+      skillEl.append(b, document.createTextNode(c.powerDesc));
+
+      startChefInfoEl.replaceChildren(top, skillEl);
+    }
+
+    function renderStartChefGrid() {
+      if (!startChefGridEl) return;
+      startChefGridEl.replaceChildren(...START_CHEF_IDS.map(id => {
+        const c = CHEFS_CATALOG[id];
+        const isSel = id === startSelectedChefId;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `rr-start-chef-card${isSel ? ' selected' : ''}`;
+        btn.dataset.chefId = id;
+        btn.setAttribute('role', 'radio');
+        btn.setAttribute('aria-checked', String(isSel));
+        btn.title = `${c.name} — ⚡ ${c.powerName}: ${c.powerDesc}`;
+
+        const chk = document.createElement('span');
+        chk.className = 'rr-start-chef-check';
+        chk.setAttribute('aria-hidden', 'true');
+        chk.textContent = '✓';
+
+        const av = document.createElement('span');
+        av.className = 'rr-start-chef-av';
+        av.style.setProperty('--chef-ring', c.colorHex || '#fbbf24');
+        const img = document.createElement('img');
+        img.src = `./images/chefs/${id}.webp`;
+        img.alt = c.name;
+        img.loading = 'eager';
+        img.decoding = 'async';
+        const fb = document.createElement('span');
+        fb.className = 'rr-start-chef-fb';
+        fb.setAttribute('aria-hidden', 'true');
+        fb.textContent = c.avatar;
+        img.onerror = function () {
+          this.style.display = 'none';
+          fb.style.display = 'inline-flex';
+        };
+        av.append(img, fb);
+
+        const nm = document.createElement('span');
+        nm.className = 'rr-start-chef-name';
+        nm.textContent = c.short;
+
+        btn.append(chk, av, nm);
+        btn.addEventListener('click', () => {
+          startSelectedChefId = id;
+          playSound('card');
+          renderStartChefGrid();
+        });
+        return btn;
+      }));
+      renderStartChefInfo();
+    }
+
+    function syncStartModeAndDiffUI() {
+      document.querySelectorAll('#start-mode-group .rr-start-seg-btn').forEach(btn => {
+        const active = btn.dataset.mode === startSelectedMode;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-pressed', String(active));
+      });
+      document.querySelectorAll('#start-diff-group .rr-start-seg-btn').forEach(btn => {
+        const active = btn.dataset.diff === startSelectedDiff;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-pressed', String(active));
+      });
+    }
+
+    function renderStartScreenDynamic() {
+      // Career summary pill
+      if (startCareerPillEl) {
+        const cs = loadCareerStats();
+        if ((cs.gamesPlayed || 0) > 0) {
+          startCareerPillEl.textContent = `🏆 ${cs.totalWins || 0} trận thắng • 🍲 ${cs.totalDishesCooked || 0} món đã nấu`;
+          startCareerPillEl.classList.remove('hidden');
+        } else {
+          startCareerPillEl.classList.add('hidden');
+        }
+      }
+
+      // Resume Save CTA (meaningful auto-save OR returning to live paused Solo game)
+      if (btnStartResumeSave && startResumeTitleEl && startResumeSubEl) {
+        const snap = readMeaningfulSoloSave();
+        if (snap) {
+          startResumeTitleEl.textContent = '▶️ TIẾP TỤC VÁN DỞ';
+          startResumeSubEl.textContent = `(Ngày ${snap.day || 1} • GĐ ${snap.phase || 1} • ${snap.player.likes || 0}⭐ • $${snap.player.money || 0})`;
+          btnStartResumeSave.dataset.resumeKind = 'save';
+          btnStartResumeSave.classList.remove('hidden');
+        } else if (hasStartedSoloSession && !gameState.gameOver) {
+          startResumeTitleEl.textContent = '▶️ QUAY LẠI BÀN ĐẤU';
+          startResumeSubEl.textContent = `(Ngày ${gameState.day} • GĐ ${gameState.phase} • ${gameState.player.likes || 0}⭐ • $${gameState.player.money || 0})`;
+          btnStartResumeSave.dataset.resumeKind = 'live';
+          btnStartResumeSave.classList.remove('hidden');
+        } else {
+          btnStartResumeSave.dataset.resumeKind = '';
+          btnStartResumeSave.classList.add('hidden');
+        }
+      }
+
+      startSelectedDiff = gameState.aiDifficulty || 'normal';
+      syncStartModeAndDiffUI();
+      syncAudioButtonsUI();
+    }
+
+    function openStartScreen({ initial = false } = {}) {
+      if (!startScreenEl || !isStandaloneSoloEnv()) return;
+      if (!initial) {
+        if (isPeek3D) setPeek3D(false);
+        if (typeof closeTransientUI === 'function') closeTransientUI();
+        modalVictory?.classList.add('hidden');
+        modalLevelUp?.classList.add('hidden');
+        if (!gameState.gameOver) saveSoloProgress();
+        if (gameState.phase === 2) setTimerPaused('start_screen', true);
+        startSelectedChefId = getChefPortraitId(gameState.player);
+        startSelectedMode = gameState.hotSeat ? 'hotseat' : 'solo';
+      }
+      document.body.classList.add('rr-start-open');
+      document.getElementById('resume-save-banner')?.classList.add('hidden');
+      renderStartChefGrid();
+      renderStartScreenDynamic();
+      sync3DBoardOverlays();
+      focusGameStage('overview', null, { instant: !!initial });
+      requestRender(4);
+    }
+
+    function closeStartScreen({ showCoach = false } = {}) {
+      document.body.classList.remove('rr-start-open');
+      setTimerPaused('start_screen', false);
+      syncHeaderHeight();
+      syncDockSizeUI();
+      sync3DBoardOverlays();
+      if (showCoach) initCoachmark();
+      requestRender(4);
+    }
+    window.openStartScreen = openStartScreen;
+    window.closeStartScreen = closeStartScreen;
+
+    function startNewSoloGameFromStartScreen() {
+      clearInterval(timerInterval);
+      clearTimeout(botSnatchTimeout);
+      clearTimeout(botTradeTimeout);
+      clearTimeout(phase3Timeout);
+      timerPauseReasons.clear();
+      setUrgentTimerState(false);
+      if (typeof closeTransientUI === 'function') closeTransientUI();
+      hideBotTradeBanner();
+      modalVictory?.classList.add('hidden');
+      modalLevelUp?.classList.add('hidden');
+      clearSoloSave();
+
+      gameState.day = 1;
+      gameState.phase = 1;
+      gameState.aiDifficulty = startSelectedDiff;
+      try { localStorage.setItem(AI_DIFF_KEY, startSelectedDiff); } catch {}
+      gameState.botTradeOfferedDay = 0;
+      gameState.closedMarkets = [];
+      gameState.gameOver = false;
+      gameState.winner = null;
+      gameState.hotSeat = startSelectedMode === 'hotseat';
+      gameState.activeChefId = 'lola';
+      gameState.dumpster = [
+        { name: 'Bánh Phở Tươi', cost: 100, emoji: '🍜', type: 'carbs', market: 'carbs' },
+        { name: 'Rau Thơm & Dưa Leo', cost: 100, emoji: '🥒', type: 'veg', market: 'vegetable' },
+        { name: 'Chanh Ớt Tươi', cost: 100, emoji: '🍋', type: 'fruit', market: 'fruit' },
+        { name: 'Gạo Tấm Thơm', cost: 100, emoji: '🍚', type: 'carbs', market: 'carbs' },
+      ];
+      gameState.markets = buildSoloMarkets();
+      gameState.gameLog = [];
+      gameState.dayHistory = [];
+      gameState.stats = {};
+
+      // Build 4 fresh chef slots with ZERO duplicate chefs on the board
+      const playerSlot = createChefState('lola', 'rest_pho_saigon', 'fruit', ['steal_money', 'close_market']);
+      const rivalSlots = [
+        createChefState('angus', 'rest_bunbo_hue', 'chop', ['steal_money']),
+        createChefState('chen', 'rest_comtam', 'vegetable', []),
+        createChefState('lucrezia', 'rest_banhxeo', 'carbs', []),
+      ];
+      const fallbackPool = ['hai', 'sau', 'tam', 'muoi'].filter(id => id !== startSelectedChefId);
+      const rivalCatalogIds = ['angus', 'chen', 'lucrezia'].map(defId => (defId === startSelectedChefId ? (fallbackPool.shift() || 'hai') : defId));
+
+      applyCatalogChefToSlot(playerSlot, startSelectedChefId);
+      rivalSlots.forEach((rv, i) => applyCatalogChefToSlot(rv, rivalCatalogIds[i]));
+
+      gameState.player = playerSlot;
+      gameState.rivals = rivalSlots;
+      gameState.chefs = { lola: playerSlot, angus: rivalSlots[0] };
+
+      dealRandomStartingRecipesAndInventory();
+
+      // Reposition 3D standees & reset movement dials to Day 1 Phase 1
+      const standeeOffsets = { lola: [0, 0], angus: [1.2, 0], chen: [-1.2, 0], lucrezia: [0, 1.2] };
+      allChefsUnique().forEach(c => {
+        const st = getStandeeForChef(c);
+        const pos = gameState.markets[c.currentLocation]?.pos;
+        const [ox, oz] = standeeOffsets[c.id] || [0, 0];
+        if (st && pos) st.position.set(pos.x + ox, boardHeight, pos.z + oz);
+        const d = dialForChef(c);
+        if (d) {
+          setDialNeedle(d, c.selectedDestination || c.currentLocation, false);
+          d.rotation.x = c === gameState.player ? 0 : Math.PI;
+        }
+      });
+
+      // Reset UI panels & seat switcher cleanly to Phase 1
+      tab1.className = 'px-2 py-0.5 rounded-lg bg-amber-500 text-stone-950 font-black shadow transition-all';
+      tab2.className = 'px-2 py-0.5 rounded-lg text-stone-400 transition-all';
+      tab3.className = 'px-2 py-0.5 rounded-lg text-stone-400 transition-all';
+      panel1.classList.remove('hidden');
+      panel2.classList.add('hidden');
+      panel3.classList.add('hidden');
+      btnRevealDials.disabled = false;
+      const seatBtnLola = document.getElementById('btn-seat-lola');
+      const seatBtnAngus = document.getElementById('btn-seat-angus');
+      if (seatBtnLola) seatBtnLola.className = 'px-2 py-0.5 rounded-lg bg-amber-500 text-stone-950 font-black shadow cursor-pointer flex items-center gap-1 text-[11px]';
+      if (seatBtnAngus) seatBtnAngus.className = 'px-2 py-0.5 rounded-lg bg-stone-800 text-stone-300 font-bold cursor-pointer flex items-center gap-1 text-[11px]';
+      if (hudMainDeck) {
+        hudMainDeck.style.display = 'flex';
+        hudMainDeck.dataset.tab = 'controls';
+        isHudCollapsed = false;
+      }
+
+      rollDailyEvent(1, true);
+      recordDayHistorySnapshot(0);
+      syncHeaderChefLabels();
+      syncAiDifficultyUI();
+      syncDestButtons();
+      syncDeckPhaseAttr();
+      updateHUDStats();
+      updateRecipeUI();
+      updateLeaderboardUI();
+      renderRivalTabletopFlanks(true);
+      sync3DBoardCards();
+      if (typeof syncTabletopBellUI === 'function') syncTabletopBellUI();
+
+      hasStartedSoloSession = true;
+      playSound('bell');
+      closeStartScreen({ showCoach: true });
+      focusGameStage('overview');
+      const rest = restaurantOf(gameState.player);
+      const modeLbl = gameState.hotSeat ? ' • 2 Người Chung Máy' : '';
+      setToast(`🍳 Ván mới bắt đầu! ${gameState.player.avatar} ${gameState.player.name} (${rest.shortName}${modeLbl}) — Chạm chợ để chọn điểm đến!`);
+    }
+
+    document.querySelectorAll('#start-mode-group .rr-start-seg-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const m = btn.dataset.mode;
+        if (m !== 'solo' && m !== 'hotseat') return;
+        startSelectedMode = m;
+        syncStartModeAndDiffUI();
+        playSound('card');
+      });
+    });
+    document.querySelectorAll('#start-diff-group .rr-start-seg-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const d = btn.dataset.diff;
+        if (!['easy', 'normal', 'master'].includes(d)) return;
+        startSelectedDiff = d;
+        gameState.aiDifficulty = d;
+        try { localStorage.setItem(AI_DIFF_KEY, d); } catch {}
+        syncAiDifficultyUI();
+        syncStartModeAndDiffUI();
+        playSound('card');
+      });
+    });
+
+    btnStartNewGame?.addEventListener('click', startNewSoloGameFromStartScreen);
+    btnStartResumeSave?.addEventListener('click', () => {
+      const kind = btnStartResumeSave.dataset.resumeKind;
+      if (kind === 'save' && !hasStartedSoloSession) {
+        const snap = readMeaningfulSoloSave();
+        if (snap && restoreSoloSave(snap)) {
+          hasStartedSoloSession = true;
+          playSound('card');
+          closeStartScreen({ showCoach: false });
+          return;
+        }
+      }
+      hasStartedSoloSession = true;
+      playSound('card');
+      closeStartScreen({ showCoach: false });
+    });
+    btnStartRules?.addEventListener('click', () => {
+      if (!dialogRules) return;
+      switchRulesTab('guide');
+      renderCareerPanel();
+      dialogRules.showModal();
+    });
+    btnStartMute?.addEventListener('click', () => btnToggleMute?.click());
+    btnStartMusic?.addEventListener('click', () => btnToggleMusic?.click());
+    btnOpenStartScreen?.addEventListener('click', () => {
+      playSound('card');
+      openStartScreen({ initial: false });
+    });
+    btnVictoryHome?.addEventListener('click', () => {
+      playSound('card');
+      modalVictory?.classList.add('hidden');
+      openStartScreen({ initial: false });
+    });
+
     initSeatSwitcher();
     rollDailyEvent(1, true);
     recordDayHistorySnapshot(0);
+    syncHeaderChefLabels();
     syncAudioButtonsUI();
     syncAiDifficultyUI();
-    initCoachmark();
-    checkResumeSave();
     updateHUDStats();
     updateRecipeUI();
     updateLeaderboardUI();
     syncDockSizeUI();
-    focusGameStage('overview', null, { instant: true });
+    if (isStandaloneSoloEnv()) {
+      openStartScreen({ initial: true });
+    } else {
+      initCoachmark();
+      checkResumeSave();
+      focusGameStage('overview', null, { instant: true });
+    }
     requestAnimationFrame(() => {
       syncHeaderHeight();
       focusGameStage('overview', null, { instant: true });
@@ -11807,6 +12790,6 @@
     if (window.visualViewport) window.visualViewport.addEventListener('resize', handleViewportResize);
     handleViewportResize();
   </script>
-  <script src="./hpvn.js?v=bba5350ea3"></script>
+  <script src="./hpvn.js?v=94fcfb31ad"></script>
 </body>
 </html>

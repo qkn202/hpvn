@@ -20,6 +20,7 @@
   const identity = readIdentity();
   if (!identity) return; // opened outside HPVN: solo game
   document.documentElement.classList.add('hpvn-framed');
+  if (typeof window.closeStartScreen === 'function') window.closeStartScreen();
 
   // ---------- bridge (request-response + optional real-time push from parent) ----------
   const pending = new Map();
@@ -348,6 +349,7 @@
     T = null;
     window.__hpvnBellMeta = null;
     window.__hpvnRivalMeta = null;
+    if (typeof window.closeStartScreen === 'function') window.closeStartScreen();
     document.documentElement.classList.remove('hpvn-online-active');
     if (typeof window.setUrgentTimerState === 'function') window.setUrgentTimerState(false);
     turnBar.style.display = 'none';
@@ -397,6 +399,7 @@
     T = null;
     window.__hpvnBellMeta = null;
     window.__hpvnRivalMeta = null;
+    if (typeof window.closeStartScreen === 'function') window.closeStartScreen();
     document.documentElement.classList.remove('hpvn-online-active');
     if (typeof window.setUrgentTimerState === 'function') window.setUrgentTimerState(false);
     lobby.style.display = 'none';
