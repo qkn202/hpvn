@@ -47,7 +47,10 @@
   // ---------- page chrome ----------
   const css = document.createElement('style');
   css.textContent = `
-    html.hpvn-framed header { margin-left: 52px; width: calc(100% - 52px); }
+    html.hpvn-framed header { align-self: flex-start; margin-left: 52px; width: calc(100% - 52px); box-sizing: border-box; }
+    @media (max-width: 640px) {
+      html.hpvn-framed header { align-self: flex-start; margin-left: 46px; width: calc(100% - 46px); }
+    }
     .hpvn-panel { position: fixed; z-index: 40; background: rgba(12,10,9,.96); color: #fde68a; border: 1px solid rgba(245,158,11,.55); border-radius: 16px; font: 600 13px/1.4 system-ui, sans-serif; box-shadow: 0 20px 50px rgba(0,0,0,.6); }
     .hpvn-panel button { font: inherit; cursor: pointer; border-radius: 10px; padding: 7px 12px; border: 1px solid rgba(245,158,11,.6); background: #1c1917; color: #fde68a; }
     .hpvn-panel button.primary { background: #f59e0b; color: #0c0a09; border-color: #f59e0b; font-weight: 800; }
@@ -66,18 +69,55 @@
     #hpvn-turn .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 2px 10px; color: #e7e5e4; font-weight: 500; }
     #hpvn-turn .board .now { color: #fbbf24; font-weight: 800; }
     .hpvn-badge { background: #16a34a; color: #fff; border-radius: 999px; padding: 1px 8px; font-size: 11px; }
-    .hpvn-live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 999px; background: #22c55e; margin-right: 5px; box-shadow: 0 0 8px #22c55e; }
+    .hpvn-live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 999px; background: #22c55e; margin-right: 5px; box-shadow: 0 0 8px #22c55e; flex-shrink: 0; }
+    .hpvn-live-dot.syncing { background: #fbbf24; box-shadow: 0 0 8px #fbbf24; }
+    .hpvn-live-dot.offline { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+    .hpvn-sync-pill { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 999px; font-size: 9.5px; font-weight: 900; margin-right: 6px; flex-shrink: 0; background: rgba(22, 163, 74, 0.25); border: 1px solid rgba(34, 197, 94, 0.55); color: #86efac; }
+    .hpvn-sync-pill.syncing { background: rgba(245, 158, 11, 0.25); border-color: rgba(251, 191, 36, 0.55); color: #fde68a; }
+    .hpvn-sync-pill.offline { background: rgba(220, 38, 38, 0.28); border-color: rgba(248, 113, 113, 0.6); color: #fecaca; }
+    .hpvn-emote-bar { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(245, 158, 11, 0.22); }
+    .hpvn-emote-label { font-size: 10px; color: #a8a29e; font-weight: 800; margin-right: 2px; }
+    .hpvn-emote-btn { padding: 2px 7px !important; font-size: 14px !important; line-height: 1.2; border-radius: 999px !important; background: #1c1917 !important; border: 1px solid rgba(245, 158, 11, 0.45) !important; min-width: 30px; min-height: 26px; transition: transform 0.12s ease; }
+    .hpvn-emote-btn:hover:not(:disabled) { transform: scale(1.14); border-color: #fbbf24 !important; }
+    .hpvn-chef-chip { display: inline-flex; align-items: center; gap: 7px; }
+    .hpvn-chef-img { width: 24px; height: 24px; border-radius: 999px; object-fit: cover; border: 1.5px solid rgba(251, 191, 36, 0.7); flex-shrink: 0; }
     #hpvn-turn { left: 50%; transform: translateX(-50%); bottom: max(8px, env(safe-area-inset-bottom, 8px)); width: min(660px, calc(100% - 16px)); padding: 6px 10px; display: none; max-height: min(48dvh, 320px); overflow-y: auto; box-sizing: border-box; }
     #hpvn-solo { left: 50%; transform: translateX(-50%); bottom: max(8px, env(safe-area-inset-bottom, 8px)); padding: 4px; display: none; }
     #hpvn-turn .more { display: none; margin-top: 6px; }
     #hpvn-turn.open .more { display: block; }
     #hpvn-turn .more > * + * { margin-top: 6px; }
-    html.hpvn-framed #event-toast.toast-floating { bottom: calc(var(--hpvn-bar-h, 60px) + max(16px, env(safe-area-inset-bottom, 8px))) !important; }
+    html.hpvn-framed #event-toast.toast-floating { top: calc(var(--hdr-h, 78px) + 6px) !important; bottom: auto !important; }
     html.hpvn-framed #banner-bot-trade { z-index: 55 !important; }
-    html.hpvn-framed #hud-main-deck { padding-bottom: calc(var(--hpvn-bar-h, 64px) + max(24px, env(safe-area-inset-bottom, 8px))) !important; }
-    #hpvn-turn .line { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; }
-    #hpvn-turn .status { color: #fff; display: flex; align-items: center; }
-    #hpvn-turn .row { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+    html.hpvn-framed.hpvn-has-bottom-bar #hud-main-deck {
+      margin-bottom: calc(var(--hpvn-bar-h, 64px) + max(12px, calc(env(safe-area-inset-bottom, 8px) + 4px))) !important;
+      padding-bottom: 0 !important;
+    }
+    html.hpvn-framed.hpvn-has-bottom-bar #hud-main-deck[data-tab="controls"] {
+      max-height: none !important;
+    }
+    html.hpvn-framed.hpvn-has-bottom-bar #hud-main-deck[data-tab="mat"] {
+      max-height: min(62dvh, calc(100dvh - var(--hdr-h, 88px) - var(--hpvn-bar-h, 64px) - 20px)) !important;
+    }
+    @media (max-width: 767px) {
+      html.hpvn-framed.hpvn-has-bottom-bar #hud-main-deck {
+        border-radius: 16px !important;
+        border-bottom-width: 3px !important;
+      }
+      html.hpvn-framed.hpvn-has-bottom-bar #hud-main-deck[data-sheet="half"] {
+        max-height: min(46dvh, calc(100dvh - var(--hdr-h, 128px) - var(--hpvn-bar-h, 68px) - 96px)) !important;
+      }
+      html.hpvn-framed.hpvn-has-bottom-bar #hud-main-deck[data-sheet="full"] {
+        max-height: min(74dvh, calc(100dvh - var(--hdr-h, 128px) - var(--hpvn-bar-h, 68px) - 22px)) !important;
+      }
+      html.hpvn-framed.hpvn-has-bottom-bar #hud-mat-section,
+      html.hpvn-framed.hpvn-has-bottom-bar #mat-phase-controller-area {
+        padding-bottom: 14px !important;
+        scroll-padding-bottom: 20px !important;
+      }
+    }
+    #hpvn-turn .line { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; min-width: 0; }
+    #hpvn-turn .status { color: #fff; display: flex; align-items: center; min-width: 0; flex: 1 1 180px; overflow-wrap: break-word; font-size: 12px; }
+    #hpvn-turn .row { display: inline-flex; flex-wrap: wrap; gap: 6px; flex-shrink: 0; }
     #hpvn-turn button { padding: 4px 9px; font-size: 12px; }
     #hpvn-log-modal {
       position: fixed; inset: 0; z-index: 100; background: rgba(0, 0, 0, 0.85);
@@ -122,8 +162,8 @@
       el('div', { className: 'hpvn-modal-footer' },
         el('button', { className: 'primary hpvn-btn-full', textContent: 'Đóng Nhật Ký', onclick: closeLog }))));
   logModal.onclick = e => { if (e.target === logModal) closeLog(); };
-  function closeLog() { logModal.style.display = 'none'; }
-  function openLog() { logModal.style.display = 'flex'; logBox.scrollTop = 0; }
+  function closeLog() { logModal.style.display = 'none'; if (typeof window.sync3DBoardOverlays === 'function') window.sync3DBoardOverlays(); }
+  function openLog() { logModal.style.display = 'flex'; logBox.scrollTop = 0; if (typeof window.sync3DBoardOverlays === 'function') window.sync3DBoardOverlays(); }
   document.body.append(lobby, turnBar, soloBar, logModal);
   for (const box of [lobby, turnBar, soloBar, logModal]) {
     for (const type of ['wheel', 'touchstart', 'touchmove', 'pointerdown']) box.addEventListener(type, e => e.stopPropagation(), { passive: true });
@@ -134,14 +174,17 @@
     if (turnBar.style.display !== 'none') {
       if (turnBar.classList.contains('open')) {
         const line = turnBar.querySelector(':scope > .line');
-        h = line ? Math.ceil(line.getBoundingClientRect().height + 16) : 56;
+        const em = turnBar.querySelector('#hpvn-emote-bar');
+        h = (line ? Math.ceil(line.getBoundingClientRect().height) : 34) + (em ? Math.ceil(em.getBoundingClientRect().height + 6) : 0) + 14;
       } else {
         h = Math.ceil(turnBar.getBoundingClientRect().height);
       }
     } else if (soloBar.style.display !== 'none') {
       h = Math.ceil(soloBar.getBoundingClientRect().height);
     }
-    document.documentElement.style.setProperty('--hpvn-bar-h', `${Math.max(44, h)}px`);
+    document.documentElement.classList.toggle('hpvn-has-bottom-bar', h > 0);
+    document.documentElement.style.setProperty('--hpvn-bar-h', `${h > 0 ? Math.max(44, h) : 0}px`);
+    if (typeof window.sync3DBoardOverlays === 'function') window.sync3DBoardOverlays();
   }
   if (typeof ResizeObserver === 'function') {
     const barRo = new ResizeObserver(syncBottomBarClearance);
@@ -164,6 +207,34 @@
   let lastSyncClientMs = 0;
   let lastTickSentAt = 0;
   let activeOnlineOfferId = null;
+  let syncStatus = 'live'; // 'live' | 'syncing' | 'offline'
+  let lastOnlineTickSec = -1;
+  let lastEmoteSentAt = 0;
+  const seenEmoteIds = new Set();
+  const QUICK_EMOTES = ['🔥', '😱', '🤝', '😈', '👏', '😂'];
+  window.__hpvnOpenLog = () => { if (T) { openLog(); return true; } return false; };
+
+  function setSyncState(nextState) {
+    if (syncStatus === nextState) return;
+    syncStatus = nextState;
+    const dot = turnBar.querySelector('.hpvn-live-dot');
+    const pill = turnBar.querySelector('.hpvn-sync-pill');
+    if (dot) dot.className = `hpvn-live-dot${nextState === 'live' ? '' : ' ' + nextState}`;
+    if (pill) {
+      pill.className = `hpvn-sync-pill${nextState === 'live' ? '' : ' ' + nextState}`;
+      pill.textContent = nextState === 'syncing' ? 'ĐỒNG BỘ…' : nextState === 'offline' ? 'THỬ LẠI' : 'LIVE';
+    }
+  }
+
+  function makeChefChip(id, labelText) {
+    const img = el('img', {
+      src: `./images/chefs/${id}.webp`,
+      alt: BASE[id]?.name || id,
+      className: 'hpvn-chef-img',
+    });
+    img.onerror = () => { img.style.display = 'none'; };
+    return el('span', { className: 'hpvn-chef-chip' }, img, el('span', { textContent: labelText }));
+  }
 
   const BASE = Object.fromEntries([gameState.player, ...gameState.rivals].map(chef => [chef.id, chef]));
   for (const id of ORDER) {
@@ -239,18 +310,23 @@
     pollTimer = setTimeout(async () => {
       if (!T || busy || polling || document.visibilityState !== 'visible') { schedulePoll(); return; }
       polling = true;
+      setSyncState('syncing');
       try {
         const latest = await call({ op: 'state', code: T.code });
+        setSyncState('live');
         if (T && latest && latest.code === T.code) {
           const cur = T.view?.state;
           const nxt = latest.state;
+          const lastCurEm = cur?.emotes?.length ? cur.emotes[cur.emotes.length - 1]?.id : null;
+          const lastNxtEm = nxt?.emotes?.length ? nxt.emotes[nxt.emotes.length - 1]?.id : null;
           const changed = !T.view || latest.version !== T.view.version || latest.status !== T.view.status
             || nxt?.phase !== cur?.phase || nxt?.logN !== cur?.logN
             || Boolean(nxt?.timerPaused) !== Boolean(cur?.timerPaused)
             || Boolean(nxt?.auction) !== Boolean(cur?.auction)
             || nxt?.auction?.currentBid !== cur?.auction?.currentBid
             || nxt?.auction?.leader !== cur?.auction?.leader
-            || (nxt?.offers?.length || 0) !== (cur?.offers?.length || 0);
+            || (nxt?.offers?.length || 0) !== (cur?.offers?.length || 0)
+            || lastNxtEm !== lastCurEm;
           if (changed) {
             enter(latest);
           } else {
@@ -259,7 +335,9 @@
             lastSyncClientMs = Date.now();
           }
         }
-      } catch {}
+      } catch {
+        setSyncState('offline');
+      }
       polling = false;
       schedulePoll();
     }, delay);
@@ -268,12 +346,17 @@
   async function showLobby(note = '') {
     stopPolling();
     T = null;
+    window.__hpvnBellMeta = null;
+    window.__hpvnRivalMeta = null;
+    document.documentElement.classList.remove('hpvn-online-active');
+    if (typeof window.setUrgentTimerState === 'function') window.setUrgentTimerState(false);
     turnBar.style.display = 'none';
     soloBar.style.display = 'none';
     closeLog();
     if (typeof closeTransientUI === 'function') closeTransientUI();
     if (typeof modalVictory !== 'undefined' && modalVictory) modalVictory.classList.add('hidden');
     lobby.style.display = 'flex';
+    syncBottomBarClearance();
     lobby.replaceChildren(el('div', { className: 'box' }, el('h2', { textContent: '🍲 Vua Đầu Bếp: Online Thời Gian Thực' }), el('p', { textContent: INTRO }),
       note ? el('p', { textContent: note, style: 'color:#fca5a5' }) : '', el('p', { textContent: 'Đang tải bàn của bạn…' })));
     let mine = [];
@@ -299,8 +382,9 @@
       el('div', { className: 'box' }, el('h2', { textContent: 'Mở bàn Real-Time mới' }),
         el('p', { textContent: 'Chọn số người, Nhà Hàng (tùy chọn) và Đầu Bếp của bạn:' }),
         el('div', { className: 'row', style: 'margin-bottom:8px' }, el('span', { textContent: 'Số người:' }), sizePick, restPick),
-        el('div', { className: 'chefs' }, ...ORDER.map((id, i) => el('button', { className: 'primary', textContent: `${i + 1}. ${chefLabel(id)}`,
-          title: BASE[id]?.powerDesc || '', onclick: () => createTable(id, Number(sizePick.value), restPick.value || undefined) })))),
+        el('div', { className: 'chefs' }, ...ORDER.map((id, i) => el('button', { className: 'primary',
+          title: BASE[id]?.powerDesc || '', onclick: () => createTable(id, Number(sizePick.value), restPick.value || undefined) },
+          makeChefChip(id, `${i + 1}. ${BASE[id]?.name || id}`))))),
       el('div', { className: 'box' }, el('h2', { textContent: 'Vào bàn bằng mã' }),
         el('div', { className: 'row' }, codeInput, el('button', { className: 'primary', textContent: 'Vào bàn', onclick: () => joinTable(codeInput.value.trim().toUpperCase()) }))),
       el('div', { className: 'box' }, el('h2', { textContent: 'Chơi thử với máy' }),
@@ -311,12 +395,17 @@
   function enterSoloMode() {
     stopPolling();
     T = null;
+    window.__hpvnBellMeta = null;
+    window.__hpvnRivalMeta = null;
+    document.documentElement.classList.remove('hpvn-online-active');
+    if (typeof window.setUrgentTimerState === 'function') window.setUrgentTimerState(false);
     lobby.style.display = 'none';
     turnBar.style.display = 'none';
     closeLog();
     if (typeof closeTransientUI === 'function') closeTransientUI();
     if (typeof modalVictory !== 'undefined' && modalVictory) modalVictory.classList.add('hidden');
     soloBar.style.display = 'block';
+    if (typeof window.renderDailyEventBanner === 'function') window.renderDailyEventBanner(gameState.dailyEvent || null);
     if (btnRestartEl) btnRestartEl.textContent = soloBtnRestartText;
     if (btnRevealDials) btnRevealDials.textContent = soloBtnRevealText;
     if (btnDoneBuying) btnDoneBuying.textContent = soloBtnDoneText;
@@ -369,17 +458,21 @@
       if (typeof timerDisplay !== 'undefined' && timerDisplay) timerDisplay.innerText = '01:00';
       if (typeof sandTimerFill !== 'undefined' && sandTimerFill) sandTimerFill.style.width = '100%';
       syncDestButtons();
+      if (typeof window.syncDeckPhaseAttr === 'function') window.syncDeckPhaseAttr();
       updateHUDStats();
       updateRecipeUI();
       updateLeaderboardUI();
-      if (typeof tweenCamera === 'function') tweenCamera(0, 42, 28, 0, 0, 3.0);
+      if (typeof window.focusGameStage === 'function') window.focusGameStage('overview');
+      else if (typeof tweenCamera === 'function') tweenCamera(0, 42, 28, 0, 0, 3.0);
     }
+    if (typeof window.renderRivalTabletopFlanks === 'function') window.renderRivalTabletopFlanks(true);
     syncBottomBarClearance();
   }
 
   function showWaiting(view) {
     turnBar.style.display = 'none';
     lobby.style.display = 'flex';
+    syncBottomBarClearance();
     const seated = Object.keys(view.seats).length;
     lobby.replaceChildren(
       el('div', { className: 'box' }, el('h2', { textContent: `⚡ Bàn Real-Time ${view.code} · chờ ${seated}/${view.size} người` }),
@@ -419,6 +512,9 @@
       STANDEES[id] = createAcrylicChefStandee(c.short || c.name, c.avatar, c.colorHex);
       STANDEES[id].position.set(0, boardHeight, boardCenterZ);
       scene.add(STANDEES[id]);
+      if (window.VdbAAA && typeof window.VdbAAA.upgradeChefStandee === 'function') {
+        window.VdbAAA.upgradeChefStandee(STANDEES[id], id, c.short || c.name, c.avatar, c.colorHex);
+      }
     }
     return STANDEES[id];
   }
@@ -429,7 +525,13 @@
     if (btnOpenPairing) btnOpenPairing.style.display = 'none';
     const first = !T || T.code !== view.code || !T.view?.state;
     T = { code: view.code, view: first ? null : T.view };
-    if (view.status === 'waiting') { T.view = view; showWaiting(view); return; }
+    if (view.status === 'waiting') {
+      document.documentElement.classList.remove('hpvn-online-active');
+      T.view = view;
+      showWaiting(view);
+      return;
+    }
+    document.documentElement.classList.add('hpvn-online-active');
     lobby.style.display = 'none';
     apply(view, first);
     schedulePoll();
@@ -452,7 +554,13 @@
   function syncLiveClockUI() {
     if (!T || T.view?.status !== 'playing') return;
     const st = T.view.state;
-    if (!st || st.over || st.phase !== 2) return;
+    if (!st || st.over || st.phase !== 2) {
+      if (lastOnlineTickSec !== -1) {
+        lastOnlineTickSec = -1;
+        if (typeof window.setUrgentTimerState === 'function') window.setUrgentTimerState(false);
+      }
+      return;
+    }
 
     const remMs = computeRemainingMs(st);
     const secs = Math.ceil(remMs / 1000);
@@ -466,6 +574,18 @@
       sandTimerFill.classList.toggle('paused', isPaused);
     }
     if (typeof update3DSandTimer === 'function') update3DSandTimer(remMs / 60000);
+
+    const isUrgent = !isPaused && secs <= 10 && secs > 0;
+    if (typeof window.setUrgentTimerState === 'function') window.setUrgentTimerState(isUrgent);
+    if (typeof window.syncTabletopBellTimer === 'function') {
+      window.syncTabletopBellTimer(remMs / 60000, `${mins}:${secStr}`, isPaused, isUrgent);
+    }
+    if (isUrgent && secs !== lastOnlineTickSec) {
+      lastOnlineTickSec = secs;
+      if (window.VdbAAA?.audio?.tickCountdown) window.VdbAAA.audio.tickCountdown(secs);
+    } else if (!isUrgent) {
+      lastOnlineTickSec = -1;
+    }
 
     // Update live auction gavel countdown text if open
     if (st.auction) {
@@ -526,6 +646,7 @@
     if (btnFold) btnFold.disabled = auc.leader === me;
     if (!dlg.open) {
       playSound('gavel');
+      if (window.VdbAAA?.vfx?.gavelSmash) window.VdbAAA.vfx.gavelSmash();
       dlg.showModal();
     }
   }
@@ -541,7 +662,17 @@
     const isNew = activeOnlineOfferId !== incoming.id;
     activeOnlineOfferId = incoming.id;
     const fromChef = BASE[incoming.from] || { avatar: '👨‍🍳', name: incoming.from };
-    document.getElementById('bot-trade-avatar').textContent = fromChef.avatar;
+    const pImg = document.getElementById('bot-trade-portrait-img');
+    const pAv = document.getElementById('bot-trade-avatar');
+    if (pImg) {
+      pImg.style.display = '';
+      pImg.src = `./images/chefs/${incoming.from}.webp`;
+      pImg.alt = fromChef.name;
+    }
+    if (pAv) {
+      pAv.style.display = 'none';
+      pAv.textContent = fromChef.avatar;
+    }
     document.getElementById('bot-trade-title').textContent = `📨 ${who(incoming.from).toUpperCase()} GỬI KÈO TRỰC TIẾP!`;
     document.getElementById('bot-trade-desc').textContent = `Đề nghị đổi: ${incoming.label}`;
     banner.classList.remove('hidden');
@@ -557,6 +688,9 @@
     const seated = (st.turnOrder || ORDER).filter(id => st.chefs[id]);
     const phaseChanged = first || before?.state?.phase !== st.phase || before?.state?.day !== st.day;
     const locChanged = !first && before?.state?.chefs?.[me]?.currentLocation !== st.chefs?.[me]?.currentLocation;
+    const prevLikes = before?.state?.chefs?.[me]?.likes ?? null;
+    const prevMoney = before?.state?.chefs?.[me]?.money ?? null;
+    const prevMilestones = (before?.state?.chefs?.[me]?.unlockedMilestones || []).length;
 
     for (const [id, chef] of Object.entries(st.chefs)) {
       const base = BASE[id];
@@ -581,6 +715,7 @@
     gameState.rivals = seated.filter(id => id !== me).map(id => BASE[id]);
     gameState.day = st.day;
     gameState.phase = st.phase;
+    gameState.dailyEvent = st.dailyEvent || null;
     gameState.closedMarkets = (st.closed || []).map(c => c.market);
     gameState.dumpster = st.dumpster || [];
     gameState.hotSeat = false;
@@ -623,6 +758,48 @@
       }
     }
 
+    // Simultaneous Dial Reveal Banner on Phase 1 -> 2 transition
+    if (!first && before?.state?.phase === 1 && st.phase === 2 && typeof window.showDialRevealBanner === 'function') {
+      window.showDialRevealBanner(seated.map(id => BASE[id]));
+    }
+
+    // Daily Event strip sync
+    if (typeof window.renderDailyEventBanner === 'function') {
+      window.renderDailyEventBanner(st.dailyEvent || null);
+    }
+
+    // Online Quick Emotes rendering via VdbAAA.vfx.floatingEmote()
+    const emList = Array.isArray(st.emotes) ? st.emotes : [];
+    if (first) {
+      emList.forEach(em => { if (em && em.id) seenEmoteIds.add(em.id); });
+    } else {
+      emList.forEach(em => {
+        if (!em || !em.id || seenEmoteIds.has(em.id)) return;
+        seenEmoteIds.add(em.id);
+        playSound('emote');
+        if (window.VdbAAA?.vfx?.floatingEmote) {
+          window.VdbAAA.vfx.floatingEmote(who(em.from), BASE[em.from]?.avatar || '👨‍🍳', em.emoji);
+        }
+      });
+    }
+
+    // Online tactile VFX on local chef delta
+    if (!first && st.chefs[me]) {
+      const nowLikes = st.chefs[me].likes || 0;
+      const nowMoney = st.chefs[me].money || 0;
+      const nowMilestones = (st.chefs[me].unlockedMilestones || []).length;
+      if (prevLikes !== null && nowLikes > prevLikes && window.VdbAAA?.vfx?.cookBurst) {
+        window.VdbAAA.vfx.cookBurst(document.getElementById('recipes-container'), nowLikes - prevLikes);
+      }
+      if (prevMoney !== null && nowMoney !== prevMoney && window.VdbAAA?.vfx?.coinFly) {
+        window.VdbAAA.vfx.coinFly(document.getElementById('player-money'), nowMoney - prevMoney);
+      }
+      if (nowMilestones > prevMilestones && !st.over && nowLikes < WIN_LIKES && window.VdbAAA?.vfx?.milestoneBurst) {
+        const latestMs = st.chefs[me].unlockedMilestones[nowMilestones - 1];
+        window.VdbAAA.vfx.milestoneBurst(latestMs);
+      }
+    }
+
     updateHUDStats();
     updateRecipeUI();
     updateLeaderboardUI();
@@ -635,7 +812,7 @@
 
     const seen = before ? before.state.logN : st.logN;
     const fresh = (st.log || []).filter(line => line.n > seen);
-    if (fresh.length) setToast(fresh.slice(-2).map(line => line.text).join('  '));
+    if (fresh.length && !st.over) setToast(fresh.slice(-2).map(line => line.text).join('  '));
     if (st.over) showWinner(st);
   }
 
@@ -649,6 +826,25 @@
   function showPhase(st, me, moved, locChanged = false) {
     const shown = st.phase || 1;
     const totalH = (st.humans || []).length;
+    window.__hpvnBellMeta = {
+      phase: shown,
+      totalH,
+      dialLocked: !!st.myDial,
+      dialReadyCnt: (st.dialReady || []).filter(id => (st.humans || []).includes(id)).length,
+      doneMe: (st.readyDone || []).includes(me),
+      doneCnt: (st.readyDone || []).length,
+      readyNextMe: (st.readyNextDay || []).includes(me),
+      readyNextCnt: (st.readyNextDay || []).length,
+    };
+    window.__hpvnRivalMeta = {
+      phase: shown,
+      humans: Array.isArray(st.humans) ? st.humans : [],
+      dialReady: Array.isArray(st.dialReady) ? st.dialReady : [],
+      readyDone: Array.isArray(st.readyDone) ? st.readyDone : [],
+      readyNextDay: Array.isArray(st.readyNextDay) ? st.readyNextDay : [],
+    };
+    if (typeof hudMainDeck !== 'undefined' && hudMainDeck) hudMainDeck.dataset.phase = String(shown);
+    if (typeof window.syncDeckPhaseAttr === 'function') window.syncDeckPhaseAttr();
     [tab1, tab2, tab3].forEach((tab, i) => { tab.className = i + 1 === shown ? TAB_ON[i] : TAB_OFF; });
     [panel1, panel2, panel3].forEach((panel, i) => panel.classList.toggle('hidden', i + 1 !== shown));
     syncDestButtons();
@@ -659,9 +855,12 @@
       const lockedCnt = (st.dialReady || []).filter(id => (st.humans || []).includes(id)).length;
       btnRevealDials.disabled = false;
       btnRevealDials.textContent = locked
-        ? `⏳ ĐÃ KHÓA ĐĨA (${lockedCnt}/${totalH} SẴN SÀNG — BẤM ĐỂ ĐỔI CHỢ)`
-        : '🛎️ KHÓA ĐĨA DI CHUYỂN BÍ MẬT!';
-      if (moved) tweenCamera(0, 42, 28, 0, 0, 3.0);
+        ? `⏳ ĐÃ KHÓA (${lockedCnt}/${totalH}) · ĐỔI CHỢ`
+        : '🛎️ KHÓA ĐĨA BÍ MẬT!';
+      if (moved) {
+        if (typeof window.focusGameStage === 'function') window.focusGameStage('overview');
+        else tweenCamera(0, 42, 28, 0, 0, 3.0);
+      }
     } else if (shown === 2) {
       if (moved || locChanged) {
         if (moved) {
@@ -669,9 +868,10 @@
           closeLog();
         }
         const pos = gameState.markets[p.currentLocation].pos;
-        tweenCamera(pos.x, 32, pos.z + 14, pos.x, 0, pos.z);
-        if (moved && typeof hudMainDeck !== 'undefined' && hudMainDeck && window.innerWidth >= 1024 && window.innerHeight > 620) {
-          hudMainDeck.scrollTop = hudMainDeck.scrollHeight;
+        if (typeof window.focusGameStage === 'function') {
+          window.focusGameStage(p.currentLocation === 'island' ? 'island' : 'market', pos);
+        } else {
+          tweenCamera(pos.x, 32, pos.z + 14, pos.x, 0, pos.z);
         }
       }
       marketTitle.innerText = gameState.markets[p.currentLocation].name.toUpperCase();
@@ -679,14 +879,15 @@
       const doneMe = (st.readyDone || []).includes(me);
       const doneCnt = (st.readyDone || []).length;
       btnDoneBuying.textContent = doneMe
-        ? `✅ Đã rung chuông (${doneCnt}/${totalH}) — Chờ đồng hồ / đối thủ`
-        : `🔔 Rung Chuông Xong Sớm (${doneCnt}/${totalH})`;
+        ? `✅ Đã Xong (${doneCnt}/${totalH})`
+        : `🔔 Rung Chuông (${doneCnt}/${totalH})`;
       renderMarketShelf();
       updateContestedAlert();
     } else if (shown === 3) {
       if (moved) {
         if (typeof closeTransientUI === 'function') closeTransientUI();
-        tweenCamera(0, 36, 22, 0, 0, 6.0);
+        if (typeof window.focusGameStage === 'function') window.focusGameStage('overview');
+        else tweenCamera(0, 36, 22, 0, 0, 6.0);
       }
       const readyMe = (st.readyNextDay || []).includes(me);
       const readyCnt = (st.readyNextDay || []).length;
@@ -694,6 +895,9 @@
         ? `⏳ Đã sẵn sàng (${readyCnt}/${totalH}) — Chờ đối thủ nấu xong`
         : `☀️ Sẵn Sàng Sang Ngày Mới (${readyCnt}/${totalH})`;
     }
+    if (typeof window.renderTabletopZone === 'function') window.renderTabletopZone();
+    if (typeof window.renderRivalTabletopFlanks === 'function') window.renderRivalTabletopFlanks();
+    if (typeof window.sync3DBoardOverlays === 'function') window.sync3DBoardOverlays();
   }
 
   function drawTurnBar() {
@@ -722,13 +926,30 @@
       el('button', { textContent: '📜 Nhật ký', onclick: () => { if (logModal.style.display === 'flex') closeLog(); else openLog(); } }),
       el('button', { textContent: '↻', title: 'Đồng bộ ngay', onclick: () => refresh() }));
     const open = turnBar.classList.contains('open');
+    const syncLabel = syncStatus === 'syncing' ? 'ĐỒNG BỘ…' : syncStatus === 'offline' ? 'THỬ LẠI' : 'LIVE';
+    const emoteRow = (view.status === 'playing' || view.status === 'over')
+      ? el('div', { id: 'hpvn-emote-bar', className: 'hpvn-emote-bar' },
+          el('span', { className: 'hpvn-emote-label', textContent: 'Biểu cảm:' }),
+          ...QUICK_EMOTES.map(emoji => el('button', {
+            type: 'button',
+            className: 'hpvn-emote-btn',
+            title: `Gửi biểu cảm ${emoji}`,
+            ariaLabel: `Gửi biểu cảm ${emoji}`,
+            textContent: emoji,
+            onclick: () => sendQuickEmote(emoji),
+          })))
+      : '';
     turnBar.replaceChildren(
       el('div', { className: 'line' },
-        el('span', { className: 'status' }, el('span', { className: 'hpvn-live-dot' }), statusText),
+        el('span', { className: 'status' },
+          el('span', { className: `hpvn-live-dot${syncStatus === 'live' ? '' : ' ' + syncStatus}` }),
+          el('span', { className: `hpvn-sync-pill${syncStatus === 'live' ? '' : ' ' + syncStatus}`, textContent: syncLabel }),
+          statusText),
         el('span', { className: 'row' },
           el('button', { textContent: '🏠 Sảnh', onclick: () => showLobby() }),
           view.status !== 'over' ? el('button', { textContent: '🚪 Rời bàn', onclick: leaveTable }) : '',
           el('button', { textContent: open ? '▾ Thu gọn' : '▴ Bàn', onclick: () => { turnBar.classList.toggle('open'); drawTurnBar(); } }))),
+      emoteRow,
       el('div', { className: 'more' }, el('div', { textContent: `⚡ Bàn Real-Time ${view.code} · Ngày ${st.day} · Giai đoạn ${st.phase}:` }),
         el('div', { className: 'board' }, ...(st.turnOrder || ORDER).filter(id => st.chefs[id]).map(id => {
           const isH = (st.humans || []).includes(id);
@@ -742,6 +963,15 @@
         buttons));
     turnBar.style.display = 'block';
     syncBottomBarClearance();
+  }
+
+  function sendQuickEmote(emoji) {
+    if (!T || (T.view?.status !== 'playing' && T.view?.status !== 'over')) return;
+    const now = Date.now();
+    if (now - lastEmoteSentAt < 1550) return;
+    lastEmoteSentAt = now;
+    playSound('emote');
+    act('emote', { emoji });
   }
 
   function drawLog() {
@@ -759,28 +989,62 @@
     stopPolling();
     const winner = BASE[st.winner];
     if (!winner || !modalVictory) return;
+    if (typeof eventToast !== 'undefined' && eventToast) eventToast.classList.add('toast-hidden');
+    document.getElementById('modal-level-up')?.classList.add('hidden');
     const set = (id, text) => { const node = document.getElementById(id); if (node) node.innerText = text; };
     const wState = st.chefs[st.winner] || winner;
+    const vImg = document.getElementById('victory-portrait-img');
+    const vEm = document.getElementById('victory-portrait-emoji');
+    if (vImg) {
+      vImg.style.display = '';
+      vImg.src = `./images/chefs/${st.winner}.webp`;
+      vImg.alt = winner.name;
+    }
+    if (vEm) {
+      vEm.style.display = 'none';
+      vEm.textContent = winner.avatar || '🏆';
+    }
     set('victory-winner-text', `${winner.avatar} ${winner.name} • [${(winner.restaurant || '').toUpperCase()}] THẮNG VỚI ${wState.likes} ⭐!`);
     set('victory-stat-dishes', `${wState.cookedCount || 0} món`);
     set('victory-stat-money', `$${wState.money}`);
     set('victory-stat-upgrades', `${(wState.upgrades || []).length}/4 nâng cấp`);
     set('victory-stat-level', `${wState.garbage || 0}🗑️ • Mốc ${(wState.unlockedMilestones || []).slice(-1)[0] || 0}⭐`);
+    if (typeof window.renderVictoryBreakdown === 'function') {
+      const seated = (st.turnOrder || ORDER).filter(id => st.chefs[id]);
+      const chefsArr = seated.map(id => ({ ...BASE[id], ...st.chefs[id], id, displayName: who(id) }));
+      window.renderVictoryBreakdown({
+        chefs: chefsArr,
+        dayHistory: st.dayHistory || [],
+        stats: st.stats || {},
+        winnerId: st.winner,
+      });
+    }
     if (btnRestartEl) btnRestartEl.textContent = '🏠 VỀ SẢNH BÀN ONLINE';
     modalVictory.classList.remove('hidden');
+    if (window.VdbAAA?.vfx?.victoryConfetti) window.VdbAAA.vfx.victoryConfetti();
   }
 
   async function refresh() {
     if (!T || busy) return;
-    try { enter(await call({ op: 'state', code: T.code })); } catch (error) { setToast(`⚠️ ${error.message}`, true); }
+    setSyncState('syncing');
+    try {
+      const latest = await call({ op: 'state', code: T.code });
+      setSyncState('live');
+      enter(latest);
+    } catch (error) {
+      setSyncState('offline');
+      setToast(`⚠️ ${error.message}`, true);
+    }
   }
 
   // Concurrent-safe act() with automatic 1-time retry on version conflict ('functions/aborted')
   async function act(action, args = {}, retried = false) {
     if (!T || busy) return null;
     busy = true;
+    setSyncState('syncing');
     try {
       const answer = await call({ op: 'act', code: T.code, version: T.view.version, step: action, args });
+      setSyncState('live');
       apply(answer);
       return answer.result;
     } catch (error) {
@@ -790,6 +1054,7 @@
         if (action !== 'tick') return act(action, args, true);
         return null;
       }
+      setSyncState('live');
       if (action !== 'tick') {
         playSound('error');
         setToast(`⚠️ ${error.message}`, true);
@@ -799,7 +1064,19 @@
   }
 
   async function leaveTable() {
-    if (!window.confirm(T.view.status === 'waiting' ? 'Rời bàn này?' : 'Rời bàn này? Bếp máy sẽ chơi thay bạn.')) return;
+    const msg = T.view.status === 'waiting' ? 'Rời bàn chờ này?' : 'Rời bàn này? Bếp máy sẽ tự động chơi thay vị trí của bạn.';
+    let ok = true;
+    if (typeof window.rrConfirm === 'function') {
+      ok = await window.rrConfirm({
+        icon: '🚪',
+        title: 'Rời Bàn Online?',
+        message: msg,
+        confirmText: 'Rời bàn',
+        cancelText: 'Ở lại',
+        danger: true,
+      });
+    }
+    if (!ok) return;
     try { await call({ op: 'leave', code: T.code }); showLobby(); } catch (error) { setToast(`⚠️ ${error.message}`, true); }
   }
   document.addEventListener('visibilitychange', () => {

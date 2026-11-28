@@ -1,0 +1,368 @@
+{
+  "version": 1,
+  "summary": {
+    "dishCount": 24,
+    "chefCount": 8,
+    "totalAssets": 32,
+    "dishesTotalKB": 673.45,
+    "chefsTotalKB": 128.51,
+    "totalKB": 801.96,
+    "legacyJpgFallbacks": 11
+  },
+  "dishes": [
+    {
+      "id": "rec_banhmi",
+      "name": "Bánh Mì Kẹp Thịt Chả",
+      "tier": "basic",
+      "file": "images/dishes/rec_banhmi.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 22300,
+      "kb": 21.78,
+      "source": "existing_jpg"
+    },
+    {
+      "id": "rec_goicuon",
+      "name": "Gỏi Cuốn Tôm Thịt",
+      "tier": "basic",
+      "file": "images/dishes/rec_goicuon.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 32424,
+      "kb": 31.66,
+      "source": "generated"
+    },
+    {
+      "id": "rec_comtam_trung",
+      "name": "Cơm Tấm Trứng Ốp La",
+      "tier": "basic",
+      "file": "images/dishes/rec_comtam_trung.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 29218,
+      "kb": 28.53,
+      "source": "generated"
+    },
+    {
+      "id": "rec_comtam_bicha",
+      "name": "Cơm Tấm Ba Rọi Nướng",
+      "tier": "basic",
+      "file": "images/dishes/rec_comtam_bicha.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 26440,
+      "kb": 25.82,
+      "source": "existing_jpg"
+    },
+    {
+      "id": "rec_buncha_cua",
+      "name": "Bún Chả Cua Huế",
+      "tier": "basic",
+      "file": "images/dishes/rec_buncha_cua.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 17794,
+      "kb": 17.38,
+      "source": "existing_jpg"
+    },
+    {
+      "id": "rec_nemran",
+      "name": "Nem Rán Hà Nội",
+      "tier": "basic",
+      "file": "images/dishes/rec_nemran.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 17224,
+      "kb": 16.82,
+      "source": "existing_jpg"
+    },
+    {
+      "id": "rec_banhkhot",
+      "name": "Bánh Khọt Vũng Tàu",
+      "tier": "basic",
+      "file": "images/dishes/rec_banhkhot.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 33094,
+      "kb": 32.32,
+      "source": "generated"
+    },
+    {
+      "id": "rec_banhmi_thitnuong",
+      "name": "Bánh Mì Thịt Ba Rọi",
+      "tier": "basic",
+      "file": "images/dishes/rec_banhmi_thitnuong.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 33256,
+      "kb": 32.48,
+      "source": "generated"
+    },
+    {
+      "id": "rec_goi_tom_xoai",
+      "name": "Gỏi Tôm Xoài Cát Chua Cay",
+      "tier": "basic",
+      "file": "images/dishes/rec_goi_tom_xoai.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 34640,
+      "kb": 33.83,
+      "source": "generated"
+    },
+    {
+      "id": "rec_cua_rangmuoi",
+      "name": "Cua Biển Rang Muối Ớt",
+      "tier": "basic",
+      "file": "images/dishes/rec_cua_rangmuoi.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 32728,
+      "kb": 31.96,
+      "source": "generated"
+    },
+    {
+      "id": "rec_trung_opla_banhmi",
+      "name": "Bánh Mì Trứng Ốp La",
+      "tier": "basic",
+      "file": "images/dishes/rec_trung_opla_banhmi.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 33888,
+      "kb": 33.09,
+      "source": "generated"
+    },
+    {
+      "id": "rec_pho_tron",
+      "name": "Phở Trộn Rau Thơm Hà Nội",
+      "tier": "basic",
+      "file": "images/dishes/rec_pho_tron.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 32296,
+      "kb": 31.54,
+      "source": "generated"
+    },
+    {
+      "id": "rec_suon_cham_ot",
+      "name": "Sườn Nướng Chanh Ớt Cao Nguyên",
+      "tier": "basic",
+      "file": "images/dishes/rec_suon_cham_ot.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 31566,
+      "kb": 30.83,
+      "source": "generated"
+    },
+    {
+      "id": "rec_suon_hanh_ngo",
+      "name": "Sườn Nướng Hành Ngò Tây Nguyên",
+      "tier": "basic",
+      "file": "images/dishes/rec_suon_hanh_ngo.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 33882,
+      "kb": 33.09,
+      "source": "generated"
+    },
+    {
+      "id": "rec_pho",
+      "name": "Phở Bò Tái Nạm Cung Đình",
+      "tier": "gourmet",
+      "file": "images/dishes/rec_pho.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 19596,
+      "kb": 19.14,
+      "source": "existing_jpg"
+    },
+    {
+      "id": "rec_bunbo",
+      "name": "Bún Bò Giò Heo Cung Đình",
+      "tier": "gourmet",
+      "file": "images/dishes/rec_bunbo.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 15316,
+      "kb": 14.96,
+      "source": "existing_jpg"
+    },
+    {
+      "id": "rec_comtam_suon",
+      "name": "Cơm Tấm Sườn Cốt Lết",
+      "tier": "gourmet",
+      "file": "images/dishes/rec_comtam_suon.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 21346,
+      "kb": 20.85,
+      "source": "existing_jpg"
+    },
+    {
+      "id": "rec_banhxeo",
+      "name": "Bánh Xèo Tôm Nhảy Nước Dừa",
+      "tier": "gourmet",
+      "file": "images/dishes/rec_banhxeo.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 27086,
+      "kb": 26.45,
+      "source": "existing_jpg"
+    },
+    {
+      "id": "rec_laubo",
+      "name": "Lẩu Bò Nhúng Dấm Thảo Mộc",
+      "tier": "gourmet",
+      "file": "images/dishes/rec_laubo.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 33700,
+      "kb": 32.91,
+      "source": "generated"
+    },
+    {
+      "id": "rec_bokho",
+      "name": "Bò Kho Bánh Mì Hồi Quế",
+      "tier": "gourmet",
+      "file": "images/dishes/rec_bokho.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 33478,
+      "kb": 32.69,
+      "source": "generated"
+    },
+    {
+      "id": "rec_cuahap_nuocdua",
+      "name": "Cua Biển Hấp Nước Cốt Dừa",
+      "tier": "gourmet",
+      "file": "images/dishes/rec_cuahap_nuocdua.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 32032,
+      "kb": 31.28,
+      "source": "generated"
+    },
+    {
+      "id": "rec_buncha_cuahap",
+      "name": "Bún Chả Cua Nước Dừa Huế",
+      "tier": "gourmet",
+      "file": "images/dishes/rec_buncha_cuahap.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 30388,
+      "kb": 29.68,
+      "source": "generated"
+    },
+    {
+      "id": "rec_suon_nuong_chua_ngot",
+      "name": "Sườn Nướng Xoài Cát Phố Hội",
+      "tier": "gourmet",
+      "file": "images/dishes/rec_suon_nuong_chua_ngot.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 33238,
+      "kb": 32.46,
+      "source": "generated"
+    },
+    {
+      "id": "rec_caolau_phohoi",
+      "name": "Cao Lầu Thịt Xá Xíu Phố Hội",
+      "tier": "gourmet",
+      "file": "images/dishes/rec_caolau_phohoi.webp",
+      "width": 512,
+      "height": 320,
+      "bytes": 32686,
+      "kb": 31.92,
+      "source": "generated"
+    }
+  ],
+  "chefs": [
+    {
+      "id": "lola",
+      "name": "Cô Ba Sài Gòn",
+      "short": "Cô Ba",
+      "colorHex": "#ec4899",
+      "file": "images/chefs/lola.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 16712,
+      "kb": 16.32
+    },
+    {
+      "id": "angus",
+      "name": "Mệ Thảo Xứ Huế",
+      "short": "Mệ Thảo",
+      "colorHex": "#dc2626",
+      "file": "images/chefs/angus.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 15874,
+      "kb": 15.5
+    },
+    {
+      "id": "chen",
+      "name": "Chú Bảy Chợ Lớn",
+      "short": "Chú Bảy",
+      "colorHex": "#0d9488",
+      "file": "images/chefs/chen.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 16146,
+      "kb": 15.77
+    },
+    {
+      "id": "lucrezia",
+      "name": "Dì Năm Miền Tây",
+      "short": "Dì Năm",
+      "colorHex": "#eab308",
+      "file": "images/chefs/lucrezia.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 20394,
+      "kb": 19.92
+    },
+    {
+      "id": "hai",
+      "name": "Chị Hai Hội An",
+      "short": "Chị Hai",
+      "colorHex": "#8b5cf6",
+      "file": "images/chefs/hai.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 14406,
+      "kb": 14.07
+    },
+    {
+      "id": "sau",
+      "name": "Anh Sáu Hà Thành",
+      "short": "Anh Sáu",
+      "colorHex": "#2563eb",
+      "file": "images/chefs/sau.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 14428,
+      "kb": 14.09
+    },
+    {
+      "id": "tam",
+      "name": "Bà Tám Đất Cảng",
+      "short": "Bà Tám",
+      "colorHex": "#f97316",
+      "file": "images/chefs/tam.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 17250,
+      "kb": 16.85
+    },
+    {
+      "id": "muoi",
+      "name": "Út Mười Tây Nguyên",
+      "short": "Út Mười",
+      "colorHex": "#65a30d",
+      "file": "images/chefs/muoi.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 16382,
+      "kb": 16.0
+    }
+  ]
+}

@@ -90,11 +90,94 @@ const COUNTER_SLOTS = 3;
 
 const BASE_DAILY_INCOME = 300;
 const ACTION_CARD_COST = 200;
+const ACTION_SALE_COST = 150;
 const GARBAGE_DISPOSAL_COST = 100;
 const CHOCOLATE_SELL_VALUE = 500;
+const VIP_CHOCOLATE_SELL_VALUE = 650;
+const HYGIENE_FINE = 100;
+const COOK_CASH_BONUS = 100;
 const WIN_LIKES = 20;
 const MAX_DAYS = 30;
 const MAX_UPGRADES = 4;
+
+const AI_DIFFICULTIES = ['easy', 'normal', 'master'];
+const EMOTES = ['🔥', '😱', '🤝', '😈', '👏', '😂', '🍲', '💀'];
+const EMOTE_COOLDOWN_MS = 1500;
+const MAX_EMOTES = 6;
+
+// Daily Event Deck (10 balanced Vietnamese market events inspired by Rival Restaurants: Back for Seconds)
+const DAILY_EVENTS = [
+  {
+    id: 'calm_market',
+    name: 'Chợ Sáng Êm Ả',
+    emoji: '☀️',
+    desc: 'Một ngày mua bán bình thường — giá cả và luật chợ chuẩn mực.',
+    effect: 'calm_market',
+  },
+  {
+    id: 'discount_green',
+    name: 'Được Mùa Rau Quả',
+    emoji: '🥬',
+    desc: 'Chợ Hoa Quả & Chợ Rau Củ giảm giá -$50 mọi nguyên liệu hôm nay (tối thiểu $50)!',
+    effect: 'discount_green',
+  },
+  {
+    id: 'discount_protein',
+    name: 'Lô Hàng Tươi Về Sớm',
+    emoji: '🥩',
+    desc: 'Hàng Thịt Tươi & Vựa Hải Sản giảm giá -$50 mọi nguyên liệu hôm nay (tối thiểu $50)!',
+    effect: 'discount_protein',
+  },
+  {
+    id: 'gourmet_festival',
+    name: 'Lễ Hội Ẩm Thực Đặc Sản',
+    emoji: '👑',
+    desc: 'Mỗi Món Đặc Sản (Gourmet) nấu thành công hôm nay nhận thêm +1⭐ Danh Tiếng!',
+    effect: 'gourmet_festival',
+  },
+  {
+    id: 'hygiene_inspect',
+    name: 'Đoàn Kiểm Tra VSATTP',
+    emoji: '🕵️',
+    desc: 'Đầu ngày: bếp nào tích từ 2 Túi Rác trở lên bị phạt hành chính $100!',
+    effect: 'hygiene_inspect',
+  },
+  {
+    id: 'free_disposal',
+    name: 'Ngày Xanh Đô Thị',
+    emoji: '♻️',
+    desc: 'Dọn Rác tại Chợ Bến Thành hoàn toàn MIỄN PHÍ ($0/túi) trong hôm nay!',
+    effect: 'free_disposal',
+  },
+  {
+    id: 'storm_surcharge',
+    name: 'Mưa Bão Đứt Nguồn Hàng',
+    emoji: '⛈️',
+    desc: 'Một quầy chợ thường bị tăng phụ phí +$50 mọi món hàng trong hôm nay!',
+    effect: 'storm_surcharge',
+  },
+  {
+    id: 'vip_chocolate',
+    name: 'Khách VIP Săn Sô-cô-la',
+    emoji: '🍫',
+    desc: 'Sô-cô-la Đặc Sản bán tại Chợ Bến Thành hôm nay được giá tới $650 (thay vì $500)!',
+    effect: 'vip_chocolate',
+  },
+  {
+    id: 'action_sale',
+    name: 'Chợ Đen Khuyến Mãi',
+    emoji: '⚡',
+    desc: 'Bốc Thẻ Hành Động tại Chợ Bến Thành giảm giá chỉ còn $150 hôm nay (thay vì $200)!',
+    effect: 'action_sale',
+  },
+  {
+    id: 'cook_cash_bonus',
+    name: 'Giờ Vàng Thực Khách Bo Hậu',
+    emoji: '💰',
+    desc: 'Mỗi món ăn nấu xong hôm nay được thực khách thưởng nóng thêm +$100 tiền mặt!',
+    effect: 'cook_cash_bonus',
+  },
+];
 
 // Authentic Rival Restaurants Upgrades (Max 4 clipped onto Mat, no duplicates)
 const UPGRADES = [
@@ -361,7 +444,9 @@ const MILESTONE_POINTS = [3, 7, 12];
 
 module.exports = {
   MARKETS, MARKET_KEYS, COUNTER_SLOTS,
-  BASE_DAILY_INCOME, ACTION_CARD_COST, GARBAGE_DISPOSAL_COST, CHOCOLATE_SELL_VALUE,
+  BASE_DAILY_INCOME, ACTION_CARD_COST, ACTION_SALE_COST, GARBAGE_DISPOSAL_COST,
+  CHOCOLATE_SELL_VALUE, VIP_CHOCOLATE_SELL_VALUE, HYGIENE_FINE, COOK_CASH_BONUS,
+  AI_DIFFICULTIES, EMOTES, EMOTE_COOLDOWN_MS, MAX_EMOTES, DAILY_EVENTS,
   UPGRADES, MAX_UPGRADES, ACTION_CARDS,
   RESTAURANTS, RESTAURANT_IDS, MILESTONE_POINTS,
   BASIC_RECIPES, GOURMET_RECIPES,

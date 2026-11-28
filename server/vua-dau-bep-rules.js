@@ -123,11 +123,119 @@ function cardCost(chef, card, shopKey, { fromShelf = false, state = null } = {})
     if (chef.id === 'lucrezia' && fromShelf) cost = Math.max(50, cost - 50);
   }
 
+  // Daily Event market price modifiers
+  const ev = state?.dailyEvent;
+  if (ev) {
+    if (ev.effect === 'discount_green' && (shopKey === 'fruit' || shopKey === 'vegetable')) {
+      cost = Math.max(50, cost - 50);
+    } else if (ev.effect === 'discount_protein' && (shopKey === 'chop' || shopKey === 'dairy')) {
+      cost = Math.max(50, cost - 50);
+    } else if (ev.effect === 'storm_surcharge' && ev.targetMarket === shopKey) {
+      cost += 50;
+    }
+  }
+
   // Cô Ba's Surcharge chef power (only at regular markets, never at Island or Mystery Mart)
   if (marketSurchargeOwner(state, chef, shopKey)) {
     cost += 50;
   }
   return cost;
+}
+
+// Daily Event dynamic pricing helpers
+function garbageDisposalCost(s) {
+  return s?.dailyEvent?.effect === 'free_disposal' ? 0 : D.GARBAGE_DISPOSAL_COST;
+}
+
+function chocolateSellValue(s) {
+  return s?.dailyEvent?.effect === 'vip_chocolate' ? D.VIP_CHOCOLATE_SELL_VALUE : D.CHOCOLATE_SELL_VALUE;
+}
+
+function actionCardCost(s) {
+  return s?.dailyEvent?.effect === 'action_sale' ? D.ACTION_SALE_COST : D.ACTION_CARD_COST;
+}
+
+// Per-chef analytics stats & end-of-day history helpers
+function ensureStats(chef) {
+  if (!chef) return null;
+  if (!chef.stats) {
+    chef.stats = {
+      auctionsWon: 0,
+      tradesDone: 0,
+      garbageDumped: 0,
+      peakMoney: chef.money || 0,
+      dishesCooked: chef.cookedCount || 0,
+    };
+  }
+  return chef.stats;
+}
+
+function trackPeakMoney(chef) {
+  const st = ensureStats(chef);
+  if (!st) return;
+  if (chef.money > st.peakMoney) st.peakMoney = chef.money;
+  st.dishesCooked = chef.cookedCount || 0;
+}
+
+function syncAllPeakMoney(s) {
+  if (!s || !s.chefs) return;
+  for (const chef of Object.values(s.chefs)) trackPeakMoney(chef);
+}
+
+function recordDaySnapshot(s) {
+  s.dayHistory = s.dayHistory || [];
+  const likes = {};
+  const money = {};
+  for (const id of order(s)) {
+    const c = s.chefs[id];
+    likes[id] = c.likes || 0;
+    money[id] = c.money || 0;
+  }
+  const snap = {
+    day: s.day,
+    likes,
+    money,
+    event: s.dailyEvent ? s.dailyEvent.id : null,
+  };
+  const existingIdx = s.dayHistory.findIndex(h => h.day === s.day);
+  if (existingIdx !== -1) s.dayHistory[existingIdx] = snap;
+  else s.dayHistory.push(snap);
+  return snap;
+}
+
+// Roll 1 deterministic Daily Event at start of each day (Day 1..MAX_DAYS)
+function rollDailyEvent(s) {
+  if (s.eventsEnabled === false) {
+    s.dailyEvent = null;
+    return null;
+  }
+  const prevId = s.dailyEvent?.id || null;
+  const pool = prevId ? D.DAILY_EVENTS.filter(e => e.id !== prevId) : D.DAILY_EVENTS;
+  const tpl = pick(s, pool);
+  const ev = { ...tpl };
+  if (ev.effect === 'storm_surcharge') {
+    const regularMarkets = D.MARKET_KEYS.filter(isRegularMarket);
+    const targetMarket = pick(s, regularMarkets);
+    ev.targetMarket = targetMarket;
+    const mInfo = D.MARKETS[targetMarket];
+    ev.desc = `${mInfo.emoji} ${mInfo.shortName} bị mưa bão: tăng phụ phí +$50 mọi món hàng hôm nay!`;
+  }
+  s.dailyEvent = ev;
+  say(s, `📰 SỰ KIỆN NGÀY ${s.day}: ${ev.emoji} ${ev.name} — ${ev.desc}`);
+
+  // Start-of-day immediate effect: hygiene_inspect (chefs with >= 2 garbage pay $100 fine)
+  if (ev.effect === 'hygiene_inspect') {
+    for (const id of order(s)) {
+      const chef = s.chefs[id];
+      if ((chef.garbage || 0) >= 2) {
+        const fine = Math.min(D.HYGIENE_FINE, chef.money);
+        chef.money -= fine;
+        say(s, `🕵️ Đoàn VSATTP phạt ${chefName(id)} -$${fine} vì tích ${chef.garbage}🗑️ Rác!`);
+      }
+    }
+  }
+  syncAllPeakMoney(s);
+  return ev;
 }
 
 // Build initial shuffled Shelf Deck + 3 face-up Counter slots for each of the 6 markets
@@ -254,7 +362,7 @@ function eligibleAddonFor(chef, recipe) {
 }
 
 // Preview exact Likes & Garbage outcome before cooking
-function previewCook(chef, recipe, { useAddon = false } = {}) {
+function previewCook(chef, recipe, { useAddon = false, state = null } = {}) {
   const rest = restaurantOf(chef);
   const { tofuUsed } = missingFor(chef, recipe);
   const baseLikes = recipe.likes;
@@ -264,20 +372,23 @@ function previewCook(chef, recipe, { useAddon = false } = {}) {
   const reviewBonus = chef.reviewBonusToday || 0;
   const cleanCelebrityBonus = (hasUpgrade(chef, 'upg_celebrity') && (chef.garbage || 0) === 0) ? 1 : 0;
   const milestoneBonus = chef.milestoneCookBonus || 0;
+  const eventBonus = (state?.dailyEvent?.effect === 'gourmet_festival' && recipe.isGourmet) ? 1 : 0;
+  const cashBonus = (chef.id === 'sau' ? 50 : 0)
+    + (state?.dailyEvent?.effect === 'cook_cash_bonus' ? D.COOK_CASH_BONUS : 0);
 
   // Double Cooktop simultaneous rule: both dishes use the garbage count BEFORE this turn's cooking
   const effectiveGarbage = (chef.cookedToday || 0) > 0 && typeof chef.garbageBeforeCook === 'number'
     ? chef.garbageBeforeCook
     : (chef.garbage || 0);
 
-  const grossLikes = baseLikes + cuisineBonus + addonBonus + reviewBonus + cleanCelebrityBonus + milestoneBonus;
+  const grossLikes = baseLikes + cuisineBonus + addonBonus + reviewBonus + cleanCelebrityBonus + milestoneBonus + eventBonus;
   // Official Rulebook: a cooked recipe's popularity value cannot drop below 0!
   const netLikes = Math.max(0, grossLikes - effectiveGarbage);
   const addedGarbage = Math.max(0, (recipe.garbage ?? (recipe.isGourmet ? 2 : 1)) - tofuUsed);
 
   return {
     baseLikes, cuisineBonus, addonBonus, addonItem, reviewBonus,
-    cleanCelebrityBonus, milestoneBonus, garbagePenalty: effectiveGarbage,
+    cleanCelebrityBonus, milestoneBonus, eventBonus, cashBonus, garbagePenalty: effectiveGarbage,
     grossLikes, netLikes, addedGarbage, tofuUsed,
   };
 }
@@ -391,7 +502,7 @@ function cook(s, chef, recipe, opts = {}) {
   }
 
   const useAddon = opts.useAddon === true;
-  const breakdown = previewCook(chef, recipe, { useAddon });
+  const breakdown = previewCook(chef, recipe, { useAddon, state: s });
 
   // Consume required ingredients (exact → Tofu for meat → Wild)
   for (const req of recipe.requires) {
@@ -421,6 +532,8 @@ function cook(s, chef, recipe, opts = {}) {
 
   if (chef.reviewBonusToday > 0) chef.reviewBonusToday = 0;
   if (chef.id === 'sau') chef.money += 50;
+  const eventCashBonus = s?.dailyEvent?.effect === 'cook_cash_bonus' ? D.COOK_CASH_BONUS : 0;
+  if (eventCashBonus > 0) chef.money += eventCashBonus;
 
   chef.likes += breakdown.netLikes;
   chef.cookedCount += 1;
@@ -443,8 +556,10 @@ function cook(s, chef, recipe, opts = {}) {
 
   const tags = [];
   if (breakdown.cuisineBonus) tags.push('+1⭐ Đặc sản');
+  if (breakdown.eventBonus) tags.push('+1⭐ Lễ Hội');
   if (breakdown.addonBonus) tags.push(`+1⭐ ${breakdown.addonItem.name}`);
   if (breakdown.reviewBonus) tags.push(`+${breakdown.reviewBonus}⭐ 5 Sao`);
+  if (eventCashBonus) tags.push(`+$${eventCashBonus} Bo Hậu`);
   if (breakdown.garbagePenalty) tags.push(`-${breakdown.garbagePenalty}⭐ Rác`);
   if (breakdown.addedGarbage) tags.push(`+${breakdown.addedGarbage}🗑️`);
   const detail = tags.length ? ` [${tags.join(', ')}]` : '';
@@ -452,10 +567,12 @@ function cook(s, chef, recipe, opts = {}) {
   say(s, `🍳 ${chefName(chef.id)} nấu xong ${recipe.name} (+${breakdown.netLikes} ⭐${detail}, tổng ${chef.likes}⭐).`);
 
   checkRestaurantMilestones(s, chef);
+  trackPeakMoney(chef);
 
   if (chef.likes >= D.WIN_LIKES && !s.over) {
     s.over = true;
     s.winner = chef.id;
+    recordDaySnapshot(s);
     say(s, `🏆 ${chefName(chef.id)} (${restaurantOf(chef).name}) đạt ${chef.likes} ⭐ và CHIẾN THẮNG NGAY LẬP TỨC! 🎉`);
   }
   return breakdown.netLikes;
@@ -465,6 +582,8 @@ module.exports = {
   GameError, fail, rand, pick, shuffle, newId, chefName, marketName, restaurantOf, say,
   ingredient, item, dealRecipe, actionCard, order, round, hasUpgrade, capacity, buyLimit, cookLimit,
   tierFromLikes, dailyIncome, dailyPerk, isRegularMarket, marketSurchargeOwner, cardCost,
+  garbageDisposalCost, chocolateSellValue, actionCardCost,
+  ensureStats, trackPeakMoney, syncAllPeakMoney, recordDaySnapshot, rollDailyEvent,
   buildMarketDecks, refillMarketCounters, isClosed, claimKey, claimHolder,
   missingFor, canCook, needs, eligibleAddonFor, previewCook, addWild, trashItem,
   checkRestaurantMilestones, flushPendingGarbage, cook,

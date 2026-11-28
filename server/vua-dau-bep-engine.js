@@ -12,7 +12,7 @@
 //            First to 20⭐ wins IMMEDIATELY! Once all readyNextDay -> refill Counters, pay $300+ income, Day+1!
 const D = require('./vua-dau-bep-data');
 const R = require('./vua-dau-bep-rules');
-const { chooseMarket, botShopAndCard, botCookAll, acceptsTrade, botAuctionResponse } = require('./vua-dau-bep-bots');
+const { chooseMarket, botWokAway, botShopAndCard, botCookAll, acceptsTrade, botAuctionResponse } = require('./vua-dau-bep-bots');
 
 const { fail } = R;
 
@@ -23,6 +23,8 @@ const ACTION_PAUSE_MS = 3_000;   // Brief tactical pause when an Action Card is 
 
 function newGame(seed, humans = ['lola', 'angus'], options = {}) {
   const nowMs = Number.isFinite(options.nowMs) ? options.nowMs : Date.now();
+  const difficulty = D.AI_DIFFICULTIES.includes(options?.difficulty) ? options.difficulty : 'normal';
+  const eventsEnabled = options?.events !== false;
   const s = {
     v: 3,
     mode: 'realtime',
@@ -32,6 +34,12 @@ function newGame(seed, humans = ['lola', 'angus'], options = {}) {
     phase: 1,
     over: false,
     winner: null,
+    difficulty,
+    eventsEnabled,
+    dailyEvent: null,
+    emotes: [],
+    emoteCooldowns: {},
+    dayHistory: [],
     humans: [...humans],
     chefs: {},
     markets: {},
@@ -102,11 +110,19 @@ function newGame(seed, humans = ['lola', 'angus'], options = {}) {
       dumpsterDay: 0,
       cardDay: 0,
       chefPowerDay: 0,
+      stats: {
+        auctionsWon: 0,
+        tradesDone: 0,
+        garbageDumped: 0,
+        peakMoney: D.BASE_DAILY_INCOME,
+        dishesCooked: 0,
+      },
     };
   });
 
   s.dumpster = D.STARTING_DUMPSTER.map(R.ingredient).filter(Boolean);
   R.say(s, `🎉 VÁN ONLINE THỜI GIAN THỰC (Luật Rival Restaurants chuẩn)! Tất cả người chơi cùng xoay Đĩa bí mật, cùng tranh mua 60 giây & đấu giá trực tiếp! Ai đạt ${D.WIN_LIKES}⭐ trước thắng ngay!`);
+  R.rollDailyEvent(s);
   return s;
 }
 
@@ -158,20 +174,7 @@ function enterPhase2(s, nowMs) {
   }
 
   // Bot Mệ Thảo (Angus Khan) automatic Wok Away if contesting a regular market!
-  if (!s.humans.includes('angus') && s.chefs.angus) {
-    const angus = s.chefs.angus;
-    if (R.isRegularMarket(angus.currentLocation) && angus.chefPowerDay !== s.day) {
-      const sameSpot = Object.values(s.chefs).filter(c => c !== angus && c.currentLocation === angus.currentLocation);
-      if (sameSpot.length > 0 && R.rand(s) < 0.6) {
-        const victim = sameSpot[0];
-        const opts = D.MARKET_KEYS.filter(k => k !== angus.currentLocation && !R.isClosed(s, k));
-        const newM = opts.length ? R.pick(s, opts) : 'island';
-        victim.currentLocation = newM;
-        angus.chefPowerDay = s.day;
-        R.say(s, `🔥 Mệ Thảo dùng Đuổi Chợ (Wok Away): đá ${R.chefName(victim.id)} văng sang ${R.marketName(newM)}!`);
-      }
-    }
-  }
+  botWokAway(s, s.chefs.angus);
 
   const summary = R.order(s).map(id => `${R.chefName(id)} → ${D.MARKETS[s.chefs[id].currentLocation].shortName}`).join(' · ');
   R.say(s, `🛎️ MỞ ĐĨA ĐỒNG LOẠT! ${summary}. Bắt đầu 60 giây Mua Sắm & Thương Lượng!`);
@@ -208,6 +211,7 @@ function finalizeAuction(s, nowMs) {
   const surchargeOwner = R.marketSurchargeOwner(s, winner, auc.market);
   if (surchargeOwner && cost >= 50) {
     surchargeOwner.money += 50;
+    R.trackPeakMoney(surchargeOwner);
   }
   const bought = { id: R.newId(s, 'ing'), ...slot.card, cost };
   winner.inventory.push(bought);
@@ -215,6 +219,7 @@ function finalizeAuction(s, nowMs) {
   slot.claimedBy = claim;
   s.claims[R.claimKey(auc.market, auc.slotIndex)] = claim;
   winner.boughtCountToday += 1;
+  R.ensureStats(winner).auctionsWon += 1;
   R.say(s, `🔨 CHỐT ĐẤU GIÁ! ${R.chefName(winner.id)} giành được ${slot.card.emoji} ${slot.card.name} với giá $${cost}! Đồng hồ 60s tiếp tục chạy!`);
 }
 
@@ -251,6 +256,8 @@ function enterPhase3(s, nowMs) {
 function endDay(s, nowMs) {
   const chefs = Object.values(s.chefs);
   for (const chef of chefs) R.flushPendingGarbage(chef);
+  R.syncAllPeakMoney(s);
+  R.recordDaySnapshot(s);
 
   const contenders = chefs.filter(c => c.likes >= D.WIN_LIKES);
   if (contenders.length || s.day >= D.MAX_DAYS) {
@@ -270,6 +277,7 @@ function endDay(s, nowMs) {
 
   for (const chef of chefs) {
     chef.money += R.dailyIncome(chef);
+    R.trackPeakMoney(chef);
     chef.reviewBonusToday = 0;
     chef.boughtCountToday = 0;
     chef.cookedToday = 0;
@@ -286,6 +294,7 @@ function endDay(s, nowMs) {
   s.timerPaused = false;
   s.pauseReason = null;
   R.say(s, `☀️ NGÀY ${s.day}: Mọi bếp nhận thu nhập ngày ($${D.BASE_DAILY_INCOME} nền + Quảng Cáo) & nhập lại Quầy Chợ! Hãy xoay Đĩa Di Chuyển bí mật!`);
+  R.rollDailyEvent(s);
 }
 
 // Advance real-time 60s sand timer, brief action pause, live auction gavel, and delayed bot shopping!
@@ -380,10 +389,18 @@ function swap(a, b, give, want) {
   const move = (from, to, part) => {
     if (part.money) { from.money -= part.money; to.money += part.money; }
     if (part.item) { from.inventory.splice(from.inventory.indexOf(part.item), 1); to.inventory.push(part.item); }
-    if (part.garbage) { from.garbage = Math.max(0, (from.garbage || 0) - part.garbage); to.garbage = (to.garbage || 0) + part.garbage; }
+    if (part.garbage) {
+      from.garbage = Math.max(0, (from.garbage || 0) - part.garbage);
+      to.garbage = (to.garbage || 0) + part.garbage;
+      R.ensureStats(from).garbageDumped += part.garbage;
+    }
   };
   move(a, b, give);
   move(b, a, want);
+  R.ensureStats(a).tradesDone += 1;
+  R.ensureStats(b).tradesDone += 1;
+  R.trackPeakMoney(a);
+  R.trackPeakMoney(b);
 }
 
 function findCounterSlot(s, market, slotIndex, name) {
@@ -475,11 +492,13 @@ const OPS = {
       const taken = holder.inventory.splice(holder.inventory.findIndex(i => i.id === claim.itemInstanceId), 1)[0];
       chef.money -= total;
       holder.money += total;
+      R.trackPeakMoney(holder);
       chef.inventory.push(taken);
       const updatedClaim = { ...claim, id: chef.id, baseCost: total, left: 1 };
       slot.claimedBy = updatedClaim;
       s.claims[R.claimKey(market, slot.slotIdx)] = updatedClaim;
       if (remote) chef.deliveryUsedToday = true; else chef.boughtCountToday += 1;
+      R.ensureStats(chef).auctionsWon += 1;
       R.say(s, `💥 ${R.chefName(chef.id)} trả $${total} (+$${bribe}) giành ${template.emoji} ${template.name} từ ${R.chefName(holder.id)}!`);
       return;
     }
@@ -495,6 +514,9 @@ const OPS = {
         if (other.inventory.length >= R.capacity(other)) return false;
         if (other.money < cost + 50) return false;
         if (s.humans.includes(other.id)) return true; // Any human rival at the same market gets to bid or fold!
+        if (s.difficulty === 'easy') {
+          return R.needs(other).includes(template.name) || ['wild', 'tofu'].includes(template.type);
+        }
         return R.needs(other).includes(template.name) || ['wild', 'tofu', 'chocolate'].includes(template.type);
       });
       if (rivalsAtMarket.length > 0) {
@@ -598,12 +620,13 @@ const OPS = {
   draw(s, chef) {
     needPhase(s, 2); needIsland(chef);
     if (s.auction) fail('Đang tạm dừng vì Đấu Giá!');
-    if (chef.money < D.ACTION_CARD_COST) fail(`Thẻ Hành Động giá $${D.ACTION_CARD_COST}.`);
-    chef.money -= D.ACTION_CARD_COST;
+    const cost = R.actionCardCost(s);
+    if (chef.money < cost) fail(`Thẻ Hành Động giá $${cost}.`);
+    chef.money -= cost;
     const card = R.actionCard(s, R.pick(s, D.ACTION_CARDS).type);
     chef.actionCards.push(card);
-    R.say(s, `⚡ ${R.chefName(chef.id)} bốc 1 Thẻ Hành Động bí mật ($${D.ACTION_CARD_COST}).`);
-    return { card };
+    R.say(s, `⚡ ${R.chefName(chef.id)} bốc 1 Thẻ Hành Động bí mật ($${cost}).`);
+    return { card, cost };
   },
 
   upgrade(s, chef, { id }) {
@@ -625,11 +648,14 @@ const OPS = {
     if ((chef.garbage || 0) <= 0) fail('Bếp của bạn đang sạch, không có rác!');
     const qty = count === 'all' ? chef.garbage : (Number.isSafeInteger(count) ? count : 1);
     if (qty <= 0 || qty > chef.garbage) fail('Số túi rác không hợp lệ.');
-    const total = qty * D.GARBAGE_DISPOSAL_COST;
+    const unitCost = R.garbageDisposalCost(s);
+    const total = qty * unitCost;
     if (chef.money < total) fail(`Cần $${total} để đổ ${qty} túi rác.`);
     chef.money -= total;
     chef.garbage -= qty;
-    R.say(s, `🧹 ${R.chefName(chef.id)} trả $${total} đổ ${qty} Túi Rác (còn ${chef.garbage}🗑️).`);
+    R.say(s, total === 0
+      ? `🧹 ${R.chefName(chef.id)} đổ miễn phí ${qty} Túi Rác ($0 - Ngày Xanh Đô Thị, còn ${chef.garbage}🗑️).`
+      : `🧹 ${R.chefName(chef.id)} trả $${total} đổ ${qty} Túi Rác (còn ${chef.garbage}🗑️).`);
     return { disposed: qty, cost: total };
   },
 
@@ -643,9 +669,11 @@ const OPS = {
     const [sold] = chef.inventory.splice(idx, 1);
     const tpl = R.ingredient(sold.name);
     if (tpl) s.dumpster.push(tpl);
-    chef.money += D.CHOCOLATE_SELL_VALUE;
-    R.say(s, `🍫 ${R.chefName(chef.id)} bán Sô-cô-la Đặc Sản thu về +$${D.CHOCOLATE_SELL_VALUE}!`);
-    return { earned: D.CHOCOLATE_SELL_VALUE };
+    const earned = R.chocolateSellValue(s);
+    chef.money += earned;
+    R.trackPeakMoney(chef);
+    R.say(s, `🍫 ${R.chefName(chef.id)} bán Sô-cô-la Đặc Sản thu về +$${earned}!`);
+    return { earned };
   },
 
   dumpster(s, chef, { index }) {
@@ -706,6 +734,7 @@ const OPS = {
       } else {
         if ((chef.garbage || 0) > 0) chef.garbage -= 1;
         victim.garbage = (victim.garbage || 0) + 1;
+        R.ensureStats(chef).garbageDumped += 1;
         text = `đổ 1 Túi Rác 🗑️ sang bếp của ${R.chefName(victim.id)} (${victim.garbage}🗑️)`;
       }
     } else if (card.type === 'close_market') {
@@ -830,16 +859,38 @@ const OPS = {
       R.say(s, `✅ ${R.chefName(chef.id)} đã nấu xong (${s.readyNextDay.length}/${s.humans.length} người sẵn sàng sang ngày mới).`);
     }
   },
+
+  // Real-Time Online Quick Emotes (available in any phase & post-game, allowlisted + light rate-limit)
+  emote(s, chef, { emoji }, nowMs) {
+    if (typeof emoji !== 'string' || !D.EMOTES.includes(emoji)) {
+      fail('Biểu cảm không hợp lệ.');
+    }
+    s.emoteCooldowns = s.emoteCooldowns || {};
+    const lastAt = s.emoteCooldowns[chef.id];
+    if (typeof lastAt === 'number' && nowMs - lastAt < D.EMOTE_COOLDOWN_MS) {
+      fail('Bạn gửi biểu cảm quá nhanh, chờ chút nhé!');
+    }
+    s.emoteCooldowns[chef.id] = nowMs;
+    const entry = { id: R.newId(s, 'emo'), from: chef.id, emoji, at: nowMs };
+    s.emotes = s.emotes || [];
+    s.emotes.push(entry);
+    if (s.emotes.length > D.MAX_EMOTES) s.emotes.splice(0, s.emotes.length - D.MAX_EMOTES);
+    return { emote: entry };
+  },
 };
 
 /** Real-Time Simultaneous Action: ANY seated human may act during the current phase! */
 function act(s, chefId, op, data, nowMs = Date.now()) {
-  if (s.over) fail('Ván đã kết thúc.');
+  if (s.over && op !== 'emote') fail('Ván đã kết thúc.');
   if (!s.chefs[chefId]) fail('Bếp không tồn tại trong bàn này.');
   if (!Object.hasOwn(OPS, op)) fail('Thao tác không hợp lệ.');
-  syncClock(s, nowMs);
-  if (s.over) return {};
-  return OPS[op](s, s.chefs[chefId], data && typeof data === 'object' ? data : {}, nowMs) || {};
+  if (op !== 'emote') {
+    syncClock(s, nowMs);
+    if (s.over) return {};
+  }
+  const result = OPS[op](s, s.chefs[chefId], data && typeof data === 'object' ? data : {}, nowMs) || {};
+  R.syncAllPeakMoney(s);
+  return result;
 }
 
 /** Autopilot / Timeout helper: advances all pending humans through the current phase cleanly! */
@@ -891,6 +942,7 @@ function view(s, chefId, nowMs = Date.now()) {
   const out = JSON.parse(JSON.stringify(s));
   delete out.rng;
   delete out.refused;
+  delete out.emoteCooldowns;
 
   // Hide secret Phase 1 dials of other players; only expose myDial + dialReady list!
   out.myDial = s.dials[chefId] || null;
@@ -919,10 +971,27 @@ function view(s, chefId, nowMs = Date.now()) {
       }
     }
   }
+  const stats = {};
   for (const chef of Object.values(out.chefs)) {
     chef.actionCardCount = chef.actionCards.length;
     if (chef.id !== chefId) chef.actionCards = [];
+    const st = chef.stats || {
+      auctionsWon: 0,
+      tradesDone: 0,
+      garbageDumped: 0,
+      peakMoney: chef.money || 0,
+      dishesCooked: chef.cookedCount || 0,
+    };
+    st.peakMoney = Math.max(st.peakMoney || 0, chef.money || 0);
+    st.dishesCooked = chef.cookedCount || 0;
+    chef.stats = st;
+    stats[chef.id] = { ...st };
   }
+  out.dailyEvent = out.dailyEvent || null;
+  out.difficulty = out.difficulty || 'normal';
+  out.emotes = Array.isArray(out.emotes) ? out.emotes : [];
+  out.dayHistory = Array.isArray(out.dayHistory) ? out.dayHistory : [];
+  out.stats = stats;
   out.turnChef = currentChef(s)?.id || null;
   return out;
 }
@@ -930,5 +999,7 @@ function view(s, chefId, nowMs = Date.now()) {
 module.exports = {
   newGame, act, autoplay, leave, view, currentChef, syncClock,
   PHASE2_DURATION_MS, AUCTION_GAVEL_MS, BOT_SHOP_DELAY_MS,
+  DAILY_EVENTS: D.DAILY_EVENTS, EMOTES: D.EMOTES, EMOTE_COOLDOWN_MS: D.EMOTE_COOLDOWN_MS,
+  AI_DIFFICULTIES: D.AI_DIFFICULTIES,
   GameError: R.GameError,
 };
