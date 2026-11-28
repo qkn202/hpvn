@@ -1267,6 +1267,12 @@
     ctx: null,
     interactiveCtx: null,
     rootGroup: null,
+    envRT: null,
+    lightingUpgraded: false,
+    tableUpgraded: false,
+    boardUpgraded: false,
+    propsUpgraded: false,
+    lanternGlowTex: null,
     clockPointLight: null,
     playerDial: null,
     serviceBellGroup: null,
@@ -1315,7 +1321,7 @@
     portraitCache: new Map(), // chefId -> Promise<HTMLImageElement|null>
   };
 
-  function makeTex(THREE, drawFn, w, h) {
+  function makeTex(THREE, drawFn, w, h, isLinearData) {
     const c = document.createElement('canvas');
     c.width = w || 256;
     c.height = h || 256;
@@ -1323,51 +1329,1123 @@
     if (ctx) drawFn(ctx, c.width, c.height);
     const tex = new THREE.CanvasTexture(c);
     tex.anisotropy = 4;
+    if (!isLinearData && THREE && THREE.sRGBEncoding !== undefined) {
+      tex.encoding = THREE.sRGBEncoding;
+    }
     return tex;
+  }
+
+  function tagMaterialSRGB(mat, THREE) {
+    if (!mat || !THREE || THREE.sRGBEncoding === undefined) return;
+    const mats = Array.isArray(mat) ? mat : [mat];
+    for (let i = 0; i < mats.length; i++) {
+      const m = mats[i];
+      if (!m) continue;
+      if (m.map && m.map.encoding !== THREE.sRGBEncoding) {
+        m.map.encoding = THREE.sRGBEncoding;
+        m.map.needsUpdate = true;
+        m.needsUpdate = true;
+      }
+      if (m.emissiveMap && m.emissiveMap.encoding !== THREE.sRGBEncoding) {
+        m.emissiveMap.encoding = THREE.sRGBEncoding;
+        m.emissiveMap.needsUpdate = true;
+        m.needsUpdate = true;
+      }
+    }
+  }
+
+  function ensureSceneColorTexturesSRGB(ctx, fullTraverse) {
+    if (!ctx || !ctx.THREE || ctx.THREE.sRGBEncoding === undefined) return;
+    const { THREE, scene, interactive3DCards, interactive3DShelves } = ctx;
+    if (fullTraverse && scene && typeof scene.traverse === 'function') {
+      scene.traverse(obj => {
+        if (obj && obj.isMesh && obj.material) {
+          tagMaterialSRGB(obj.material, THREE);
+        }
+      });
+      return;
+    }
+    if (Array.isArray(interactive3DCards)) {
+      for (let i = 0; i < interactive3DCards.length; i++) {
+        const m = interactive3DCards[i];
+        if (m && m.material) tagMaterialSRGB(m.material, THREE);
+      }
+    }
+    if (Array.isArray(interactive3DShelves)) {
+      for (let i = 0; i < interactive3DShelves.length; i++) {
+        const m = interactive3DShelves[i];
+        if (m && m.material) tagMaterialSRGB(m.material, THREE);
+      }
+    }
+  }
+
+  function resolveSceneRefs(ctx) {
+    const out = {
+      tableMesh: ctx.tableMesh || null,
+      boardBaseMesh: ctx.boardBaseMesh || null,
+      boardFaceMesh: ctx.boardFaceMesh || null,
+      sandTimerGroup: ctx.sandTimerGroup || null,
+      gourmetDeck: ctx.gourmetDeck || null,
+      basicDeck: ctx.basicDeck || null,
+      garbageBagGroup: ctx.garbageBagGroup || null,
+      actionDeckMesh: ctx.actionDeckMesh || null,
+      keyLight: ctx.keyLight || null,
+      fillLight: ctx.fillLight || null,
+      ambientLight: null,
+    };
+    const scene = ctx.scene;
+    if (!scene || !Array.isArray(scene.children)) return out;
+    const bcz = typeof ctx.boardCenterZ === 'number' ? ctx.boardCenterZ : -3.5;
+
+    for (let i = 0; i < scene.children.length; i++) {
+      const ch = scene.children[i];
+      if (!ch) continue;
+      if (ch.isAmbientLight && !out.ambientLight) {
+        out.ambientLight = ch;
+      } else if (ch.isDirectionalLight) {
+        if (ch.castShadow && !out.keyLight) out.keyLight = ch;
+        else if (!ch.castShadow && !out.fillLight) out.fillLight = ch;
+      } else if (ch.isMesh && ch.geometry) {
+        const gp = ch.geometry.parameters || {};
+        if (!out.tableMesh && ch.geometry.type === 'BoxGeometry' && gp.width >= 80 && gp.depth >= 60) {
+          out.tableMesh = ch;
+        } else if (!out.boardBaseMesh && ch.geometry.type === 'BoxGeometry' && gp.width >= 27 && gp.width <= 29 && gp.depth >= 19 && gp.depth <= 21) {
+          out.boardBaseMesh = ch;
+        } else if (!out.boardFaceMesh && ch.geometry.type === 'PlaneGeometry' && gp.width >= 27 && gp.height >= 19) {
+          out.boardFaceMesh = ch;
+        } else if (ch.geometry.type === 'BoxGeometry' && gp.width >= 2.2 && gp.width <= 2.6 && gp.depth >= 3.2 && gp.depth <= 3.6 && ch.position.x < -14) {
+          if (ch.position.z < bcz && !out.gourmetDeck) out.gourmetDeck = ch;
+          else if (ch.position.z >= bcz && !out.basicDeck) out.basicDeck = ch;
+        } else if (!out.actionDeckMesh && ch.geometry.type === 'BoxGeometry' && gp.width >= 1.5 && gp.width <= 1.75 && gp.depth >= 2.0 && gp.depth <= 2.35 && ch.position.x > 3 && ch.position.x < 6) {
+          out.actionDeckMesh = ch;
+        }
+      } else if (ch.isGroup) {
+        if (!out.sandTimerGroup && ch.position && ch.position.x > 15 && ch.children && ch.children.length >= 7) {
+          out.sandTimerGroup = ch;
+        } else if (!out.garbageBagGroup && ch.position && ch.position.x < -3.5 && ch.position.x > -6.0 && Math.abs(ch.position.z - (bcz + 0.3)) < 1.2) {
+          out.garbageBagGroup = ch;
+        }
+      }
+    }
+    return out;
+  }
+
+  function getLanternGlowTexture(THREE) {
+    if (sceneState.lanternGlowTex) return sceneState.lanternGlowTex;
+    sceneState.lanternGlowTex = makeTex(THREE, (ctx, w, h) => {
+      const g = ctx.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2);
+      g.addColorStop(0, 'rgba(255, 232, 168, 0.92)');
+      g.addColorStop(0.32, 'rgba(245, 166, 56, 0.45)');
+      g.addColorStop(0.7, 'rgba(217, 102, 28, 0.12)');
+      g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    }, 96, 96);
+    return sceneState.lanternGlowTex;
+  }
+
+  // ------------------------------------------
+  // 3A-v2. INDOCHINE COLLECTOR'S EDITION: LIGHTING, PMREM, WALNUT MARQUETRY, COLLECTOR BOARD & HEIRLOOM PROPS
+  // ------------------------------------------
+  function setupIndochineLightingAndEnv(ctx, refs) {
+    if (sceneState.lightingUpgraded) return;
+    sceneState.lightingUpgraded = true;
+    const { THREE, scene, renderer } = ctx;
+
+    // 1. Filmic tone mapping & true sRGB color pipeline
+    if (renderer) {
+      if (THREE.ACESFilmicToneMapping !== undefined) {
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      }
+      renderer.toneMappingExposure = 1.08;
+      if (THREE.sRGBEncoding !== undefined) {
+        renderer.outputEncoding = THREE.sRGBEncoding;
+      }
+    }
+
+    // 2. Deep espresso-lacquer atmospheric backdrop
+    scene.background = new THREE.Color(0x0b0604);
+    if (scene.fog) {
+      if (scene.fog.color && typeof scene.fog.color.setHex === 'function') {
+        scene.fog.color.setHex(0x0b0604);
+      }
+      if (typeof scene.fog.density === 'number') {
+        scene.fog.density = 0.0036;
+      }
+    }
+
+    // 3. Offline procedural Saigon Fine-Dining Bistro Environment Map via PMREMGenerator
+    if (renderer && typeof THREE.PMREMGenerator === 'function') {
+      try {
+        const envTex = makeTex(THREE, (c, w, h) => {
+          // Vertical studio gradient: deep espresso ceiling -> warm bistro horizon -> dark walnut floor
+          const bg = c.createLinearGradient(0, 0, 0, h);
+          bg.addColorStop(0.0, '#120905');
+          bg.addColorStop(0.24, '#24130a');
+          bg.addColorStop(0.46, '#3d2211');
+          bg.addColorStop(0.56, '#1f1108');
+          bg.addColorStop(1.0, '#0a0503');
+          c.fillStyle = bg;
+          c.fillRect(0, 0, w, h);
+
+          // Warm overhead Saigon brass chandelier softboxes (creates gleaming metallic highlights!)
+          const lamps = [
+            { x: w * 0.28, y: h * 0.22, rx: w * 0.14, ry: h * 0.13, col: 'rgba(255, 236, 186, 0.92)' },
+            { x: w * 0.62, y: h * 0.18, rx: w * 0.18, ry: h * 0.14, col: 'rgba(255, 224, 152, 0.85)' },
+            { x: w * 0.84, y: h * 0.34, rx: w * 0.12, ry: h * 0.10, col: 'rgba(246, 184, 88, 0.55)' },
+            { x: w * 0.12, y: h * 0.38, rx: w * 0.13, ry: h * 0.10, col: 'rgba(126, 212, 202, 0.32)' },
+          ];
+          lamps.forEach(lp => {
+            c.save();
+            c.translate(lp.x, lp.y);
+            c.scale(1, lp.ry / lp.rx);
+            const g = c.createRadialGradient(0, 0, 2, 0, 0, lp.rx);
+            g.addColorStop(0, lp.col);
+            g.addColorStop(0.45, lp.col.replace(/[\d.]+\)$/, '0.32)'));
+            g.addColorStop(1, 'rgba(0,0,0,0)');
+            c.fillStyle = g;
+            c.beginPath();
+            c.arc(0, 0, lp.rx, 0, Math.PI * 2);
+            c.fill();
+            c.restore();
+          });
+
+          // Subtle warm candlelight rim band along horizon
+          const rim = c.createLinearGradient(0, h * 0.44, 0, h * 0.56);
+          rim.addColorStop(0, 'rgba(255, 202, 120, 0)');
+          rim.addColorStop(0.5, 'rgba(245, 186, 98, 0.28)');
+          rim.addColorStop(1, 'rgba(255, 202, 120, 0)');
+          c.fillStyle = rim;
+          c.fillRect(0, h * 0.44, w, h * 0.12);
+        }, 512, 256);
+
+        if (THREE.EquirectangularReflectionMapping !== undefined) {
+          envTex.mapping = THREE.EquirectangularReflectionMapping;
+        }
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        if (typeof pmrem.compileEquirectangularShader === 'function') {
+          pmrem.compileEquirectangularShader();
+        }
+        const envRT = pmrem.fromEquirectangular(envTex);
+        if (envRT && envRT.texture) {
+          scene.environment = envRT.texture;
+          sceneState.envRT = envRT;
+        }
+        envTex.dispose();
+        pmrem.dispose();
+      } catch (_) {}
+    }
+
+    // 4. Studio Light Rig Calibration (Warm Indochine Candlelight Key + Jade Rim + Hemisphere Bounce)
+    if (refs.ambientLight) {
+      refs.ambientLight.color.setHex(0xffe8c8);
+      refs.ambientLight.intensity = 0.28;
+    }
+    if (typeof THREE.HemisphereLight === 'function') {
+      const hemi = new THREE.HemisphereLight(0xffe8c2, 0x1a0d06, 0.54);
+      hemi.name = 'VdbIndochineHemiLight';
+      scene.add(hemi);
+    }
+    if (refs.keyLight) {
+      refs.keyLight.color.setHex(0xfff1d6);
+      refs.keyLight.intensity = 1.32;
+      if (refs.keyLight.shadow) {
+        refs.keyLight.shadow.bias = -0.00025;
+      }
+    }
+    if (refs.fillLight) {
+      refs.fillLight.color.setHex(0x7fd4ca);
+      refs.fillLight.intensity = 0.34;
+    }
+  }
+
+  function upgradeTabletop(ctx, refs) {
+    const tableMesh = refs.tableMesh;
+    if (!tableMesh || sceneState.tableUpgraded) return;
+    sceneState.tableUpgraded = true;
+    const { THREE } = ctx;
+    const bcz = typeof ctx.boardCenterZ === 'number' ? ctx.boardCenterZ : -3.5;
+
+    // Deterministic pseudo-random for rich, repeatable hand-rubbed walnut grain
+    let seed = 4219;
+    const rand = () => {
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    };
+
+    const walnutTex = makeTex(THREE, (c, w, h) => {
+      const plankCount = 9;
+      const pw = w / plankCount;
+      const tones = ['#26130a', '#2e180d', '#1f1008', '#341b0f', '#29150b', '#221108', '#311a0e', '#251209', '#2b160c'];
+
+      for (let p = 0; p < plankCount; p++) {
+        const x0 = p * pw;
+        // Plank base gradient
+        const pg = c.createLinearGradient(x0, 0, x0 + pw, 0);
+        pg.addColorStop(0, '#190c06');
+        pg.addColorStop(0.08, tones[p % tones.length]);
+        pg.addColorStop(0.55, tones[(p + 2) % tones.length]);
+        pg.addColorStop(0.94, tones[p % tones.length]);
+        pg.addColorStop(1, '#140904');
+        c.fillStyle = pg;
+        c.fillRect(x0, 0, pw + 1, h);
+
+        // Organic flowing walnut grain fibers
+        const freq = 0.004 + rand() * 0.003;
+        const phase = rand() * Math.PI * 2;
+        for (let g = 0; g < 34; g++) {
+          const gx = x0 + 4 + rand() * (pw - 8);
+          const isWarm = g % 3 === 0;
+          c.strokeStyle = isWarm ? 'rgba(182, 118, 62, 0.065)' : 'rgba(9, 4, 2, 0.14)';
+          c.lineWidth = 0.8 + rand() * 2.2;
+          c.beginPath();
+          for (let y = 0; y <= h; y += 32) {
+            const wave = Math.sin(y * freq + phase + g * 0.35) * (3.5 + (g % 5));
+            const px = clamp(gx + wave, x0 + 2, x0 + pw - 2);
+            if (y === 0) c.moveTo(px, y);
+            else c.lineTo(px, y);
+          }
+          c.stroke();
+        }
+
+        // Subtle cathedral woodfigure oval highlights
+        for (let k = 0; k < 2; k++) {
+          const kx = x0 + pw * (0.28 + rand() * 0.44);
+          const ky = h * (0.2 + rand() * 0.6);
+          c.save();
+          c.translate(kx, ky);
+          c.scale(0.32, 1.8);
+          const kg = c.createRadialGradient(0, 0, 2, 0, 0, pw * 0.72);
+          kg.addColorStop(0, 'rgba(154, 96, 48, 0.06)');
+          kg.addColorStop(0.55, 'rgba(18, 8, 4, 0.08)');
+          kg.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          c.fillStyle = kg;
+          c.beginPath();
+          c.arc(0, 0, pw * 0.72, 0, Math.PI * 2);
+          c.fill();
+          c.restore();
+        }
+
+        // Crisp bevel plank seam
+        c.fillStyle = 'rgba(7, 3, 1, 0.78)';
+        c.fillRect(x0, 0, 2.5, h);
+        c.fillStyle = 'rgba(255, 206, 150, 0.045)';
+        c.fillRect(x0 + 2.5, 0, 1.2, h);
+      }
+
+      // Subtle inlaid antique-brass marquetry frame generously surrounding the central board & side props
+      // BoxGeometry(88, 1.8, 66) top face maps world x in [-44..44] -> [0..w], z in [-33..33] -> [0..h]
+      const toU = wx => ((wx + 44) / 88) * w;
+      const toV = wz => ((wz + 33) / 66) * h;
+      const mx1 = toU(-20.4), mx2 = toU(20.4);
+      const my1 = toV(bcz - 13.4), my2 = toV(bcz + 13.8);
+
+      c.save();
+      c.strokeStyle = 'rgba(218, 178, 98, 0.34)';
+      c.lineWidth = 3.2;
+      c.strokeRect(mx1, my1, mx2 - mx1, my2 - my1);
+      c.strokeStyle = 'rgba(218, 178, 98, 0.16)';
+      c.lineWidth = 1.4;
+      c.strokeRect(mx1 + 10, my1 + 10, (mx2 - mx1) - 20, (my2 - my1) - 20);
+
+      // Mitered brass corner diamond inlays
+      const corners = [[mx1, my1], [mx2, my1], [mx1, my2], [mx2, my2]];
+      corners.forEach(([cx, cy]) => {
+        c.save();
+        c.translate(cx, cy);
+        c.rotate(Math.PI / 4);
+        c.fillStyle = 'rgba(226, 186, 108, 0.42)';
+        c.fillRect(-5.5, -5.5, 11, 11);
+        c.strokeStyle = 'rgba(18, 9, 4, 0.7)';
+        c.lineWidth = 1.5;
+        c.strokeRect(-5.5, -5.5, 11, 11);
+        c.restore();
+      });
+      c.restore();
+
+      // Warm overhead Saigon candlelight pool centered under the board + moody outer table vignette
+      const poolX = toU(0);
+      const poolY = toV(bcz);
+      const warmPool = c.createRadialGradient(poolX, poolY, 70, poolX, poolY, w * 0.56);
+      warmPool.addColorStop(0, 'rgba(255, 212, 146, 0.15)');
+      warmPool.addColorStop(0.48, 'rgba(196, 132, 68, 0.04)');
+      warmPool.addColorStop(0.78, 'rgba(14, 7, 3, 0.30)');
+      warmPool.addColorStop(1, 'rgba(6, 3, 1, 0.68)');
+      c.fillStyle = warmPool;
+      c.fillRect(0, 0, w, h);
+    }, 1024, 1024);
+
+    // Linear wood-grain bump map for tactile satin walnut reflections
+    const bumpTex = makeTex(THREE, (c, w, h) => {
+      c.fillStyle = '#808080';
+      c.fillRect(0, 0, w, h);
+      const plankCount = 9;
+      const pw = w / plankCount;
+      for (let p = 0; p < plankCount; p++) {
+        const x0 = p * pw;
+        c.fillStyle = '#242424';
+        c.fillRect(x0, 0, 2, h);
+        for (let g = 0; g < 26; g++) {
+          const gx = x0 + 2 + ((g * 19 + p * 7) % Math.max(4, Math.floor(pw - 4)));
+          c.fillStyle = g % 2 === 0 ? '#939393' : '#6c6c6c';
+          c.fillRect(gx, 0, 1.2, h);
+        }
+      }
+    }, 512, 512, true);
+
+    if (tableMesh.material && tableMesh.material.map) {
+      try { tableMesh.material.map.dispose(); } catch (_) {}
+    }
+    tableMesh.material = new THREE.MeshStandardMaterial({
+      map: walnutTex,
+      bumpMap: bumpTex,
+      bumpScale: 0.04,
+      roughness: 0.42,
+      metalness: 0.06,
+      envMapIntensity: 0.72,
+    });
+    tableMesh.receiveShadow = true;
+  }
+
+  function buildCollectorBoardTexture(THREE) {
+    return makeTex(THREE, (ctx, w, h) => {
+      // 1. Deep Imperial Jade-Obsidian Lacquer Board Surface
+      const baseGrad = ctx.createRadialGradient(w * 0.5, h * 0.5, 160, w * 0.5, h * 0.5, w * 0.64);
+      baseGrad.addColorStop(0, '#0f2425');
+      baseGrad.addColorStop(0.58, '#081517');
+      baseGrad.addColorStop(1, '#040a0c');
+      ctx.fillStyle = baseGrad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Subtle fine silk-linen weave micro-texture
+      ctx.strokeStyle = 'rgba(224, 190, 120, 0.024)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 28) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+      for (let y = 0; y < h; y += 28) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+
+      // Subtle tactile Collector's Edition fold seams
+      ctx.strokeStyle = 'rgba(2, 5, 7, 0.68)';
+      ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
+
+      // Double hairline antique champagne-gold perimeter frame
+      ctx.strokeStyle = '#d4aa54';
+      ctx.lineWidth = 7;
+      ctx.strokeRect(14, 14, w - 28, h - 28);
+      ctx.strokeStyle = 'rgba(232, 200, 128, 0.42)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(24, 24, w - 48, h - 48);
+
+      // Vietnamese "Hoa Văn Kỷ Hà" geometric corner frets
+      const drawCornerFret = (cx, cy, sx, sy) => {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(sx, sy);
+        ctx.strokeStyle = '#e2be6c';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 44); ctx.lineTo(0, 0); ctx.lineTo(44, 0);
+        ctx.moveTo(0, 26); ctx.lineTo(26, 26); ctx.lineTo(26, 0);
+        ctx.moveTo(12, 12); ctx.lineTo(12, 0);
+        ctx.stroke();
+        ctx.fillStyle = '#f3d996';
+        ctx.fillRect(4, 4, 5, 5);
+        ctx.restore();
+      };
+      drawCornerFret(18, 18, 1, 1);
+      drawCornerFret(w - 18, 18, -1, 1);
+      drawCornerFret(18, h - 18, 1, -1);
+      drawCornerFret(w - 18, h - 18, -1, -1);
+
+      // 2. CENTRAL HUB: THE ISLAND (CHỢ BẾN THÀNH) — Saigon Gạch Bông Mosaic Plaza
+      const islandW = w * 0.48;
+      const islandH = h * 0.49;
+      const islandX = (w - islandW) / 2;
+      const islandY = (h - islandH) / 2;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(islandX, islandY, islandW, islandH);
+      ctx.clip();
+
+      // Deep Imperial Jade-Slate foundation
+      const islBg = ctx.createRadialGradient(w / 2, h / 2, 40, w / 2, h / 2, islandW * 0.65);
+      islBg.addColorStop(0, '#133032');
+      islBg.addColorStop(0.65, '#0b2022');
+      islBg.addColorStop(1, '#071517');
+      ctx.fillStyle = islBg;
+      ctx.fillRect(islandX, islandY, islandW, islandH);
+
+      // Authentic Saigon Gạch Bông (Indochine cement tile) diamond & 4-petal rosette mosaic
+      const tileSize = 68;
+      for (let ty = islandY - 12; ty < islandY + islandH + tileSize; ty += tileSize) {
+        for (let tx = islandX - 12; tx < islandX + islandW + tileSize; tx += tileSize) {
+          const rIdx = Math.floor((ty - islandY) / tileSize);
+          const cIdx = Math.floor((tx - islandX) / tileSize);
+          const alt = (rIdx + cIdx) % 2 === 0;
+          ctx.fillStyle = alt ? 'rgba(20, 56, 58, 0.46)' : 'rgba(9, 28, 30, 0.46)';
+          ctx.fillRect(tx, ty, tileSize - 1, tileSize - 1);
+
+          // Tile grout hairline
+          ctx.strokeStyle = 'rgba(218, 182, 108, 0.08)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(tx, ty, tileSize, tileSize);
+
+          // Subtle Indochine 4-petal geometric diamond motif inside each cement tile
+          const cx = tx + tileSize * 0.5;
+          const cy = ty + tileSize * 0.5;
+          const dr = tileSize * 0.30;
+          ctx.strokeStyle = alt ? 'rgba(226, 192, 122, 0.14)' : 'rgba(94, 234, 212, 0.10)';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy - dr);
+          ctx.lineTo(cx + dr, cy);
+          ctx.lineTo(cx, cy + dr);
+          ctx.lineTo(cx - dr, cy);
+          ctx.closePath();
+          ctx.stroke();
+
+          ctx.fillStyle = alt ? 'rgba(226, 192, 122, 0.12)' : 'rgba(94, 234, 212, 0.08)';
+          ctx.beginPath();
+          ctx.arc(cx, cy, 4.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+
+      // Double gold-and-jade plaza border
+      ctx.strokeStyle = '#d4aa54';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(islandX, islandY, islandW, islandH);
+      ctx.strokeStyle = 'rgba(94, 234, 212, 0.45)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(islandX + 8, islandY + 8, islandW - 16, islandH - 16);
+
+      // Editorial Saigon Fine-Dining Title Cartouche (same rect as original)
+      const banX = islandX + 24, banY = islandY + 20, banW = islandW - 48, banH = 108;
+      const banGrad = ctx.createLinearGradient(banX, banY, banX, banY + banH);
+      banGrad.addColorStop(0, '#160d09');
+      banGrad.addColorStop(1, '#0a0705');
+      ctx.fillStyle = banGrad;
+      ctx.fillRect(banX, banY, banW, banH);
+      ctx.strokeStyle = '#d8ae56';
+      ctx.lineWidth = 3.5;
+      ctx.strokeRect(banX, banY, banW, banH);
+      ctx.strokeStyle = 'rgba(243, 216, 148, 0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(banX + 6, banY + 6, banW - 12, banH - 12);
+
+      // Champagne-gold serif title
+      const titleGrad = ctx.createLinearGradient(0, banY + 18, 0, banY + 70);
+      titleGrad.addColorStop(0, '#fff4cf');
+      titleGrad.addColorStop(0.55, '#e2b75b');
+      titleGrad.addColorStop(1, '#bd8930');
+      ctx.fillStyle = titleGrad;
+      ctx.font = '700 38px Georgia, "Times New Roman", serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      fitCanvasText(ctx, '✦  VUA ĐẦU BẾP VIỆT NAM  ✦', w / 2, islandY + 64, islandW - 84);
+      ctx.fillStyle = '#a7e3d8';
+      ctx.font = '700 18px system-ui, -apple-system, sans-serif';
+      fitCanvasText(ctx, 'CHỢ BẾN THÀNH  •  ĐẢO TRUNG TÂM  (KHÔNG ĐẤU GIÁ • KHÔNG KỸ NĂNG)', w / 2, islandY + 102, islandW - 76);
+
+      // Left Circular Medallion: Kitchen Hamper & Discard Tray (exact coords: islandX+145, islandY+260, r=96)
+      const gx = islandX + 145, gy = islandY + 260;
+      ctx.beginPath();
+      ctx.arc(gx, gy, 96, 0, Math.PI * 2);
+      ctx.fillStyle = '#18100d';
+      ctx.fill();
+      ctx.strokeStyle = '#b91c1c';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(gx, gy, 86, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(218, 178, 98, 0.55)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = '#fca5a5';
+      ctx.font = '800 18px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('ĐỔ RÁC $100', gx, gy - 12);
+      ctx.fillStyle = '#d6c7b2';
+      ctx.font = '700 15px system-ui, sans-serif';
+      ctx.fillText('KHAY BỎ ($0)', gx, gy + 18);
+
+      // Center Lacquer Plaque: Upgrades & Chocolate Exchange (exact coords: w/2-155, islandY+160, 310x190)
+      const ux = w / 2 - 155, uy = islandY + 160;
+      const uGrad = ctx.createLinearGradient(ux, uy, ux, uy + 190);
+      uGrad.addColorStop(0, '#162038');
+      uGrad.addColorStop(1, '#0d1426');
+      ctx.fillStyle = uGrad;
+      ctx.fillRect(ux, uy, 310, 190);
+      ctx.strokeStyle = '#d8ae56';
+      ctx.lineWidth = 3.5;
+      ctx.strokeRect(ux, uy, 310, 190);
+      ctx.strokeStyle = 'rgba(232, 200, 128, 0.35)';
+      ctx.lineWidth = 1.4;
+      ctx.strokeRect(ux + 7, uy + 7, 296, 176);
+
+      ctx.fillStyle = '#f6dfa4';
+      ctx.font = '700 21px Georgia, "Times New Roman", serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🛠️ NÂNG CẤP ($200–$400)', w / 2, islandY + 208);
+      ctx.fillStyle = '#d6d3d1';
+      ctx.font = '700 16px system-ui, sans-serif';
+      ctx.fillText('🔥 Bếp Đôi • 📣 Quảng Cáo • 🧊 Kho', w / 2, islandY + 244);
+      ctx.strokeStyle = 'rgba(216, 174, 86, 0.32)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(ux + 28, islandY + 266); ctx.lineTo(ux + 282, islandY + 266); ctx.stroke();
+      ctx.fillStyle = '#f5ca6b';
+      ctx.font = '800 19px system-ui, sans-serif';
+      ctx.fillText('🍫 BÁN SÔ-CÔ-LA = +$500', w / 2, islandY + 306);
+
+      // Right Card Bay: Action Card Deck (exact coords: islandX + islandW - 220, islandY + 165, 165x185)
+      const ax = islandX + islandW - 220, ay = islandY + 165;
+      const aGrad = ctx.createLinearGradient(ax, ay, ax, ay + 185);
+      aGrad.addColorStop(0, '#09382d');
+      aGrad.addColorStop(1, '#052019');
+      ctx.fillStyle = aGrad;
+      ctx.fillRect(ax, ay, 165, 185);
+      ctx.strokeStyle = '#d4aa54';
+      ctx.lineWidth = 3.5;
+      ctx.strokeRect(ax, ay, 165, 185);
+      ctx.strokeStyle = 'rgba(94, 234, 212, 0.45)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(ax + 7, ay + 7, 151, 171);
+      ctx.fillStyle = '#bbf7d0';
+      ctx.font = '800 19px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      fitCanvasText(ctx, 'THẺ HÀNH ĐỘNG', ax + 82, islandY + 244, 144);
+      ctx.fillStyle = '#f8e3a8';
+      ctx.font = '700 27px Georgia, "Times New Roman", serif';
+      ctx.fillText('$200', ax + 82, islandY + 288);
+
+      // Bottom Island Ribbon: Saigon Ivory-Parchment Gold-Trimmed Ledger (exact coords)
+      const rx = islandX + 55, ry = islandY + islandH - 115, rw = islandW - 110, rh = 82;
+      const ribGrad = ctx.createLinearGradient(rx, ry, rx, ry + rh);
+      ribGrad.addColorStop(0, '#f9f0da');
+      ribGrad.addColorStop(1, '#e8d5ac');
+      ctx.fillStyle = ribGrad;
+      ctx.fillRect(rx, ry, rw, rh);
+      ctx.strokeStyle = '#b78a34';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(rx, ry, rw, rh);
+      ctx.strokeStyle = '#115e59';
+      ctx.lineWidth = 1.6;
+      ctx.strokeRect(rx + 6, ry + 6, rw - 12, rh - 12);
+      ctx.fillStyle = '#1f130b';
+      ctx.font = '800 22px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      fitCanvasText(ctx, '💵 THU NHẬP NGÀY: $300 NỀN  ✦  +QUẢNG CÁO  ✦  MỐC 3·7·12⭐ → 20⭐ THẮNG', w / 2, islandY + islandH - 65, islandW - 138);
+
+      // 3. 6 CURATED JEWEL-TONE LACQUER MARKET STALLS (PIXEL-EXACT SLOT ALIGNMENT!)
+      const drawMarketZone = (x, y, mw, mh, bgTop, bgBot, accent, goldTrim, title, price) => {
+        const g = ctx.createLinearGradient(x, y, x, y + mh);
+        g.addColorStop(0, bgTop);
+        g.addColorStop(1, bgBot);
+        ctx.fillStyle = g;
+        ctx.fillRect(x, y, mw, mh);
+
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 4.5;
+        ctx.strokeRect(x, y, mw, mh);
+        ctx.strokeStyle = 'rgba(226, 190, 114, 0.42)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x + 5, y + 5, mw - 10, mh - 10);
+
+        // Header strip with satin gradient + brushed gold underline
+        const hg = ctx.createLinearGradient(x, y + 6, x, y + 44);
+        hg.addColorStop(0, accent);
+        hg.addColorStop(1, bgTop);
+        ctx.fillStyle = hg;
+        ctx.fillRect(x + 6, y + 6, mw - 12, 38);
+        ctx.fillStyle = goldTrim;
+        ctx.fillRect(x + 6, y + 43, mw - 12, 2);
+
+        ctx.fillStyle = '#fcf6e8';
+        ctx.font = '700 22px Georgia, "Times New Roman", serif';
+        ctx.textAlign = 'left';
+        fitCanvasText(ctx, title, x + 18, y + 32, mw - 112);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#f8df94';
+        ctx.font = '800 22px system-ui, sans-serif';
+        ctx.fillText(price, x + mw - 16, y + 32);
+
+        // 1 Shelf slot + 3 Counter slots (exact original coordinates)
+        const slotW = (mw - 42) / 4;
+        const slotH = mh - 60;
+        for (let i = 0; i < 4; i++) {
+          const sx = x + 10 + i * (slotW + 7);
+          const sy = y + 50;
+          ctx.fillStyle = i === 0 ? 'rgba(232, 198, 126, 0.11)' : 'rgba(0, 0, 0, 0.28)';
+          ctx.fillRect(sx, sy, slotW, slotH);
+          ctx.strokeStyle = i === 0 ? '#e4be6c' : 'rgba(232, 200, 132, 0.36)';
+          ctx.lineWidth = i === 0 ? 2.5 : 1.6;
+          ctx.strokeRect(sx, sy, slotW, slotH);
+          ctx.fillStyle = i === 0 ? '#f6dfa4' : 'rgba(236, 224, 198, 0.72)';
+          ctx.font = '800 12.5px system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(i === 0 ? 'KỆ ÚP' : `QUẦY ${i}`, sx + slotW / 2, sy + slotH - 10);
+        }
+      };
+
+      // Top 3 Markets
+      drawMarketZone(35, 28, w * 0.305, 165, '#3b0b0e', '#1e0506', '#a82222', '#e0b861', '🥩 HÀNG THỊT TƯƠI', '$200');
+      drawMarketZone(w * 0.348, 28, w * 0.305, 165, '#3b2608', '#1f1303', '#b38119', '#eed07f', '🦐 HẢI SẢN VŨNG TÀU', '$200');
+      drawMarketZone(w * 0.665, 28, w * 0.315, 165, '#2b0d45', '#150624', '#7b35b2', '#dfb8ff', '🌿 PHỐ GIA VỊ HUYỀN BÍ', '$300');
+
+      // Bottom Market (Fruit)
+      drawMarketZone(w * 0.22, h - 195, w * 0.56, 165, '#092c44', '#041624', '#126b9c', '#9fdaf5', '🍉 CHỢ HOA QUẢ MIỀN TÂY', '$100');
+
+      // Left Vertical Market: Carbs ($100) — exact coords (35, 212, 175, h - 425)
+      const drawVerticalMarket = (vx, bgTop, bgBot, accent, goldTrim, title, labelColor) => {
+        const vh = h - 425;
+        const g = ctx.createLinearGradient(vx, 212, vx + 175, 212 + vh);
+        g.addColorStop(0, bgTop);
+        g.addColorStop(1, bgBot);
+        ctx.fillStyle = g;
+        ctx.fillRect(vx, 212, 175, vh);
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 4.5;
+        ctx.strokeRect(vx, 212, 175, vh);
+        ctx.strokeStyle = 'rgba(226, 190, 114, 0.42)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(vx + 5, 217, 165, vh - 10);
+
+        const hg = ctx.createLinearGradient(vx, 218, vx, 262);
+        hg.addColorStop(0, accent);
+        hg.addColorStop(1, bgTop);
+        ctx.fillStyle = hg;
+        ctx.fillRect(vx + 6, 218, 163, 44);
+        ctx.fillStyle = goldTrim;
+        ctx.fillRect(vx + 6, 261, 163, 2);
+
+        ctx.fillStyle = '#fcf6e8';
+        ctx.font = '700 18.5px Georgia, "Times New Roman", serif';
+        ctx.textAlign = 'center';
+        fitCanvasText(ctx, title, vx + 87, 247, 150);
+
+        const sx = vx === 35 ? 52 : (vx + 18);
+        for (let i = 0; i < 4; i++) {
+          const sy = 274 + i * 238;
+          ctx.fillStyle = i === 0 ? 'rgba(232, 198, 126, 0.11)' : 'rgba(0, 0, 0, 0.28)';
+          ctx.fillRect(sx, sy, 140, 215);
+          ctx.strokeStyle = i === 0 ? '#e4be6c' : 'rgba(232, 200, 132, 0.36)';
+          ctx.lineWidth = i === 0 ? 2.5 : 1.6;
+          ctx.strokeRect(sx, sy, 140, 215);
+          ctx.fillStyle = i === 0 ? '#f6dfa4' : labelColor;
+          ctx.font = '800 13.5px system-ui, sans-serif';
+          ctx.fillText(i === 0 ? 'KỆ ÚP' : `QUẦY ${i}`, vx + 87, sy + 200);
+        }
+      };
+
+      drawVerticalMarket(35, '#3b1907', '#1d0b03', '#b45a16', '#f2c87d', '🌾 GẠO & PHỞ $100', '#f4dec0');
+      drawVerticalMarket(w - 210, '#072c18', '#03160c', '#187a46', '#98e5b9', '🥗 RAU CỦ $100', '#d1f2df');
+    }, 2048, 1463);
+  }
+
+  function buildBoardBrassFrame(THREE, boardHeight, boardCenterZ) {
+    const group = new THREE.Group();
+    group.name = 'VdbBoardBrassFrame';
+    group.userData.isDecorative = true;
+
+    const rosewoodMat = new THREE.MeshStandardMaterial({
+      color: 0x220f08,
+      roughness: 0.36,
+      metalness: 0.14,
+      envMapIntensity: 0.9,
+    });
+    const brassMat = new THREE.MeshStandardMaterial({
+      color: 0xdcb35c,
+      roughness: 0.20,
+      metalness: 0.90,
+      envMapIntensity: 1.32,
+    });
+
+    const bw = 28;
+    const bd = 20;
+    const railW = 0.38;
+    const railH = boardHeight + 0.03;
+
+    // 4 beveled dark-rosewood perimeter moldings hugging the 28x20 board snugly
+    const northRail = new THREE.Mesh(new THREE.BoxGeometry(bw + railW * 2, railH, railW), rosewoodMat);
+    northRail.position.set(0, railH * 0.5, boardCenterZ - bd * 0.5 - railW * 0.5);
+    northRail.castShadow = true;
+    northRail.receiveShadow = true;
+
+    const southRail = northRail.clone();
+    southRail.position.z = boardCenterZ + bd * 0.5 + railW * 0.5;
+
+    const westRail = new THREE.Mesh(new THREE.BoxGeometry(railW, railH, bd), rosewoodMat);
+    westRail.position.set(-bw * 0.5 - railW * 0.5, railH * 0.5, boardCenterZ);
+    westRail.castShadow = true;
+    westRail.receiveShadow = true;
+
+    const eastRail = westRail.clone();
+    eastRail.position.x = bw * 0.5 + railW * 0.5;
+
+    group.add(northRail, southRail, westRail, eastRail);
+
+    // Fine brushed-brass inner trim bead running flush along all 4 outer board edges
+    const beadT = 0.065;
+    const beadH = 0.045;
+    const beadY = boardHeight + 0.015;
+    const bN = new THREE.Mesh(new THREE.BoxGeometry(bw + beadT * 2, beadH, beadT), brassMat);
+    bN.position.set(0, beadY, boardCenterZ - bd * 0.5 - beadT * 0.5);
+    const bS = bN.clone();
+    bS.position.z = boardCenterZ + bd * 0.5 + beadT * 0.5;
+    const bW = new THREE.Mesh(new THREE.BoxGeometry(beadT, beadH, bd), brassMat);
+    bW.position.set(-bw * 0.5 - beadT * 0.5, beadY, boardCenterZ);
+    const bE = bW.clone();
+    bE.position.x = bw * 0.5 + beadT * 0.5;
+    group.add(bN, bS, bW, bE);
+
+    // 4 Sculpted Brushed-Brass Collector Corner Brackets with decorative rivets
+    const studGeo = new THREE.SphereGeometry(0.065, 10, 8);
+    const corners = [
+      [-1, -1], [1, -1], [-1, 1], [1, 1],
+    ];
+    corners.forEach(([sx, sz]) => {
+      const cGrp = new THREE.Group();
+      const cx = sx * (bw * 0.5 + railW * 0.55);
+      const cz = boardCenterZ + sz * (bd * 0.5 + railW * 0.55);
+      cGrp.position.set(cx, 0, cz);
+
+      const armX = new THREE.Mesh(new THREE.BoxGeometry(1.55, railH + 0.045, railW + 0.09), brassMat);
+      armX.position.set(-sx * 0.56, (railH + 0.045) * 0.5, 0);
+      armX.castShadow = true;
+      const armZ = new THREE.Mesh(new THREE.BoxGeometry(railW + 0.09, railH + 0.045, 1.55), brassMat);
+      armZ.position.set(0, (railH + 0.045) * 0.5, -sz * 0.56);
+      armZ.castShadow = true;
+
+      const capStud = new THREE.Mesh(studGeo, brassMat);
+      capStud.position.set(0, railH + 0.055, 0);
+      const studX = new THREE.Mesh(studGeo, brassMat);
+      studX.position.set(-sx * 1.12, railH + 0.055, 0);
+      const studZ = new THREE.Mesh(studGeo, brassMat);
+      studZ.position.set(0, railH + 0.055, -sz * 1.12);
+
+      cGrp.add(armX, armZ, capStud, studX, studZ);
+      group.add(cGrp);
+    });
+
+    return group;
+  }
+
+  function upgradeCollectorBoard(ctx, refs, root, boardHeight, boardCenterZ) {
+    if (sceneState.boardUpgraded) return;
+    sceneState.boardUpgraded = true;
+    const { THREE } = ctx;
+
+    // 1. Physical 3D Beveled Rosewood & Brushed-Brass Frame around the board
+    const frame = buildBoardBrassFrame(THREE, boardHeight, boardCenterZ);
+    root.add(frame);
+
+    // 2. Lacquered Rosewood Board Base
+    if (refs.boardBaseMesh) {
+      refs.boardBaseMesh.material = new THREE.MeshStandardMaterial({
+        color: 0x1b0e08,
+        roughness: 0.40,
+        metalness: 0.14,
+        envMapIntensity: 0.85,
+      });
+    }
+
+    // 3. Museum-grade Indochine Lacquer & Saigon Gạch Bông Board Face
+    if (refs.boardFaceMesh) {
+      if (refs.boardFaceMesh.material && refs.boardFaceMesh.material.map) {
+        try { refs.boardFaceMesh.material.map.dispose(); } catch (_) {}
+      }
+      const collectorTex = buildCollectorBoardTexture(THREE);
+      refs.boardFaceMesh.material = new THREE.MeshStandardMaterial({
+        map: collectorTex,
+        roughness: 0.48,
+        metalness: 0.08,
+        envMapIntensity: 0.65,
+      });
+      refs.boardFaceMesh.receiveShadow = true;
+    }
+  }
+
+  function buildGiltCardEdgeTexture(THREE) {
+    return makeTex(THREE, (c, w, h) => {
+      const grad = c.createLinearGradient(0, 0, w, 0);
+      grad.addColorStop(0, '#c89e4b');
+      grad.addColorStop(0.5, '#f2d99a');
+      grad.addColorStop(1, '#b88937');
+      c.fillStyle = grad;
+      c.fillRect(0, 0, w, h);
+      for (let y = 3; y < h; y += 5) {
+        c.fillStyle = y % 10 === 3 ? 'rgba(66, 36, 12, 0.35)' : 'rgba(255, 248, 224, 0.32)';
+        c.fillRect(0, y, w, 1.8);
+      }
+    }, 128, 64);
+  }
+
+  function buildHardcoverDeckLidTexture(THREE, spec) {
+    return makeTex(THREE, (c, w, h) => {
+      const bg = c.createLinearGradient(0, 0, w, h);
+      bg.addColorStop(0, spec.bgTop);
+      bg.addColorStop(1, spec.bgBot);
+      c.fillStyle = bg;
+      c.fillRect(0, 0, w, h);
+
+      // Ornate double gold-foil embossed border
+      c.strokeStyle = spec.gold;
+      c.lineWidth = 8;
+      c.strokeRect(10, 10, w - 20, h - 20);
+      c.strokeStyle = 'rgba(255, 236, 184, 0.55)';
+      c.lineWidth = 2;
+      c.strokeRect(20, 20, w - 40, h - 40);
+
+      // Corner gold diamonds
+      [[20, 20], [w - 20, 20], [20, h - 20], [w - 20, h - 20]].forEach(([cx, cy]) => {
+        c.save();
+        c.translate(cx, cy);
+        c.rotate(Math.PI / 4);
+        c.fillStyle = spec.gold;
+        c.fillRect(-5, -5, 10, 10);
+        c.restore();
+      });
+
+      // Decorative subtle top & bottom dividers
+      c.strokeStyle = 'rgba(232, 196, 118, 0.45)';
+      c.lineWidth = 2;
+      c.beginPath(); c.moveTo(42, 54); c.lineTo(w - 42, 54); c.stroke();
+      c.beginPath(); c.moveTo(42, h - 48); c.lineTo(w - 42, h - 48); c.stroke();
+
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillStyle = '#f9e6b2';
+      c.font = 'italic 700 28px Georgia, "Times New Roman", serif';
+      fitCanvasText(c, spec.eyebrow, w / 2, 86, w - 56);
+
+      c.fillStyle = spec.goldBright;
+      c.font = '700 40px Georgia, "Times New Roman", serif';
+      fitCanvasText(c, spec.title, w / 2, 140, w - 44);
+
+      if (spec.sub) {
+        c.fillStyle = '#f8df94';
+        c.font = '800 32px system-ui, sans-serif';
+        fitCanvasText(c, spec.sub, w / 2, 198, w - 52);
+      }
+
+      c.font = '48px sans-serif';
+      c.fillText(spec.icon, w / 2, spec.sub ? 256 : 226);
+    }, 256, 340);
+  }
+
+  function upgradeHeirloomProps(ctx, refs) {
+    if (sceneState.propsUpgraded) return;
+    sceneState.propsUpgraded = true;
+    const { THREE } = ctx;
+
+    const antiqueBrassMat = new THREE.MeshStandardMaterial({
+      color: 0xdcb35c,
+      roughness: 0.20,
+      metalness: 0.90,
+      envMapIntensity: 1.35,
+    });
+    const darkRosewoodMat = new THREE.MeshStandardMaterial({
+      color: 0x261108,
+      roughness: 0.36,
+      metalness: 0.14,
+      envMapIntensity: 0.85,
+    });
+
+    // 1. Ornate Brass & Crystal Hourglass (preserve topSandMesh/botSandMesh refs intact!)
+    if (refs.sandTimerGroup && !refs.sandTimerGroup.userData._aaaUpgraded) {
+      refs.sandTimerGroup.userData._aaaUpgraded = true;
+      const crystalMat = new THREE.MeshStandardMaterial({
+        color: 0xf0f9ff,
+        transparent: true,
+        opacity: 0.30,
+        roughness: 0.06,
+        metalness: 0.18,
+        envMapIntensity: 1.45,
+        depthWrite: false,
+      });
+      const champagneSandMat = new THREE.MeshStandardMaterial({
+        color: 0xebb94d,
+        roughness: 0.50,
+        metalness: 0.22,
+        emissive: new THREE.Color(0x3a2404),
+        emissiveIntensity: 0.14,
+      });
+
+      refs.sandTimerGroup.children.forEach(ch => {
+        if (!ch || !ch.isMesh || !ch.geometry) return;
+        const gp = ch.geometry.parameters || {};
+        if (ch.geometry.type === 'CylinderGeometry') {
+          if (gp.radiusTop >= 0.8) {
+            ch.material = darkRosewoodMat;
+          } else {
+            ch.material = antiqueBrassMat;
+          }
+        } else if (ch.geometry.type === 'ConeGeometry') {
+          if (gp.radius >= 0.68) {
+            ch.material = crystalMat;
+          } else {
+            ch.material = champagneSandMat;
+          }
+        }
+      });
+
+      // Add sculpted brass cap bezels, waist collar & top crown finial
+      const baseRing = new THREE.Mesh(new THREE.TorusGeometry(1.12, 0.065, 10, 28), antiqueBrassMat);
+      baseRing.rotation.x = Math.PI / 2;
+      baseRing.position.y = 0.24;
+      const topRing = new THREE.Mesh(new THREE.TorusGeometry(1.12, 0.065, 10, 28), antiqueBrassMat);
+      topRing.rotation.x = Math.PI / 2;
+      topRing.position.y = 3.08;
+      const waistCollar = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.055, 8, 20), antiqueBrassMat);
+      waistCollar.rotation.x = Math.PI / 2;
+      waistCollar.position.y = 1.66;
+      const topFinial = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), antiqueBrassMat);
+      topFinial.position.y = 3.42;
+      refs.sandTimerGroup.add(baseRing, topRing, waistCollar, topFinial);
+    }
+
+    // 2. Gilt-Edged Hardcover Recipe Decks & Action Deck (6-material arrays)
+    const giltEdgeTex = buildGiltCardEdgeTexture(THREE);
+    const giltEdgeMat = new THREE.MeshStandardMaterial({
+      map: giltEdgeTex,
+      roughness: 0.34,
+      metalness: 0.48,
+      envMapIntensity: 1.05,
+    });
+    const deckBottomMat = new THREE.MeshStandardMaterial({ color: 0x160c07, roughness: 0.7 });
+
+    const upgradeDeck = (mesh, spec) => {
+      if (!mesh || mesh.userData._aaaUpgraded) return;
+      mesh.userData._aaaUpgraded = true;
+      if (mesh.material && !Array.isArray(mesh.material) && mesh.material.map) {
+        try { mesh.material.map.dispose(); } catch (_) {}
+      }
+      const lidTex = buildHardcoverDeckLidTexture(THREE, spec);
+      const lidMat = new THREE.MeshStandardMaterial({
+        map: lidTex,
+        roughness: 0.36,
+        metalness: 0.16,
+        envMapIntensity: 0.9,
+      });
+      // BoxGeometry faces: +X, -X, +Y (top), -Y (bottom), +Z, -Z
+      mesh.material = [giltEdgeMat, giltEdgeMat, lidMat, deckBottomMat, giltEdgeMat, giltEdgeMat];
+    };
+
+    upgradeDeck(refs.gourmetDeck, {
+      bgTop: '#241242', bgBot: '#120824', gold: '#d8ae56', goldBright: '#fae29e',
+      eyebrow: 'Món', title: 'ĐẶC SẢN', sub: '', icon: '👑',
+    });
+    upgradeDeck(refs.basicDeck, {
+      bgTop: '#3d1909', bgBot: '#1f0b04', gold: '#d89b44', goldBright: '#f7d88f',
+      eyebrow: 'Món', title: 'CƠ BẢN', sub: '', icon: '🍳',
+    });
+    upgradeDeck(refs.actionDeckMesh, {
+      bgTop: '#083a2c', bgBot: '#041c15', gold: '#d4aa54', goldBright: '#f8e2a0',
+      eyebrow: 'THẺ', title: 'HÀNH ĐỘNG', sub: '$200', icon: '⚡',
+    });
+
+    // 3. Refined Kitchen Service Hamper around Garbage Bag (preserves bounce animation & raycast)
+    if (refs.garbageBagGroup && !refs.garbageBagGroup.userData._aaaUpgraded) {
+      refs.garbageBagGroup.userData._aaaUpgraded = true;
+      const linenSackMat = new THREE.MeshStandardMaterial({
+        color: 0x1e1d20,
+        roughness: 0.80,
+        metalness: 0.08,
+      });
+      refs.garbageBagGroup.children.forEach(ch => {
+        if (!ch || !ch.isMesh || !ch.geometry) return;
+        if (ch.geometry.type === 'TorusGeometry') {
+          ch.material = antiqueBrassMat;
+        } else {
+          ch.material = linenSackMat;
+        }
+      });
+
+      // Sculpted slatted dark-rosewood & brushed-brass kitchen hamper collar around lower half
+      const hamperGrp = new THREE.Group();
+      hamperGrp.name = 'VdbKitchenHamper';
+      const baseDisc = new THREE.Mesh(new THREE.CylinderGeometry(1.02, 0.94, 0.14, 20), darkRosewoodMat);
+      baseDisc.position.y = 0.07;
+      baseDisc.castShadow = true;
+      hamperGrp.add(baseDisc);
+
+      const botHoop = new THREE.Mesh(new THREE.TorusGeometry(1.01, 0.042, 8, 24), antiqueBrassMat);
+      botHoop.rotation.x = Math.PI / 2;
+      botHoop.position.y = 0.22;
+      const topHoop = new THREE.Mesh(new THREE.TorusGeometry(1.09, 0.046, 8, 24), antiqueBrassMat);
+      topHoop.rotation.x = Math.PI / 2;
+      topHoop.position.y = 1.02;
+      hamperGrp.add(botHoop, topHoop);
+
+      const slatGeo = new THREE.BoxGeometry(0.14, 0.96, 0.05);
+      const slatCount = 12;
+      for (let s = 0; s < slatCount; s++) {
+        const a = (s / slatCount) * Math.PI * 2;
+        const r = 1.04;
+        const slat = new THREE.Mesh(slatGeo, darkRosewoodMat);
+        slat.position.set(Math.cos(a) * r, 0.56, Math.sin(a) * r);
+        slat.rotation.y = -a + Math.PI / 2;
+        slat.castShadow = true;
+        hamperGrp.add(slat);
+      }
+      refs.garbageBagGroup.add(hamperGrp);
+    }
   }
 
   function buildClockFaceTexture(THREE) {
     return makeTex(THREE, (ctx, w, h) => {
       const cx = w / 2, cy = h / 2, r = w * 0.44;
-      // Background bezel
-      ctx.fillStyle = '#c89b3c';
+      // Rich brushed antique bronze backing
+      ctx.fillStyle = '#3a2210';
       ctx.fillRect(0, 0, w, h);
 
-      // Outer gold rim
+      // Outer brushed-brass bezel ring
       const bezelGrad = ctx.createRadialGradient(cx, cy, r * 0.78, cx, cy, r * 1.08);
-      bezelGrad.addColorStop(0, '#fde68a');
-      bezelGrad.addColorStop(0.65, '#b45309');
-      bezelGrad.addColorStop(1, '#78350f');
+      bezelGrad.addColorStop(0, '#fae4a2');
+      bezelGrad.addColorStop(0.62, '#c8963c');
+      bezelGrad.addColorStop(1, '#5e3810');
       ctx.beginPath();
       ctx.arc(cx, cy, r * 1.06, 0, Math.PI * 2);
       ctx.fillStyle = bezelGrad;
       ctx.fill();
 
-      // Warm ivory dial face
-      const faceGrad = ctx.createRadialGradient(cx, cy - r * 0.15, r * 0.1, cx, cy, r * 0.96);
-      faceGrad.addColorStop(0, '#fffdf5');
-      faceGrad.addColorStop(0.85, '#fef3c7');
-      faceGrad.addColorStop(1, '#e7cf96');
+      // Warm Saigon enamel porcelain dial face
+      const faceGrad = ctx.createRadialGradient(cx, cy - r * 0.14, r * 0.08, cx, cy, r * 0.96);
+      faceGrad.addColorStop(0, '#fffdf6');
+      faceGrad.addColorStop(0.82, '#f9ebca');
+      faceGrad.addColorStop(1, '#dec082');
       ctx.beginPath();
-      ctx.arc(cx, cy, r * 0.93, 0, Math.PI * 2);
+      ctx.arc(cx, cy, r * 0.92, 0, Math.PI * 2);
       ctx.fillStyle = faceGrad;
       ctx.fill();
 
-      // Inner decorative ring
-      ctx.strokeStyle = '#92400e';
+      // Inner heritage chapter rings
+      ctx.strokeStyle = '#7c4512';
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.arc(cx, cy, r * 0.84, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.strokeStyle = 'rgba(124, 69, 18, 0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 0.62, 0, Math.PI * 2);
+      ctx.stroke();
 
-      // 12 hour markers
+      // 12 bold antique-bronze hour indices
       for (let i = 0; i < 12; i++) {
         const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
         const isCardinal = i % 3 === 0;
         const rIn = r * (isCardinal ? 0.62 : 0.70);
-        const rOut = r * 0.81;
-        ctx.strokeStyle = isCardinal ? '#7c2d12' : '#44403c';
-        ctx.lineWidth = isCardinal ? 6 : 3.5;
+        const rOut = r * 0.82;
+        ctx.strokeStyle = isCardinal ? '#5c1f0e' : '#3a2a1e';
+        ctx.lineWidth = isCardinal ? 6.5 : 3.5;
         ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(cx + Math.cos(a) * rIn, cy + Math.sin(a) * rIn);
@@ -1375,43 +2453,45 @@
         ctx.stroke();
       }
 
-      // Iconic 10:10 clock hands (bold dark bronze for readability from overview)
+      // Iconic 10:10 wrought-iron heritage hands
       ctx.strokeStyle = '#18100a';
       ctx.lineCap = 'round';
-      // Hour hand (10)
       ctx.lineWidth = 10;
       ctx.beginPath();
       ctx.moveTo(cx, cy);
       ctx.lineTo(cx - r * 0.42, cy - r * 0.26);
       ctx.stroke();
-      // Minute hand (2)
       ctx.lineWidth = 7;
       ctx.beginPath();
       ctx.moveTo(cx, cy);
       ctx.lineTo(cx + r * 0.58, cy - r * 0.31);
       ctx.stroke();
 
-      // Brass center boss
+      // Brushed brass center boss
       ctx.beginPath();
-      ctx.arc(cx, cy, 8, 0, Math.PI * 2);
-      ctx.fillStyle = '#b45309';
+      ctx.arc(cx, cy, 9, 0, Math.PI * 2);
+      ctx.fillStyle = '#a86b18';
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(cx, cy, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#fef08a';
+      ctx.arc(cx, cy, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#fef0b8';
       ctx.fill();
     }, 256, 256);
   }
 
   function buildBenThanhFacadeTexture(THREE) {
     return makeTex(THREE, (ctx, w, h) => {
-      // Saigon heritage cream/ochre plaster wall
-      ctx.fillStyle = '#f3dca8';
+      // Saigon heritage cream limestone plaster wall
+      const wallGrad = ctx.createLinearGradient(0, 0, 0, h);
+      wallGrad.addColorStop(0, '#f3e4c6');
+      wallGrad.addColorStop(0.75, '#e8d0a3');
+      wallGrad.addColorStop(1, '#d3b27b');
+      ctx.fillStyle = wallGrad;
       ctx.fillRect(0, 0, w, h);
 
-      // Subtle masonry horizontal grooves
-      ctx.strokeStyle = 'rgba(146, 64, 14, 0.16)';
-      ctx.lineWidth = 2;
+      // Subtle colonial ashlar masonry horizontal courses
+      ctx.strokeStyle = 'rgba(122, 68, 22, 0.14)';
+      ctx.lineWidth = 1.8;
       for (let y = 18; y < h; y += 22) {
         ctx.beginPath();
         ctx.moveTo(0, y);
@@ -1419,15 +2499,17 @@
         ctx.stroke();
       }
 
-      // Base dado band
-      ctx.fillStyle = '#d6b272';
+      // Heritage base dado plinth band
+      ctx.fillStyle = '#c49b5c';
       ctx.fillRect(0, h - 28, w, 28);
+      ctx.fillStyle = 'rgba(92, 46, 14, 0.35)';
+      ctx.fillRect(0, h - 28, w, 3);
 
-      // Central grand dark arched gateway
-      const archW = 112, archH = 118;
+      // Central grand arched gateway bathed in warm bistro amber light
+      const archW = 116, archH = 120;
       const ax = (w - archW) / 2;
       const ay = h - archH;
-      ctx.fillStyle = '#451a03';
+      ctx.fillStyle = '#2d1205';
       ctx.beginPath();
       ctx.moveTo(ax, h);
       ctx.lineTo(ax, ay + archW / 2);
@@ -1436,53 +2518,69 @@
       ctx.closePath();
       ctx.fill();
 
-      // Warm golden glow inside arch
-      const innerGlow = ctx.createRadialGradient(w / 2, h - 25, 8, w / 2, h - 42, 62);
-      innerGlow.addColorStop(0, 'rgba(253, 224, 71, 0.72)');
-      innerGlow.addColorStop(0.6, 'rgba(245, 158, 11, 0.32)');
-      innerGlow.addColorStop(1, 'rgba(69, 26, 3, 0)');
+      // Warm golden lantern glow radiating from inside market hall
+      const innerGlow = ctx.createRadialGradient(w / 2, h - 22, 8, w / 2, h - 46, 68);
+      innerGlow.addColorStop(0, 'rgba(255, 228, 128, 0.92)');
+      innerGlow.addColorStop(0.55, 'rgba(245, 162, 42, 0.45)');
+      innerGlow.addColorStop(1, 'rgba(45, 18, 5, 0)');
       ctx.fillStyle = innerGlow;
       ctx.fillRect(ax, ay, archW, archH);
 
-      // Arch trim
-      ctx.strokeStyle = '#b45309';
-      ctx.lineWidth = 6;
+      // Sculpted limestone & antique-gold arch keystone trim
+      ctx.strokeStyle = '#a87222';
+      ctx.lineWidth = 6.5;
       ctx.beginPath();
       ctx.arc(w / 2, ay + archW / 2, archW / 2 + 2, Math.PI, 0);
       ctx.stroke();
 
-      // Side arched colonial louvered windows
-      [96, w - 96].forEach(wx => {
-        ctx.fillStyle = '#14532d';
+      // Side arched colonial windows with warm glowing amber interiors & heritage jade shutters
+      [92, w - 92].forEach(wx => {
+        ctx.save();
         ctx.beginPath();
         ctx.arc(wx, h - 76, 26, Math.PI, 0);
         ctx.lineTo(wx + 26, h - 28);
         ctx.lineTo(wx - 26, h - 28);
         ctx.closePath();
+        const wg = ctx.createRadialGradient(wx, h - 56, 4, wx, h - 56, 36);
+        wg.addColorStop(0, '#ffe49e');
+        wg.addColorStop(0.55, '#d98a2b');
+        wg.addColorStop(1, '#14442b');
+        ctx.fillStyle = wg;
         ctx.fill();
-        ctx.strokeStyle = '#fef3c7';
+        ctx.strokeStyle = '#144c30';
         ctx.lineWidth = 4;
         ctx.stroke();
+        // Fine window muntin mullions
+        ctx.strokeStyle = 'rgba(24, 62, 40, 0.65)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(wx, h - 102); ctx.lineTo(wx, h - 28);
+        ctx.moveTo(wx - 24, h - 62); ctx.lineTo(wx + 24, h - 62);
+        ctx.stroke();
+        ctx.restore();
       });
 
-      // Iconic "CHỢ BẾN THÀNH" crimson & gold signboard above arch
-      drawRoundRect(ctx, w / 2 - 140, 12, 280, 44, 8);
-      ctx.fillStyle = '#991b1b';
+      // Iconic "CHỢ BẾN THÀNH" sơn son thếp vàng (crimson lacquer & gold-leaf serif) signboard
+      drawRoundRect(ctx, w / 2 - 146, 10, 292, 46, 7);
+      const signGrad = ctx.createLinearGradient(0, 10, 0, 56);
+      signGrad.addColorStop(0, '#7c1215');
+      signGrad.addColorStop(1, '#4d0a0c');
+      ctx.fillStyle = signGrad;
       ctx.fill();
-      ctx.strokeStyle = '#fbbf24';
+      ctx.strokeStyle = '#dfb559';
       ctx.lineWidth = 4;
       ctx.stroke();
-      ctx.fillStyle = '#fef08a';
-      ctx.font = '900 24px sans-serif';
+      ctx.fillStyle = '#fae6a8';
+      ctx.font = '700 24px Georgia, "Times New Roman", serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      fitCanvasText(ctx, 'CHỢ BẾN THÀNH', w / 2, 35, 256);
+      fitCanvasText(ctx, 'CHỢ BẾN THÀNH', w / 2, 34, 264);
     }, 512, 192);
   }
 
   function buildRoofTileTexture(THREE) {
     return makeTex(THREE, (ctx, w, h) => {
-      ctx.fillStyle = '#b83721';
+      ctx.fillStyle = '#8f2b19';
       ctx.fillRect(0, 0, w, h);
       const rows = 8;
       const cols = 10;
@@ -1493,11 +2591,11 @@
           const ox = (r % 2) * (rw * 0.5);
           const x = (c * rw + ox) % w;
           const y = r * rh;
-          ctx.fillStyle = (r + c) % 2 === 0 ? '#c9442b' : '#a8301b';
+          ctx.fillStyle = (r + c) % 2 === 0 ? '#a83620' : '#892716';
           ctx.beginPath();
-          ctx.arc(x + rw * 0.5, y + rh * 0.6, rw * 0.48, 0, Math.PI);
+          ctx.arc(x + rw * 0.5, y + rh * 0.62, rw * 0.48, 0, Math.PI);
           ctx.fill();
-          ctx.strokeStyle = 'rgba(69, 14, 6, 0.38)';
+          ctx.strokeStyle = 'rgba(42, 10, 4, 0.48)';
           ctx.lineWidth = 2;
           ctx.stroke();
         }
@@ -1505,38 +2603,127 @@
     }, 256, 256);
   }
 
+  function buildKumquatBonsaiUrn(THREE, brassMat) {
+    const grp = new THREE.Group();
+    grp.userData.isDecorative = true;
+
+    // Blue-and-white Saigon porcelain ceramic urn via LatheGeometry
+    const urnTex = makeTex(THREE, (c, w, h) => {
+      c.fillStyle = '#f6f1e4';
+      c.fillRect(0, 0, w, h);
+      c.fillStyle = '#184b82';
+      c.fillRect(0, 10, w, 12);
+      c.fillRect(0, h - 18, w, 10);
+      for (let x = 8; x < w; x += 24) {
+        c.beginPath();
+        c.arc(x, h * 0.5, 7, 0, Math.PI * 2);
+        c.strokeStyle = '#1e5896';
+        c.lineWidth = 2.5;
+        c.stroke();
+      }
+    }, 128, 64);
+    const urnMat = new THREE.MeshStandardMaterial({ map: urnTex, roughness: 0.24, metalness: 0.08, envMapIntensity: 0.9 });
+    let urnGeo;
+    if (typeof THREE.LatheGeometry === 'function') {
+      const pts = [
+        new THREE.Vector2(0.14, 0.0),
+        new THREE.Vector2(0.22, 0.08),
+        new THREE.Vector2(0.27, 0.26),
+        new THREE.Vector2(0.21, 0.40),
+        new THREE.Vector2(0.25, 0.46),
+      ];
+      urnGeo = new THREE.LatheGeometry(pts, 16);
+    } else {
+      urnGeo = new THREE.CylinderGeometry(0.24, 0.16, 0.44, 14);
+    }
+    const urn = new THREE.Mesh(urnGeo, urnMat);
+    if (typeof THREE.LatheGeometry !== 'function') urn.position.y = 0.22;
+    urn.castShadow = true;
+    grp.add(urn);
+
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.022, 6, 16), brassMat);
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = 0.45;
+    grp.add(rim);
+
+    // Gnarled bonsai trunk + deep jade foliage crown + golden Tết kumquats
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3b2212, roughness: 0.85 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x16532e, roughness: 0.68 });
+    const fruitMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      emissive: new THREE.Color(0xc26106),
+      emissiveIntensity: 0.35,
+      roughness: 0.32,
+    });
+
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.055, 0.34, 7), trunkMat);
+    trunk.position.y = 0.56;
+    grp.add(trunk);
+
+    const foliageOffsets = [
+      [0, 0.78, 0, 0.21],
+      [-0.14, 0.70, 0.07, 0.15],
+      [0.14, 0.72, -0.05, 0.15],
+      [0.02, 0.90, 0.02, 0.14],
+    ];
+    foliageOffsets.forEach(([fx, fy, fz, fr]) => {
+      const f = new THREE.Mesh(new THREE.SphereGeometry(fr, 10, 8), leafMat);
+      f.position.set(fx, fy, fz);
+      f.castShadow = true;
+      grp.add(f);
+    });
+
+    const fruitGeo = new THREE.SphereGeometry(0.038, 7, 6);
+    [[-0.16, 0.74, 0.14], [0.15, 0.78, 0.11], [0.02, 0.86, 0.17], [-0.05, 0.94, -0.06], [0.12, 0.66, -0.11]].forEach(([kx, ky, kz]) => {
+      const k = new THREE.Mesh(fruitGeo, fruitMat);
+      k.position.set(kx, ky, kz);
+      grp.add(k);
+    });
+
+    return grp;
+  }
+
   function buildBenThanhClockTower(THREE, boardHeight, boardCenterZ) {
     const group = new THREE.Group();
     group.name = 'VdbBenThanhClockTower';
     group.userData.isDecorative = true;
 
-    const creamMat = new THREE.MeshStandardMaterial({ color: 0xe2bc72, roughness: 0.68, metalness: 0.05 });
-    const trimMat = new THREE.MeshStandardMaterial({ color: 0xb88234, roughness: 0.46, metalness: 0.22 });
-    const goldMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.26, metalness: 0.80 });
+    const creamMat = new THREE.MeshStandardMaterial({ color: 0xefe0c2, roughness: 0.62, metalness: 0.04 });
+    const trimMat = new THREE.MeshStandardMaterial({ color: 0xb78842, roughness: 0.42, metalness: 0.28 });
+    const brassMat = new THREE.MeshStandardMaterial({
+      color: 0xe2b85c,
+      roughness: 0.19,
+      metalness: 0.92,
+      envMapIntensity: 1.35,
+    });
     const roofTex = buildRoofTileTexture(THREE);
     roofTex.wrapS = THREE.RepeatWrapping;
     roofTex.wrapT = THREE.RepeatWrapping;
     roofTex.repeat.set(2, 2);
-    const roofMat = new THREE.MeshStandardMaterial({ map: roofTex, color: 0xd9664c, roughness: 0.64, metalness: 0.06 });
+    const roofMat = new THREE.MeshStandardMaterial({ map: roofTex, color: 0xd96b52, roughness: 0.56, metalness: 0.08 });
     const facadeTex = buildBenThanhFacadeTexture(THREE);
-    const facadeMat = new THREE.MeshStandardMaterial({ map: facadeTex, color: 0xebd7b2, roughness: 0.62 });
+    const facadeMat = new THREE.MeshStandardMaterial({ map: facadeTex, color: 0xf7ecd6, roughness: 0.58 });
     const clockTex = buildClockFaceTexture(THREE);
     const clockMat = new THREE.MeshStandardMaterial({
       map: clockTex,
-      roughness: 0.38,
+      roughness: 0.34,
       emissive: new THREE.Color(0xffd780),
       emissiveMap: clockTex,
-      emissiveIntensity: 0.14,
+      emissiveIntensity: 0.18,
     });
 
-    // Stepped heritage stone plinth
-    const plinth = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.16, 1.72), trimMat);
+    // Stepped Saigon granite & brass-trimmed plinth
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(3.68, 0.16, 1.78), trimMat);
     plinth.position.y = 0.08;
     plinth.receiveShadow = true;
     plinth.castShadow = true;
     group.add(plinth);
 
-    // Main market hall horizontal body (front & back feature Ben Thanh facade)
+    const plinthBrass = new THREE.Mesh(new THREE.BoxGeometry(3.74, 0.035, 1.84), brassMat);
+    plinthBrass.position.y = 0.165;
+    group.add(plinthBrass);
+
+    // Main market hall horizontal body (front & back feature illuminated Ben Thanh facade)
     const hallMats = [creamMat, creamMat, creamMat, creamMat, facadeMat, facadeMat];
     const hall = new THREE.Mesh(new THREE.BoxGeometry(3.25, 0.96, 1.32), hallMats);
     hall.position.y = 0.16 + 0.48;
@@ -1544,14 +2731,14 @@
     hall.receiveShadow = true;
     group.add(hall);
 
-    // Side wing terracotta pitched roofs flanking the central tower
+    // Side wing glazed terracotta pitched roofs flanking the central tower
     [-1.08, 1.08].forEach(xOff => {
-      const wingRoof = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.22, 1.48), roofMat);
+      const wingRoof = new THREE.Mesh(new THREE.BoxGeometry(1.20, 0.22, 1.50), roofMat);
       wingRoof.position.set(xOff, 1.18, 0);
       wingRoof.castShadow = true;
       group.add(wingRoof);
 
-      const ridge = new THREE.Mesh(new THREE.BoxGeometry(1.22, 0.08, 0.14), goldMat);
+      const ridge = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.08, 0.14), brassMat);
       ridge.position.set(xOff, 1.31, 0);
       group.add(ridge);
     });
@@ -1562,11 +2749,14 @@
     towerLower.castShadow = true;
     group.add(towerLower);
 
-    // Decorative cornice band between lower & belfry
-    const cornice = new THREE.Mesh(new THREE.BoxGeometry(1.30, 0.12, 1.30), trimMat);
+    // Decorative brushed-brass & stone cornice band between lower & belfry
+    const cornice = new THREE.Mesh(new THREE.BoxGeometry(1.32, 0.12, 1.32), trimMat);
     cornice.position.y = 2.04;
     cornice.castShadow = true;
     group.add(cornice);
+    const corniceTrim = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.035, 1.36), brassMat);
+    corniceTrim.position.y = 2.11;
+    group.add(corniceTrim);
 
     // Belfry cube with 4 crisp CanvasTexture clock faces (+X, -X, +Z, -Z)
     const belfryMats = [clockMat, clockMat, trimMat, trimMat, clockMat, clockMat];
@@ -1575,49 +2765,72 @@
     belfry.castShadow = true;
     group.add(belfry);
 
-    // Corner gold pilasters on belfry
+    // 4 Physical 3D Brushed-Brass Clock Bezels framing each clock face
+    const bezelGeo = new THREE.TorusGeometry(0.40, 0.038, 10, 28);
+    [
+      { x: 0, z: 0.54, ry: 0 },
+      { x: 0, z: -0.54, ry: 0 },
+      { x: 0.54, z: 0, ry: Math.PI / 2 },
+      { x: -0.54, z: 0, ry: Math.PI / 2 },
+    ].forEach(b => {
+      const ring = new THREE.Mesh(bezelGeo, brassMat);
+      ring.position.set(b.x, 2.54, b.z);
+      ring.rotation.y = b.ry;
+      group.add(ring);
+    });
+
+    // Corner brushed-brass pilasters on belfry
     const pilasterGeo = new THREE.BoxGeometry(0.11, 0.96, 0.11);
-    [[-0.51, -0.51], [0.51, -0.51], [-0.51, 0.51], [0.51, 0.51]].forEach(([px, pz]) => {
+    [[-0.52, -0.52], [0.52, -0.52], [-0.52, 0.52], [0.52, 0.52]].forEach(([px, pz]) => {
       const p = new THREE.Mesh(pilasterGeo, trimMat);
       p.position.set(px, 2.54, pz);
       group.add(p);
     });
 
-    // Upper eave rim
-    const topEave = new THREE.Mesh(new THREE.BoxGeometry(1.28, 0.10, 1.28), roofMat);
+    // Upper eave rim & terraced glazed terracotta pyramidal roof
+    const topEave = new THREE.Mesh(new THREE.BoxGeometry(1.32, 0.10, 1.32), roofMat);
     topEave.position.y = 3.04;
     group.add(topEave);
 
-    // Iconic pyramidal terracotta clock tower roof (height keeps total tip ~3.85 above board)
-    const pyrRoof = new THREE.Mesh(new THREE.ConeGeometry(0.92, 0.68, 4), roofMat);
+    const pyrRoof = new THREE.Mesh(new THREE.ConeGeometry(0.94, 0.68, 4), roofMat);
     pyrRoof.rotation.y = Math.PI / 4;
     pyrRoof.position.y = 3.42;
     pyrRoof.castShadow = true;
     group.add(pyrRoof);
 
-    // Golden finial orb & spire
-    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), goldMat);
+    // Brushed-brass finial lotus orb & spire
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.115, 12, 10), brassMat);
     orb.position.y = 3.78;
     group.add(orb);
-    const spire = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.28, 8), goldMat);
+    const spire = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.28, 8), brassMat);
     spire.position.y = 3.96;
     group.add(spire);
 
-    // 4 Warm glowing Hội An / Tết lantern ornaments hanging on portico & side eaves
+    // 4 Warm glowing Hội An silk lanterns with additive glow halo sprites
     const lanternBodyGeo = new THREE.SphereGeometry(0.13, 10, 8);
     const lanternCapGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.05, 8);
     const redLanternMat = new THREE.MeshStandardMaterial({
-      color: 0xef4444,
-      emissive: new THREE.Color(0xff5a1f),
-      emissiveIntensity: 0.95,
-      roughness: 0.3,
+      color: 0xdc2626,
+      emissive: new THREE.Color(0xff6b2b),
+      emissiveIntensity: 1.05,
+      roughness: 0.28,
     });
     const amberLanternMat = new THREE.MeshStandardMaterial({
-      color: 0xf59e0b,
-      emissive: new THREE.Color(0xfbbf24),
-      emissiveIntensity: 0.9,
-      roughness: 0.3,
+      color: 0xe69f1e,
+      emissive: new THREE.Color(0xffc74a),
+      emissiveIntensity: 1.0,
+      roughness: 0.28,
     });
+    const glowSpriteMat = typeof THREE.SpriteMaterial === 'function'
+      ? new THREE.SpriteMaterial({
+        map: getLanternGlowTexture(THREE),
+        color: 0xffc966,
+        transparent: true,
+        opacity: 0.56,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      })
+      : null;
 
     const lanternCoords = [
       [-1.52, 0.96, 0.72, redLanternMat],
@@ -1630,22 +2843,34 @@
       lGroup.position.set(lx, ly, lz);
       const body = new THREE.Mesh(lanternBodyGeo, lMat);
       body.scale.set(1.0, 1.25, 1.0);
-      const topC = new THREE.Mesh(lanternCapGeo, goldMat);
+      const topC = new THREE.Mesh(lanternCapGeo, brassMat);
       topC.position.y = 0.16;
-      const botC = new THREE.Mesh(lanternCapGeo, goldMat);
+      const botC = new THREE.Mesh(lanternCapGeo, brassMat);
       botC.position.y = -0.16;
       lGroup.add(body, topC, botC);
+      if (glowSpriteMat && typeof THREE.Sprite === 'function') {
+        const halo = new THREE.Sprite(glowSpriteMat);
+        halo.scale.set(0.85, 0.85, 1);
+        lGroup.add(halo);
+      }
       group.add(lGroup);
     });
 
-    // Warm golden PointLight bathing The Island (no expensive shadow map, balanced so stone stays crisp)
-    const warmLight = new THREE.PointLight(0xffb44c, 0.85, 13, 1.85);
-    warmLight.position.set(0, 2.35, 1.25);
+    // 2 Miniature Blue-and-White Porcelain Kumquat Bonsai Urns flanking the grand portico
+    [-2.08, 2.08].forEach(ux => {
+      const urn = buildKumquatBonsaiUrn(THREE, brassMat);
+      urn.position.set(ux, 0, 0.45);
+      group.add(urn);
+    });
+
+    // Warm golden PointLight bathing The Island (no shadow map)
+    const warmLight = new THREE.PointLight(0xffb44c, 0.92, 14, 1.8);
+    warmLight.position.set(0, 2.35, 1.30);
     warmLight.castShadow = false;
     group.add(warmLight);
     sceneState.clockPointLight = warmLight;
 
-    // Position cleanly at north center of The Island (never blocks standees, garbage bag, or action deck)
+    // Position cleanly at north center of The Island
     group.position.set(0, boardHeight, boardCenterZ - 3.6);
     return group;
   }
@@ -1655,34 +2880,46 @@
       const stripes = 8;
       const sw = w / stripes;
       for (let i = 0; i < stripes; i++) {
-        ctx.fillStyle = i % 2 === 0 ? colorHex : (stripeHex || '#fef3c7');
+        ctx.fillStyle = i % 2 === 0 ? colorHex : (stripeHex || '#faf1de');
         ctx.fillRect(i * sw, 0, sw + 1, h);
       }
-      // Subtle top-to-bottom fabric shading
+      // Fine woven linen shading + gentle canopy fold shadow
       const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, 'rgba(255,255,255,0.16)');
-      grad.addColorStop(0.78, 'rgba(0,0,0,0.06)');
-      grad.addColorStop(1, 'rgba(0,0,0,0.28)');
+      grad.addColorStop(0, 'rgba(255,244,218,0.16)');
+      grad.addColorStop(0.76, 'rgba(0,0,0,0.08)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.34)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, w, h);
-      // Gold scalloped edge band at bottom
-      ctx.fillStyle = '#fbbf24';
-      ctx.fillRect(0, h - 12, w, 12);
+      // Antique gold-leaf scalloped valance band at bottom
+      ctx.fillStyle = '#d8ae56';
+      ctx.fillRect(0, h - 13, w, 13);
+      ctx.fillStyle = '#4a2b0d';
+      ctx.fillRect(0, h - 15, w, 2);
+      for (let i = 0; i < stripes; i++) {
+        ctx.fillStyle = '#fae4a8';
+        ctx.beginPath();
+        ctx.arc(i * sw + sw * 0.5, h - 6, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }, 256, 128);
   }
 
   function buildStallSignTexture(THREE, title, colorHex) {
     return makeTex(THREE, (ctx, w, h) => {
-      ctx.fillStyle = '#1c120c';
+      // Sơn son thếp vàng (lacquered dark mahogany + jewel accent + gold leaf serif)
+      const bg = ctx.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0, '#231009');
+      bg.addColorStop(1, '#120805');
+      ctx.fillStyle = bg;
       ctx.fillRect(0, 0, w, h);
       ctx.strokeStyle = colorHex;
-      ctx.lineWidth = 8;
+      ctx.lineWidth = 7;
       ctx.strokeRect(4, 4, w - 8, h - 8);
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#dfb559';
+      ctx.lineWidth = 2.4;
       ctx.strokeRect(11, 11, w - 22, h - 22);
-      ctx.fillStyle = '#fef3c7';
-      ctx.font = '900 28px sans-serif';
+      ctx.fillStyle = '#fae8b4';
+      ctx.font = '700 26px Georgia, "Times New Roman", serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       fitCanvasText(ctx, title, w / 2, h / 2 + 1, w - 34);
@@ -1694,19 +2931,35 @@
     stallsGroup.name = 'VdbMarketStalls';
     stallsGroup.userData.isDecorative = true;
 
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c2e16, roughness: 0.72 });
-    const goldMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.28, metalness: 0.78 });
-    const postGeo = new THREE.CylinderGeometry(0.068, 0.082, 1.62, 8);
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x2e150a, roughness: 0.44, metalness: 0.12 });
+    const brassMat = new THREE.MeshStandardMaterial({
+      color: 0xdcb35c,
+      roughness: 0.22,
+      metalness: 0.90,
+      envMapIntensity: 1.3,
+    });
+    const postGeo = new THREE.CylinderGeometry(0.068, 0.084, 1.62, 8);
     const collarGeo = new THREE.CylinderGeometry(0.11, 0.12, 0.10, 8);
+    const finialGeo = new THREE.SphereGeometry(0.095, 10, 8);
     const lanternGeo = new THREE.SphereGeometry(0.115, 10, 8);
+    const stallGlowMat = typeof THREE.SpriteMaterial === 'function'
+      ? new THREE.SpriteMaterial({
+        map: getLanternGlowTexture(THREE),
+        color: 0xffc864,
+        transparent: true,
+        opacity: 0.44,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      })
+      : null;
 
-    // 5 full outer-edge market stalls with striped awnings + hanging glowing lanterns
+    // 5 full outer-edge Indochine jewel-tone stalls with striped awnings, brass finials & silk lanterns
     const fullStalls = [
-      { key: 'chop',      title: 'HÀNG THỊT',   colorHex: '#dc2626', colorNum: 0xdc2626, x: -9.2, z: boardCenterZ - 9.72, w: 7.4, rotY: 0 },
-      { key: 'dairy',     title: 'HẢI SẢN',     colorHex: '#eab308', colorNum: 0xeab308, x: -0.4, z: boardCenterZ - 9.72, w: 7.1, rotY: 0 },
-      { key: 'mystery',   title: 'PHỐ GIA VỊ',  colorHex: '#9333ea', colorNum: 0x9333ea, x:  8.7, z: boardCenterZ - 9.72, w: 7.1, rotY: 0 },
-      { key: 'carbs',     title: 'GẠO & PHỞ',   colorHex: '#d97706', colorNum: 0xd97706, x: -13.65, z: boardCenterZ - 0.1, w: 9.4, rotY: Math.PI / 2 },
-      { key: 'vegetable', title: 'RAU CỦ',      colorHex: '#16a34a', colorNum: 0x16a34a, x:  13.65, z: boardCenterZ - 0.1, w: 9.4, rotY: -Math.PI / 2 },
+      { key: 'chop',      title: 'HÀNG THỊT',   colorHex: '#991b1b', colorNum: 0xb91c1c, x: -9.2, z: boardCenterZ - 9.72, w: 7.4, rotY: 0 },
+      { key: 'dairy',     title: 'HẢI SẢN',     colorHex: '#b47b16', colorNum: 0xd4941a, x: -0.4, z: boardCenterZ - 9.72, w: 7.1, rotY: 0 },
+      { key: 'mystery',   title: 'PHỐ GIA VỊ',  colorHex: '#6b21a8', colorNum: 0x7e22ce, x:  8.7, z: boardCenterZ - 9.72, w: 7.1, rotY: 0 },
+      { key: 'carbs',     title: 'GẠO & PHỞ',   colorHex: '#a84a12', colorNum: 0xc25918, x: -13.65, z: boardCenterZ - 0.1, w: 9.4, rotY: Math.PI / 2 },
+      { key: 'vegetable', title: 'RAU CỦ',      colorHex: '#15693d', colorNum: 0x168049, x:  13.65, z: boardCenterZ - 0.1, w: 9.4, rotY: -Math.PI / 2 },
     ];
 
     fullStalls.forEach(cfg => {
@@ -1715,29 +2968,33 @@
       g.rotation.y = cfg.rotY;
 
       const halfW = cfg.w / 2;
-      // 3 timber posts along outer edge
+      // 3 turned dark-rosewood posts with brushed-brass base collars & top finial orbs
       [-halfW + 0.18, 0, halfW - 0.18].forEach(px => {
         const post = new THREE.Mesh(postGeo, woodMat);
         post.position.set(px, 0.81, -0.05);
         post.castShadow = true;
         g.add(post);
 
-        const collar = new THREE.Mesh(collarGeo, goldMat);
+        const collar = new THREE.Mesh(collarGeo, brassMat);
         collar.position.set(px, 0.05, -0.05);
         g.add(collar);
+
+        const finial = new THREE.Mesh(finialGeo, brassMat);
+        finial.position.set(px, 1.69, -0.05);
+        g.add(finial);
       });
 
-      // Top tie beam
+      // Top tie beam with antique-brass inlay strip
       const beam = new THREE.Mesh(new THREE.BoxGeometry(cfg.w, 0.11, 0.12), woodMat);
       beam.position.set(0, 1.56, -0.05);
       beam.castShadow = true;
       g.add(beam);
 
-      // Compact tilted striped awning canopy extending slightly inward (+Z in local frame), clear of cards
-      const awningTex = buildAwningStripeTexture(THREE, cfg.colorHex, '#fffbeb');
+      // Compact tilted jewel-tone striped awning canopy extending slightly inward, clear of cards
+      const awningTex = buildAwningStripeTexture(THREE, cfg.colorHex, '#faf1de');
       const awningMat = new THREE.MeshStandardMaterial({
         map: awningTex,
-        roughness: 0.62,
+        roughness: 0.58,
         side: THREE.DoubleSide,
       });
       const canopy = new THREE.Mesh(new THREE.BoxGeometry(cfg.w + 0.18, 0.06, 0.86), awningMat);
@@ -1746,51 +3003,57 @@
       canopy.castShadow = true;
       g.add(canopy);
 
-      // Front sign crest above beam
+      // Front sơn son thếp vàng sign crest above beam
       const signTex = buildStallSignTexture(THREE, cfg.title, cfg.colorHex);
-      const signMat = new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.4 });
+      const signMat = new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.38, metalness: 0.12 });
       const signMesh = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.42, 0.08), [
-        woodMat, woodMat, woodMat, woodMat, signMat, signMat,
+        woodMat, woodMat, brassMat, woodMat, signMat, signMat,
       ]);
       signMesh.position.set(0, 1.94, -0.04);
       signMesh.castShadow = true;
       g.add(signMesh);
 
-      // 2 glowing color-tinted Vietnamese lanterns tucked under the awning corners
+      // 2 glowing silk Vietnamese lanterns tucked under the awning corners
       const lMat = new THREE.MeshStandardMaterial({
         color: cfg.colorNum,
         emissive: new THREE.Color(cfg.colorNum),
-        emissiveIntensity: 0.85,
-        roughness: 0.3,
+        emissiveIntensity: 0.92,
+        roughness: 0.28,
       });
       [-halfW + 0.72, halfW - 0.72].forEach(lx => {
         const orb = new THREE.Mesh(lanternGeo, lMat);
         orb.scale.set(1.0, 1.25, 1.0);
         orb.position.set(lx, 1.24, 0.36);
         g.add(orb);
+        if (stallGlowMat && typeof THREE.Sprite === 'function') {
+          const halo = new THREE.Sprite(stallGlowMat);
+          halo.scale.set(0.68, 0.68, 1);
+          halo.position.set(lx, 1.24, 0.36);
+          g.add(halo);
+        }
       });
 
       stallsGroup.add(g);
     });
 
-    // 6th market: `fruit` (South edge) — open low festive corner lantern pillars + slim lantern garland
-    // Keeps camera sightline & card raycasting 100% unobstructed from south view!
+    // 6th market: `fruit` (South edge) — low open porcelain-cobalt corner lantern pillars + curb rail
+    // Keeps camera sightline & card raycasting 100% unobstructed from south view
     const fruitGroup = new THREE.Group();
     fruitGroup.position.set(-0.4, boardHeight, boardCenterZ + 9.72);
-    const fruitColorHex = '#0284c7';
-    const fruitColorNum = 0x0284c7;
-    const fruitAwningTex = buildAwningStripeTexture(THREE, fruitColorHex, '#f0f9ff');
-    const fruitAwningMat = new THREE.MeshStandardMaterial({ map: fruitAwningTex, roughness: 0.6, side: THREE.DoubleSide });
+    const fruitColorHex = '#0c5a8a';
+    const fruitColorNum = 0x0e6da6;
+    const fruitAwningTex = buildAwningStripeTexture(THREE, fruitColorHex, '#f6efe0');
+    const fruitAwningMat = new THREE.MeshStandardMaterial({ map: fruitAwningTex, roughness: 0.56, side: THREE.DoubleSide });
     const fruitLanternMat = new THREE.MeshStandardMaterial({
       color: fruitColorNum,
       emissive: new THREE.Color(0x38bdf8),
-      emissiveIntensity: 0.9,
+      emissiveIntensity: 0.92,
       roughness: 0.28,
     });
     const warmLanternMat = new THREE.MeshStandardMaterial({
-      color: 0xf59e0b,
-      emissive: new THREE.Color(0xfbbf24),
-      emissiveIntensity: 0.9,
+      color: 0xe69f1e,
+      emissive: new THREE.Color(0xffc857),
+      emissiveIntensity: 0.94,
       roughness: 0.28,
     });
 
@@ -1801,33 +3064,34 @@
       post.castShadow = true;
       fruitGroup.add(post);
 
-      const collar = new THREE.Mesh(collarGeo, goldMat);
+      const collar = new THREE.Mesh(collarGeo, brassMat);
       collar.position.set(px, 0.05, 0);
       fruitGroup.add(collar);
 
-      // Compact pagoda cap awning on each corner pillar
       const cap = new THREE.Mesh(new THREE.ConeGeometry(0.56, 0.34, 4), fruitAwningMat);
       cap.rotation.y = Math.PI / 4;
       cap.position.set(px, 1.50, 0);
       cap.castShadow = true;
       fruitGroup.add(cap);
 
-      // Hanging corner lantern
+      const capFinial = new THREE.Mesh(finialGeo, brassMat);
+      capFinial.position.set(px, 1.70, 0);
+      fruitGroup.add(capFinial);
+
       const lantern = new THREE.Mesh(lanternGeo, idx === 0 ? fruitLanternMat : warmLanternMat);
       lantern.scale.set(1.0, 1.25, 1.0);
       lantern.position.set(px + (idx === 0 ? 0.28 : -0.28), 1.15, 0);
       fruitGroup.add(lantern);
     });
 
-    // Low decorative timber curb rail along south outer edge + subtle glowing lanterns
     const lowRail = new THREE.Mesh(new THREE.BoxGeometry(fruitHalfW * 2, 0.14, 0.14), woodMat);
     lowRail.position.set(0, 0.12, 0.08);
     fruitGroup.add(lowRail);
 
     const fruitSignTex = buildStallSignTexture(THREE, 'HOA QUẢ MIỀN TÂY', fruitColorHex);
-    const fruitSignMat = new THREE.MeshStandardMaterial({ map: fruitSignTex, roughness: 0.42 });
+    const fruitSignMat = new THREE.MeshStandardMaterial({ map: fruitSignTex, roughness: 0.38, metalness: 0.12 });
     const fruitSign = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.36, 0.08), [
-      woodMat, woodMat, woodMat, woodMat, fruitSignMat, fruitSignMat,
+      woodMat, woodMat, brassMat, woodMat, fruitSignMat, fruitSignMat,
     ]);
     fruitSign.position.set(0, 0.32, 0.14);
     fruitSign.rotation.x = -0.35;
@@ -1942,7 +3206,7 @@
 
       // Subtle warm lantern breathing on Chợ Bến Thành PointLight
       if (sceneState.clockPointLight) {
-        sceneState.clockPointLight.intensity = 0.85 + Math.sin(t * 2.1) * 0.08;
+        sceneState.clockPointLight.intensity = 0.92 + Math.sin(t * 2.1) * 0.09;
       }
 
       if (ctx.requestRender) ctx.requestRender(1);
@@ -1968,9 +3232,9 @@
 
   function buildPortraitStandeeTexture(THREE, img, name, colorHex) {
     return makeTex(THREE, (ctx, w, h) => {
-      // Crisp ivory acrylic plate background
-      ctx.fillStyle = '#fffdf7';
-      drawRoundRect(ctx, 6, 6, w - 12, h - 12, 26);
+      // Fine Saigon porcelain-ivory heirloom plate
+      ctx.fillStyle = '#faf4e6';
+      drawRoundRect(ctx, 6, 6, w - 12, h - 12, 24);
       ctx.fill();
 
       // Portrait frame clipped neatly
@@ -1978,7 +3242,7 @@
       const frameW = w - pad * 2;
       const frameH = h - 86;
       ctx.save();
-      drawRoundRect(ctx, pad, pad, frameW, frameH, 18);
+      drawRoundRect(ctx, pad, pad, frameW, frameH, 16);
       ctx.clip();
 
       // Cover-crop portrait preserving aspect ratio
@@ -1988,41 +3252,40 @@
       const dw = iw * scale;
       const dh = ih * scale;
       const dx = pad + (frameW - dw) / 2;
-      const dy = pad + (frameH - dh) * 0.28; // bias slightly upward to keep face centered
+      const dy = pad + (frameH - dh) * 0.28;
       ctx.drawImage(img, dx, dy, dw, dh);
 
       // Subtle warm bottom vignette into nameplate
       const vig = ctx.createLinearGradient(0, pad + frameH - 44, 0, pad + frameH);
       vig.addColorStop(0, 'rgba(0,0,0,0)');
-      vig.addColorStop(1, 'rgba(15,10,8,0.45)');
+      vig.addColorStop(1, 'rgba(15,10,8,0.52)');
       ctx.fillStyle = vig;
       ctx.fillRect(pad, pad + frameH - 44, frameW, 44);
       ctx.restore();
 
-      // Crisp team-color nameplate ribbon at bottom
+      // Lacquered team-color & antique-gold nameplate plaque
       const ribY = h - 68;
-      drawRoundRect(ctx, 14, ribY, w - 28, 52, 12);
-      ctx.fillStyle = colorHex || '#d97706';
+      drawRoundRect(ctx, 14, ribY, w - 28, 52, 11);
+      ctx.fillStyle = colorHex || '#9a5814';
       ctx.fill();
-      ctx.strokeStyle = '#fde047';
+      ctx.strokeStyle = '#e5be6a';
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '900 24px sans-serif';
+      ctx.fillStyle = '#fff9eb';
+      ctx.font = '700 23px Georgia, "Times New Roman", serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       fitCanvasText(ctx, String(name || '').toUpperCase(), w / 2, ribY + 27, w - 48);
 
-      // Outer glossy team-color frame border
-      drawRoundRect(ctx, 8, 8, w - 16, h - 16, 24);
-      ctx.strokeStyle = colorHex || '#d97706';
-      ctx.lineWidth = 10;
+      // Outer team lacquer border + double antique-gold hairline
+      drawRoundRect(ctx, 8, 8, w - 16, h - 16, 22);
+      ctx.strokeStyle = colorHex || '#b46918';
+      ctx.lineWidth = 9;
       ctx.stroke();
 
-      // Inner gold hairline
-      drawRoundRect(ctx, 15, 15, w - 30, h - 30, 18);
-      ctx.strokeStyle = 'rgba(253, 224, 71, 0.75)';
+      drawRoundRect(ctx, 15, 15, w - 30, h - 30, 16);
+      ctx.strokeStyle = 'rgba(232, 194, 112, 0.85)';
       ctx.lineWidth = 2.5;
       ctx.stroke();
     }, 256, 310);
@@ -2037,35 +3300,51 @@
     const finalName = name || meta.name || chefId || 'Đầu Bếp';
     const finalColor = colorHex || meta.colorHex || '#f59e0b';
 
-    // 1. Add crisp metallic gold/team-colored ring base (once per standee)
+    // 1. Weighted Brushed-Brass & Lacquered-Ebony Heirloom Pedestal (once per standee)
     if (!standee.userData._aaaRingBase) {
       standee.userData._aaaRingBase = true;
-      const goldMat = new THREE.MeshStandardMaterial({
-        color: 0xfbbf24,
-        metalness: 0.86,
-        roughness: 0.22,
+      const brassMat = new THREE.MeshStandardMaterial({
+        color: 0xe2b85c,
+        metalness: 0.90,
+        roughness: 0.20,
+        envMapIntensity: 1.32,
       });
       const teamColorNum = new THREE.Color(finalColor);
       const teamTrimMat = new THREE.MeshStandardMaterial({
         color: teamColorNum,
-        metalness: 0.45,
+        metalness: 0.42,
         roughness: 0.28,
+        envMapIntensity: 0.95,
       });
 
-      const topRing = new THREE.Mesh(new THREE.TorusGeometry(0.88, 0.055, 8, 28), goldMat);
+      // Upgrade base cylinder material to rich glossy lacquered team enamel
+      const baseCyl = standee.children[0];
+      if (baseCyl && baseCyl.isMesh && baseCyl.geometry && baseCyl.geometry.type === 'CylinderGeometry') {
+        baseCyl.material = new THREE.MeshStandardMaterial({
+          color: teamColorNum.clone().multiplyScalar(0.55),
+          metalness: 0.36,
+          roughness: 0.24,
+          envMapIntensity: 1.0,
+        });
+      }
+
+      const topRing = new THREE.Mesh(new THREE.TorusGeometry(0.88, 0.058, 10, 28), brassMat);
       topRing.rotation.x = Math.PI / 2;
       topRing.position.y = 0.30;
       standee.add(topRing);
 
-      const botRing = new THREE.Mesh(new THREE.TorusGeometry(0.97, 0.045, 8, 28), goldMat);
+      const botRing = new THREE.Mesh(new THREE.TorusGeometry(0.98, 0.052, 10, 28), brassMat);
       botRing.rotation.x = Math.PI / 2;
-      botRing.position.y = 0.045;
+      botRing.position.y = 0.048;
       standee.add(botRing);
 
-      // Sleek slotted acrylic clamp bar at base of plate
-      const clampBar = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.14, 0.22), teamTrimMat);
+      // Weighted brass clamp saddle at base of heirloom plate
+      const clampBar = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.14, 0.24), teamTrimMat);
       clampBar.position.y = 0.34;
       standee.add(clampBar);
+      const clampTrim = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.04, 0.27), brassMat);
+      clampTrim.position.y = 0.41;
+      standee.add(clampTrim);
 
       if (sceneState.ctx && sceneState.ctx.requestRender) {
         sceneState.ctx.requestRender(2);
@@ -2078,7 +3357,6 @@
 
     loadChefPortrait(chefId).then(img => {
       if (!img || standee.userData._aaaPortraitChef !== chefId) return;
-      // Locate the vertical BoxGeometry acrylic plate (children[1] in createAcrylicChefStandee)
       const plate = standee.children.find(ch =>
         ch && ch.isMesh && ch.geometry && ch.geometry.type === 'BoxGeometry'
         && ch.position && ch.position.y > 0.8
@@ -2087,17 +3365,17 @@
 
       const tex = buildPortraitStandeeTexture(THREE, img, finalName, finalColor);
       const edgeMat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(finalColor),
-        metalness: 0.35,
-        roughness: 0.25,
+        color: 0xdcb35c,
+        metalness: 0.82,
+        roughness: 0.24,
+        envMapIntensity: 1.15,
       });
       const faceMat = new THREE.MeshStandardMaterial({
         map: tex,
-        roughness: 0.30,
+        roughness: 0.28,
         metalness: 0.06,
       });
 
-      // Dispose previous texture cleanly if single material
       if (plate.material && !Array.isArray(plate.material) && plate.material.map) {
         try { plate.material.map.dispose(); } catch (_) {}
       }
@@ -2179,39 +3457,42 @@
           gap: 4px;
           padding: 3px 9px;
           border-radius: 999px;
-          font: 900 11px/1.15 system-ui, -apple-system, sans-serif;
+          font: 800 11px/1.15 system-ui, -apple-system, sans-serif;
           letter-spacing: 0.02em;
           white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
           pointer-events: none;
-          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.65);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 236, 186, 0.16);
           will-change: transform;
         }
         .vdb-3d-badge.is-need {
-          background: linear-gradient(135deg, rgba(180, 83, 9, 0.94), rgba(146, 64, 14, 0.94));
-          color: #fef08a;
-          border: 1.5px solid #fbbf24;
+          background: linear-gradient(135deg, rgba(138, 66, 12, 0.95), rgba(92, 40, 8, 0.95));
+          color: #fae6a8;
+          border: 1.5px solid #e0b861;
           animation: vdbBadgePulse 1.8s ease-in-out infinite;
         }
         .vdb-3d-badge.is-selected {
-          background: linear-gradient(135deg, #f59e0b, #eab308);
-          color: #1c1917;
-          border: 1.5px solid #fef9c3;
-          box-shadow: 0 0 18px rgba(251, 191, 36, 0.72), 0 6px 16px rgba(0, 0, 0, 0.6);
+          background: linear-gradient(135deg, #e7be67, #c28e33);
+          color: #160d06;
+          border: 1.5px solid #fdf0c4;
+          box-shadow: 0 0 18px rgba(226, 184, 92, 0.65), 0 6px 16px rgba(0, 0, 0, 0.65);
         }
         .vdb-3d-badge.is-active {
-          background: linear-gradient(135deg, rgba(5, 150, 105, 0.96), rgba(13, 148, 136, 0.96));
-          color: #fefce8;
-          border: 1.5px solid #6ee7b7;
-          box-shadow: 0 0 16px rgba(16, 185, 129, 0.65), 0 6px 16px rgba(0, 0, 0, 0.6);
+          background: linear-gradient(135deg, rgba(8, 52, 44, 0.96), rgba(6, 36, 32, 0.96));
+          color: #f8e6b4;
+          border: 1.5px solid #d8ae56;
+          font-family: Georgia, "Times New Roman", serif;
+          box-shadow: 0 0 16px rgba(216, 174, 86, 0.35), 0 6px 18px rgba(0, 0, 0, 0.72);
         }
         .vdb-3d-badge.is-closed {
-          background: rgba(153, 27, 27, 0.96);
+          background: rgba(120, 18, 20, 0.96);
           color: #fee2e2;
-          border: 1.5px solid #f87171;
+          border: 1.5px solid #e08282;
           padding: 5px 14px;
           font-size: 12px;
         }
-        /* Desktop Board-First Clickable 3D Market Pills (Phase 1) */
+        /* Indochine Collector's Edition Clickable 3D Market Plaques (Phase 1 — Desktop & Mobile) */
         .vdb-3d-market-pill {
           position: absolute;
           left: 0;
@@ -2221,48 +3502,54 @@
           gap: 5px;
           padding: 5px 10px;
           border-radius: 999px;
-          border: 1.5px solid var(--pill-accent, rgba(251, 191, 36, 0.65));
-          background: rgba(16, 13, 11, 0.92);
-          color: #f5f5f4;
-          font: 800 11.5px/1.15 system-ui, -apple-system, sans-serif;
+          border: 1.5px solid var(--pill-accent, rgba(218, 178, 102, 0.65));
+          background: linear-gradient(180deg, rgba(22, 14, 10, 0.94), rgba(12, 8, 6, 0.95));
+          color: #f8f0df;
+          font: 700 11.5px/1.15 system-ui, -apple-system, sans-serif;
           white-space: nowrap;
           pointer-events: auto;
           cursor: pointer;
-          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.68), inset 0 1px 0 rgba(255,255,255,0.08);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.74), inset 0 1px 0 rgba(255, 232, 180, 0.14);
           transition: filter 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
           will-change: transform;
         }
+        .vdb-3d-market-pill .vdb-mp-label {
+          font-family: Georgia, "Times New Roman", serif;
+          font-weight: 700;
+          letter-spacing: 0.01em;
+        }
         .vdb-3d-market-pill:hover {
           filter: brightness(1.14);
-          border-color: #fde047;
-          box-shadow: 0 0 16px rgba(251, 191, 36, 0.52), 0 8px 20px rgba(0, 0, 0, 0.72);
+          border-color: #f3d589;
+          box-shadow: 0 0 18px rgba(226, 184, 92, 0.48), 0 8px 22px rgba(0, 0, 0, 0.78);
         }
         .vdb-3d-market-pill.is-selected {
-          background: linear-gradient(135deg, #f59e0b, #eab308);
-          color: #18100a;
-          border-color: #fef9c3;
-          box-shadow: 0 0 22px rgba(251, 191, 36, 0.8), 0 8px 20px rgba(0, 0, 0, 0.65);
+          background: linear-gradient(135deg, #ecc46e, #c48e32);
+          color: #160c05;
+          border-color: #fff3cb;
+          box-shadow: 0 0 22px rgba(232, 188, 96, 0.75), 0 8px 20px rgba(0, 0, 0, 0.7);
         }
         .vdb-3d-market-pill .vdb-mp-cost {
           font-weight: 800;
-          opacity: 0.85;
+          opacity: 0.88;
           font-size: 10.5px;
+          font-variant-numeric: tabular-nums;
         }
         .vdb-3d-market-pill .vdb-mp-need {
           padding: 1px 6px;
           border-radius: 999px;
-          background: rgba(245, 158, 11, 0.28);
-          border: 1px solid rgba(253, 224, 71, 0.75);
-          color: #fef08a;
+          background: rgba(216, 168, 72, 0.24);
+          border: 1px solid rgba(238, 200, 114, 0.72);
+          color: #fae6a8;
           font-weight: 900;
           font-size: 10.5px;
         }
         .vdb-3d-market-pill.is-selected .vdb-mp-need {
-          background: rgba(24, 16, 10, 0.85);
-          color: #fde047;
-          border-color: rgba(24, 16, 10, 0.6);
+          background: rgba(22, 12, 6, 0.86);
+          color: #f8df94;
+          border-color: rgba(22, 12, 6, 0.6);
         }
-        /* Desktop Board-First Phase 2 Card & Shelf Clickable Pills */
+        /* Indochine Collector's Edition Phase 2 Card & Shelf Plaques (Desktop & Mobile) */
         .vdb-3d-card-pill {
           position: absolute;
           left: 0;
@@ -2275,47 +3562,48 @@
           max-width: 162px;
           padding: 6px 8px;
           border-radius: 12px;
-          border: 1.5px solid rgba(251, 191, 36, 0.62);
-          background: rgba(15, 12, 10, 0.94);
-          color: #fafaf9;
+          border: 1.5px solid rgba(218, 178, 102, 0.62);
+          background: linear-gradient(180deg, rgba(22, 14, 10, 0.95), rgba(11, 7, 5, 0.96));
+          color: #faf4e6;
           font: 700 11px/1.2 system-ui, -apple-system, sans-serif;
           text-align: center;
           pointer-events: auto;
           cursor: pointer;
-          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.72);
+          box-shadow: 0 10px 26px rgba(0, 0, 0, 0.76), inset 0 1px 0 rgba(255, 232, 180, 0.14);
           transition: filter 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
           will-change: transform;
         }
         .vdb-3d-card-pill:hover:not(:disabled) {
           filter: brightness(1.12);
-          border-color: #fde047;
-          box-shadow: 0 0 18px rgba(251, 191, 36, 0.5), 0 10px 24px rgba(0, 0, 0, 0.75);
+          border-color: #f3d589;
+          box-shadow: 0 0 18px rgba(226, 184, 92, 0.48), 0 10px 24px rgba(0, 0, 0, 0.78);
         }
         .vdb-3d-card-pill:disabled {
           opacity: 0.62;
           cursor: default;
         }
         .vdb-3d-card-pill.is-needed {
-          border-color: #fde047;
-          box-shadow: 0 0 18px rgba(250, 204, 21, 0.42), 0 10px 24px rgba(0, 0, 0, 0.72);
+          border-color: #f3d589;
+          box-shadow: 0 0 18px rgba(232, 192, 98, 0.44), 0 10px 24px rgba(0, 0, 0, 0.75);
         }
         .vdb-3d-card-pill.is-claimed {
           border-style: dashed;
-          border-color: #fb923c;
+          border-color: #e8924f;
         }
         .vdb-3d-card-pill.is-owned {
-          border-color: #34d399;
-          background: rgba(6, 54, 40, 0.94);
-          opacity: 0.92;
+          border-color: #5eead4;
+          background: linear-gradient(180deg, rgba(8, 48, 38, 0.95), rgba(5, 30, 24, 0.96));
+          opacity: 0.94;
         }
         .vdb-3d-card-pill.is-shelf {
-          border-color: #818cf8;
-          background: rgba(23, 20, 56, 0.94);
+          border-color: #a5b4fc;
+          background: linear-gradient(180deg, rgba(26, 20, 56, 0.95), rgba(14, 11, 34, 0.96));
         }
         .vdb-3d-card-pill .vdb-cp-name {
-          font-weight: 800;
+          font-family: Georgia, "Times New Roman", serif;
+          font-weight: 700;
           font-size: 11px;
-          color: #fef3c7;
+          color: #f9ebd0;
           max-width: 146px;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -2324,7 +3612,7 @@
         .vdb-3d-card-pill .vdb-cp-meta {
           font-size: 10px;
           font-weight: 700;
-          color: #fde047;
+          color: #f3d589;
           max-width: 146px;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -2332,7 +3620,7 @@
         }
         .vdb-3d-card-pill .vdb-cp-owner {
           font-size: 10px;
-          color: #d6d3d1;
+          color: #d6c7b4;
           max-width: 146px;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -2345,28 +3633,29 @@
           font-weight: 900;
           font-size: 11px;
           line-height: 1.2;
-          background: linear-gradient(135deg, #f59e0b, #d97706);
-          color: #18100a;
+          background: linear-gradient(135deg, #e7be67, #c28e33);
+          color: #160c05;
+          font-variant-numeric: tabular-nums;
         }
         .vdb-3d-card-pill.is-claimed .vdb-cp-cta {
-          background: rgba(234, 88, 12, 0.25);
-          border: 1px dashed #fb923c;
-          color: #fed7aa;
+          background: rgba(217, 100, 32, 0.25);
+          border: 1px dashed #f09b52;
+          color: #fde0c2;
         }
         .vdb-3d-card-pill.is-owned .vdb-cp-cta {
-          background: rgba(16, 185, 129, 0.25);
-          color: #6ee7b7;
+          background: rgba(20, 184, 166, 0.24);
+          color: #7bf1dc;
         }
         .vdb-3d-card-pill.is-empty .vdb-cp-cta,
         .vdb-3d-card-pill.is-sold .vdb-cp-cta {
-          background: rgba(68, 64, 60, 0.6);
-          color: #a8a29e;
+          background: rgba(68, 58, 52, 0.6);
+          color: #b4a89e;
         }
         .vdb-3d-card-pill.is-shelf .vdb-cp-cta {
-          background: linear-gradient(135deg, #6366f1, #4f46e5);
+          background: linear-gradient(135deg, #7c83f4, #4f46e5);
           color: #eef2ff;
         }
-        /* Desktop Board-First Phase 2 Island Service Pills */
+        /* Indochine Phase 2 Island Service Plaques */
         .vdb-3d-island-group {
           position: absolute;
           left: 0;
@@ -2383,18 +3672,18 @@
           gap: 5px;
           padding: 6px 11px;
           border-radius: 999px;
-          border: 1.5px solid var(--isl-border, rgba(251, 191, 36, 0.75));
-          background: var(--isl-bg, rgba(16, 13, 11, 0.94));
-          color: #fefce8;
+          border: 1.5px solid var(--isl-border, rgba(218, 178, 102, 0.72));
+          background: var(--isl-bg, rgba(16, 11, 8, 0.94));
+          color: #faf2df;
           font: 800 11.5px/1.15 system-ui, -apple-system, sans-serif;
           white-space: nowrap;
           cursor: pointer;
-          box-shadow: 0 8px 22px rgba(0, 0, 0, 0.72);
+          box-shadow: 0 8px 22px rgba(0, 0, 0, 0.76), inset 0 1px 0 rgba(255, 234, 184, 0.14);
           transition: filter 0.14s ease, border-color 0.14s ease;
         }
         .vdb-3d-island-btn:hover:not(:disabled) {
-          filter: brightness(1.16);
-          border-color: #fde047;
+          filter: brightness(1.15);
+          border-color: #f3d589;
         }
         .vdb-3d-island-btn:disabled {
           opacity: 0.48;
@@ -2402,8 +3691,8 @@
         }
         .vdb-3d-island-btn.is-secondary {
           padding: 6px 9px;
-          background: rgba(153, 27, 27, 0.92);
-          border-color: #fca5a5;
+          background: rgba(128, 22, 22, 0.94);
+          border-color: #f2a0a0;
           color: #fee2e2;
         }
         @keyframes vdbBadgePulse {
@@ -2420,29 +3709,30 @@
           max-width: 270px;
           padding: 8px 11px;
           border-radius: 12px;
-          background: rgba(15, 12, 10, 0.95);
-          border: 1.5px solid rgba(251, 191, 36, 0.78);
-          box-shadow: 0 14px 32px rgba(0, 0, 0, 0.75), 0 0 16px rgba(245, 158, 11, 0.22);
-          color: #f5f5f4;
+          background: linear-gradient(180deg, rgba(20, 12, 9, 0.96), rgba(10, 7, 5, 0.97));
+          border: 1.5px solid rgba(218, 178, 102, 0.78);
+          box-shadow: 0 14px 34px rgba(0, 0, 0, 0.78), 0 0 16px rgba(216, 174, 86, 0.20), inset 0 1px 0 rgba(255, 232, 180, 0.14);
+          color: #f5efe3;
           font: 600 12px/1.35 system-ui, -apple-system, sans-serif;
         }
         #vdb-3d-tooltip .vdb-tt-title {
-          font-weight: 900;
-          font-size: 13px;
-          color: #fde68a;
+          font-family: Georgia, "Times New Roman", serif;
+          font-weight: 700;
+          font-size: 13.5px;
+          color: #f5da94;
           margin-bottom: 2px;
         }
         #vdb-3d-tooltip .vdb-tt-sub {
           font-size: 11px;
-          color: #d6d3d1;
+          color: #d6c7b4;
         }
         #vdb-3d-tooltip .vdb-tt-hint {
           margin-top: 4px;
           padding: 2px 7px;
           border-radius: 6px;
-          background: rgba(245, 158, 11, 0.22);
-          border: 1px solid rgba(251, 191, 36, 0.55);
-          color: #fef08a;
+          background: rgba(216, 174, 86, 0.22);
+          border: 1px solid rgba(226, 186, 104, 0.58);
+          color: #fae6a8;
           font-weight: 800;
           font-size: 11px;
           display: none;
@@ -2481,8 +3771,83 @@
             font-size: 10.5px;
           }
         }
-        @media (max-width: 640px) {
-          .vdb-3d-badge { font-size: 10px; padding: 2px 7px; }
+        @media (max-width: 767px) {
+          .vdb-3d-badge { font-size: 10.5px; padding: 3px 9px; max-width: calc(100vw - 16px); }
+          .vdb-3d-market-pill {
+            padding: 4px 7px;
+            min-height: 30px;
+            font-size: 10.5px;
+            gap: 3.5px;
+          }
+          .vdb-3d-market-pill .vdb-mp-cost,
+          .vdb-3d-market-pill .vdb-mp-need {
+            font-size: 9.5px;
+          }
+          .vdb-3d-card-pill {
+            width: 152px;
+            min-width: 132px;
+            max-width: 164px;
+            padding: 5px 7px;
+            gap: 2.5px;
+            font-size: 10.5px;
+            border-radius: 10px;
+          }
+          .vdb-3d-card-pill .vdb-cp-name {
+            font-size: 10.5px;
+            max-width: 138px;
+          }
+          .vdb-3d-card-pill .vdb-cp-meta,
+          .vdb-3d-card-pill .vdb-cp-owner {
+            font-size: 9.5px;
+            max-width: 138px;
+          }
+          .vdb-3d-card-pill .vdb-cp-cta {
+            font-size: 10.5px;
+            padding: 3px 6px;
+          }
+          .vdb-3d-island-btn {
+            padding: 5px 8.5px;
+            min-height: 30px;
+            font-size: 10.5px;
+            gap: 4px;
+          }
+          .vdb-3d-island-btn.is-secondary {
+            padding: 5px 7px;
+          }
+        }
+        @media (max-width: 359px) {
+          .vdb-3d-market-pill {
+            padding: 3.5px 6px;
+            min-height: 28px;
+            font-size: 9.5px;
+            gap: 2.5px;
+          }
+          .vdb-3d-market-pill .vdb-mp-cost,
+          .vdb-3d-market-pill .vdb-mp-need {
+            font-size: 8.8px;
+          }
+          .vdb-3d-card-pill {
+            width: 136px;
+            min-width: 124px;
+            max-width: 146px;
+            padding: 4px 5.5px;
+            font-size: 9.8px;
+          }
+          .vdb-3d-card-pill .vdb-cp-name,
+          .vdb-3d-card-pill .vdb-cp-meta,
+          .vdb-3d-card-pill .vdb-cp-owner {
+            max-width: 124px;
+            font-size: 9.5px;
+          }
+          .vdb-3d-card-pill .vdb-cp-cta {
+            font-size: 9.8px;
+            padding: 2.5px 5px;
+          }
+          .vdb-3d-island-btn {
+            padding: 4px 6.5px;
+            min-height: 28px;
+            font-size: 9.6px;
+          }
         }
         @media (prefers-reduced-motion: reduce) {
           .vdb-3d-badge.is-need { animation: none; }
@@ -2737,23 +4102,26 @@
     group.userData.isServiceBell = true;
 
     const mahoganyMat = new THREE.MeshStandardMaterial({
-      color: 0x3b180b,
-      roughness: 0.34,
-      metalness: 0.14,
+      color: 0x2b1108,
+      roughness: 0.30,
+      metalness: 0.16,
+      envMapIntensity: 0.95,
     });
     const brassDomeMat = new THREE.MeshStandardMaterial({
-      color: 0xf6c94c,
-      metalness: 0.88,
-      roughness: 0.18,
-      emissive: new THREE.Color(0x452804),
-      emissiveIntensity: 0.12,
+      color: 0xe6bd60,
+      metalness: 0.93,
+      roughness: 0.16,
+      envMapIntensity: 1.38,
+      emissive: new THREE.Color(0x3a2004),
+      emissiveIntensity: 0.10,
     });
     const brightGoldMat = new THREE.MeshStandardMaterial({
-      color: 0xfef08a,
-      metalness: 0.92,
-      roughness: 0.14,
-      emissive: new THREE.Color(0x523206),
-      emissiveIntensity: 0.10,
+      color: 0xf7df9a,
+      metalness: 0.94,
+      roughness: 0.13,
+      envMapIntensity: 1.42,
+      emissive: new THREE.Color(0x452805),
+      emissiveIntensity: 0.08,
     });
 
     // Turned dark mahogany circular base
@@ -2840,9 +4208,9 @@
     }
     let changed = false;
     if (sceneState.serviceBellGroup) {
-      const vw = HAS_DOM ? window.innerWidth : 1280;
-      // Zero Double-Bell Rule: hide 3D bell on Desktop (>=768px) unless in Peek 3D mode; show on Mobile (<768px) or Peek
-      const shouldShow = sceneState.peekMode || vw < 768;
+      // Unified Zero Double-Bell Rule (Desktop & Mobile): UI Brass Service Bell is shown during normal play;
+      // 3D VdbServiceBell renders ONLY in Peek 3D mode (when UI chrome is hidden)!
+      const shouldShow = Boolean(sceneState.peekMode);
       if (sceneState.serviceBellGroup.visible !== shouldShow) {
         sceneState.serviceBellGroup.visible = shouldShow;
         changed = true;
@@ -2957,10 +4325,10 @@
     const puckGeo = new THREE.CylinderGeometry(0.62, 0.68, 0.22, 20);
     const cardGeo = new THREE.BoxGeometry(0.64, 0.045, 0.88);
 
-    const woodPadMat = new THREE.MeshStandardMaterial({ color: 0x24140b, roughness: 0.72 });
-    const creamCardMat = new THREE.MeshStandardMaterial({ color: 0xfff8e6, roughness: 0.45 });
-    const purpleCardMat = new THREE.MeshStandardMaterial({ color: 0x5b21b6, roughness: 0.38, metalness: 0.18 });
-    const goldEdgeMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.25, metalness: 0.78 });
+    const woodPadMat = new THREE.MeshStandardMaterial({ color: 0x1a0c06, roughness: 0.62, metalness: 0.05, envMapIntensity: 0.35 });
+    const creamCardMat = new THREE.MeshStandardMaterial({ color: 0xf9f1df, roughness: 0.44 });
+    const purpleCardMat = new THREE.MeshStandardMaterial({ color: 0x3b1566, roughness: 0.36, metalness: 0.18 });
+    const goldEdgeMat = new THREE.MeshStandardMaterial({ color: 0xdcb35c, roughness: 0.22, metalness: 0.86, envMapIntensity: 1.25 });
 
     const buildFlank = (flankRivals, isLeft) => {
       const n = flankRivals.length;
@@ -3156,6 +4524,7 @@
 
       // 2. Defensively measure floating / top-chrome banners so 3D pills NEVER collide with them
       const obstacleIds = [
+        'tt-rivals-top-strip',
         'desktop-delivery-strip',
         'contested-market-alert',
         'coachmark-banner',
@@ -3462,24 +4831,27 @@
 
   function separate2DPills(items, minX, maxX, minY, maxY, gap) {
     if (!items || items.length < 2) return;
-    for (let pass = 0; pass < 6; pass++) {
+    const g = typeof gap === 'number' ? gap : 6;
+    for (let pass = 0; pass < 14; pass++) {
+      let moved = false;
       for (let i = 0; i < items.length; i++) {
         for (let j = i + 1; j < items.length; j++) {
           const a = items[i];
           const b = items[j];
           const dx = b.x - a.x;
           const dy = b.y - a.y;
-          const ox = (a.w + b.w) * 0.5 + gap - Math.abs(dx);
-          const oy = (a.h + b.h) * 0.5 + gap - Math.abs(dy);
+          const ox = (a.w + b.w) * 0.5 + g - Math.abs(dx);
+          const oy = (a.h + b.h) * 0.5 + g - Math.abs(dy);
           if (ox > 0 && oy > 0) {
+            moved = true;
             if (oy <= ox) {
               const s = dy >= 0 ? 1 : -1;
-              a.y -= s * oy * 0.5;
-              b.y += s * oy * 0.5;
+              a.y -= s * oy * 0.52;
+              b.y += s * oy * 0.52;
             } else {
               const s = dx >= 0 ? 1 : -1;
-              a.x -= s * ox * 0.5;
-              b.x += s * ox * 0.5;
+              a.x -= s * ox * 0.52;
+              b.x += s * ox * 0.52;
             }
           }
         }
@@ -3487,6 +4859,60 @@
       items.forEach(it => {
         it.x = clamp(it.x, minX + it.w * 0.5, Math.max(minX + it.w * 0.5, maxX - it.w * 0.5));
         it.y = clamp(it.y, minY + it.h * 0.5, Math.max(minY + it.h * 0.5, maxY - it.h * 0.5));
+      });
+      if (!moved) break;
+    }
+
+    // Verify zero overlap; if tightly constrained (e.g. 320px phone), deterministically pack into clean 2-col rows
+    let hasOverlap = false;
+    for (let i = 0; i < items.length && !hasOverlap; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = items[i];
+        const b = items[j];
+        if (Math.abs(b.x - a.x) < (a.w + b.w) * 0.5 + 1 && Math.abs(b.y - a.y) < (a.h + b.h) * 0.5 + 1) {
+          hasOverlap = true;
+          break;
+        }
+      }
+    }
+    if (hasOverlap) {
+      const sorted = items.slice().sort((a, b) => (a.y - b.y) || (a.x - b.x));
+      const availW = Math.max(120, maxX - minX);
+      const rows = [];
+      let curRow = [];
+      let curW = 0;
+      sorted.forEach(it => {
+        const needW = curRow.length ? (curW + g + it.w) : it.w;
+        if (curRow.length > 0 && needW > availW) {
+          rows.push(curRow);
+          curRow = [it];
+          curW = it.w;
+        } else {
+          curRow.push(it);
+          curW = needW;
+        }
+      });
+      if (curRow.length) rows.push(curRow);
+
+      const rowHeights = rows.map(r => r.reduce((m, it) => Math.max(m, it.h), 0));
+      const totalH = rowHeights.reduce((s, h) => s + h, 0) + g * Math.max(0, rows.length - 1);
+      const availH = Math.max(0, maxY - minY);
+      const rowGap = rows.length > 1
+        ? (totalH <= availH ? g : Math.max(2, (availH - rowHeights.reduce((s, h) => s + h, 0)) / (rows.length - 1)))
+        : 0;
+      let cursorY = minY + Math.max(0, (availH - (rowHeights.reduce((s, h) => s + h, 0) + rowGap * Math.max(0, rows.length - 1))) * 0.5);
+
+      rows.forEach((row, rIdx) => {
+        row.sort((a, b) => a.x - b.x);
+        const rh = rowHeights[rIdx];
+        const rowW = row.reduce((s, it) => s + it.w, 0) + g * Math.max(0, row.length - 1);
+        let cursorX = minX + Math.max(0, (availW - rowW) * 0.5);
+        row.forEach(it => {
+          it.x = clamp(cursorX + it.w * 0.5, minX + it.w * 0.5, Math.max(minX + it.w * 0.5, maxX - it.w * 0.5));
+          it.y = cursorY + rh * 0.5;
+          cursorX += it.w + g;
+        });
+        cursorY += rh + rowGap;
       });
     }
   }
@@ -3658,11 +5084,11 @@
     const cardsData = (activeData && Array.isArray(activeData.cards)) ? activeData.cards : null;
     const isVertical = shopKey === 'carbs' || shopKey === 'vegetable';
     const proj = new THREE.Vector3();
-    const minY = stage.topPx + 8;
-    const maxY = stage.bottomPx - 10;
-    let minX = stage.leftPx + 10;
-    let maxX = stage.rightPx - 10;
-    if (maxX < minX + 180) {
+    const minY = stage.topPx + (stage.isMobile ? 6 : 8);
+    const maxY = stage.bottomPx - (stage.isMobile ? 8 : 10);
+    let minX = stage.isMobile ? 6 : (stage.leftPx + 10);
+    let maxX = stage.isMobile ? (stage.vw - 6) : (stage.rightPx - 10);
+    if (!stage.isMobile && maxX < minX + 180) {
       minX = 14;
       maxX = stage.vw - 14;
     }
@@ -3678,7 +5104,9 @@
         layer.appendChild(hdr);
         sceneState.activeHeaderNode = hdr;
       }
-      hdr.textContent = `📍 ${meta.emoji} ${meta.name}`;
+      hdr.textContent = stage.isMobile
+        ? `📍 ${meta.emoji} ${meta.short} · $${meta.cost}`
+        : `📍 ${meta.emoji} ${meta.name}`;
       hdr.style.display = 'inline-flex';
       const hdrRect0 = hdr.getBoundingClientRect();
       const hdrH = Math.ceil(hdrRect0.height) || 24;
@@ -3686,13 +5114,17 @@
       proj.set(zone.meta.cx, bh + 2.25, zone.meta.cz - (isVertical ? 5.2 : 1.5)).project(camera);
       const minHx = minX + hdrW * 0.5;
       const maxHx = Math.max(minHx, maxX - hdrW * 0.5);
-      const hx = clamp((proj.x * 0.5 + 0.5) * stage.vw, minHx, maxHx);
-      const minHy = stage.topPx + hdrH + 6;
-      const maxHy = Math.max(minHy, maxY - 172);
-      const hy = clamp((-proj.y * 0.5 + 0.5) * stage.vh, minHy, maxHy);
+      const hx = stage.isMobile
+        ? clamp(stage.vw * 0.5, minHx, maxHx)
+        : clamp((proj.x * 0.5 + 0.5) * stage.vw, minHx, maxHx);
+      const minHy = stage.topPx + hdrH + 5;
+      const maxHy = Math.max(minHy, maxY - (stage.isMobile ? 148 : 172));
+      const hy = stage.isMobile
+        ? minHy
+        : clamp((-proj.y * 0.5 + 0.5) * stage.vh, minHy, maxHy);
       hdr.style.transform = `translate3d(${Math.round(hx)}px, ${Math.round(hy)}px, 0) translate(-50%, -100%)`;
       const hdrBottom = Math.ceil(hdr.getBoundingClientRect().bottom || hy);
-      cardsMinY = Math.max(minY, hdrBottom + 10);
+      cardsMinY = Math.max(minY, hdrBottom + (stage.isMobile ? 8 : 10));
     }
 
     if (isClosed) {
@@ -3829,11 +5261,19 @@
 
     // 4. Guaranteed Zero-Overlap Layout strictly inside [minX .. maxX] x [cardsMinY .. maxY]
     if (placed.length) {
-      const gap = 10;
+      const gap = stage.isMobile ? (stage.vw < 360 ? 6 : 8) : 10;
       const availH = Math.max(0, maxY - cardsMinY);
       const availW = Math.max(0, maxX - minX);
 
-      if (isVertical) {
+      if (stage.isMobile) {
+        // Mobile (<768px): always render crisp centered 2x2 grid ([Kệ Úp, Card 0] / [Card 1, Card 2]) over zoomed-in stall!
+        const ordered = placed.slice().sort((a, b) => a.orderIdx - b.orderIdx);
+        const col0W = Math.max(ordered[0].w, ordered[2] ? ordered[2].w : 0);
+        const col1W = Math.max(ordered[1] ? ordered[1].w : 0, ordered[3] ? ordered[3].w : 0);
+        const gridW = col0W + (ordered.length > 1 ? gap + col1W : 0);
+        const centerAnchorLeft = minX + Math.max(0, (availW - gridW) * 0.5);
+        layoutPillGrid2x2(ordered, minX, maxX, cardsMinY, maxY, gap, gap, centerAnchorLeft);
+      } else if (isVertical) {
         const totalColH = placed.reduce((s, it) => s + it.h, 0) + gap * Math.max(0, placed.length - 1);
         if (totalColH <= availH - 4) {
           // Fits comfortably in 1 crisp vertical column right beside the stall, strictly clear of Rival Flanks!
@@ -3895,14 +5335,15 @@
     const chocCount = Number(isl.chocolateCount) || 0;
     const chocVal = typeof isl.chocolateValue === 'number' ? isl.chocolateValue : 500;
     const dumpsterCount = Number(isl.dumpsterCount) || 0;
+    const mob = stage.isMobile;
 
     const specs = [
       {
         id: 'garbage',
         pos: new THREE.Vector3(-4.6, bh + 2.35, bcz - 0.8),
-        bg: 'rgba(127, 29, 29, 0.94)',
-        border: '#f87171',
-        label: `🧹 Đổ Rác ($${garbageCost} · ${garbage} túi)`,
+        bg: 'rgba(116, 22, 22, 0.94)',
+        border: '#f29494',
+        label: mob ? `🧹 Rác ($${garbageCost}·${garbage})` : `🧹 Đổ Rác ($${garbageCost} · ${garbage} túi)`,
         disabled: garbage <= 0 || money < garbageCost,
         showSub: garbage > 1,
         subDisabled: money < garbageCost * garbage,
@@ -3910,43 +5351,43 @@
       {
         id: 'dumpster',
         pos: new THREE.Vector3(-4.6, bh + 0.35, bcz + 2.75),
-        bg: 'rgba(6, 78, 59, 0.94)',
-        border: '#34d399',
-        label: `♻️ Khay Bỏ ($0 · ${dumpsterCount} thẻ)`,
+        bg: 'rgba(7, 62, 48, 0.94)',
+        border: '#5eead4',
+        label: mob ? `♻️ Khay (${dumpsterCount})` : `♻️ Khay Bỏ ($0 · ${dumpsterCount} thẻ)`,
         disabled: dumpsterCount <= 0,
       },
       {
         id: 'upgrade',
         pos: new THREE.Vector3(0, bh + 0.85, bcz - 0.35),
-        bg: 'rgba(120, 53, 15, 0.94)',
-        border: '#fbbf24',
+        bg: 'rgba(98, 48, 12, 0.94)',
+        border: '#e5be6a',
         label: `🛠️ Nâng Cấp (${upgradesCount}/4)`,
         disabled: upgradesCount >= 4,
       },
       {
         id: 'chocolate',
         pos: new THREE.Vector3(0, bh + 0.4, bcz + 2.85),
-        bg: 'rgba(88, 28, 13, 0.94)',
-        border: '#f59e0b',
-        label: `🍫 Bán Sô-cô-la (+$${chocVal}${chocCount > 0 ? ' · ×' + chocCount : ''})`,
+        bg: 'rgba(76, 26, 12, 0.94)',
+        border: '#e6a84c',
+        label: mob ? `🍫 Sô-cô-la +$${chocVal}${chocCount > 0 ? ' ×' + chocCount : ''}` : `🍫 Bán Sô-cô-la (+$${chocVal}${chocCount > 0 ? ' · ×' + chocCount : ''})`,
         disabled: chocCount <= 0,
       },
       {
         id: 'action',
         pos: new THREE.Vector3(4.6, bh + 1.45, bcz + 0.2),
-        bg: 'rgba(88, 28, 135, 0.94)',
-        border: '#c084fc',
-        label: `⚡ Thẻ Hành Động ($${actionCost})`,
+        bg: 'rgba(62, 20, 96, 0.94)',
+        border: '#cfa4f8',
+        label: mob ? `⚡ Thẻ ($${actionCost})` : `⚡ Thẻ Hành Động ($${actionCost})`,
         disabled: money < actionCost,
       },
     ];
 
     const proj = new THREE.Vector3();
-    const minY = stage.topPx + 24;
-    const maxY = stage.bottomPx - 14;
-    let minX = stage.leftPx + 10;
-    let maxX = stage.rightPx - 10;
-    if (maxX < minX + 180) {
+    const minY = stage.topPx + (mob ? 14 : 24);
+    const maxY = stage.bottomPx - (mob ? 8 : 14);
+    let minX = mob ? 6 : (stage.leftPx + 10);
+    let maxX = mob ? (stage.vw - 6) : (stage.rightPx - 10);
+    if (!mob && maxX < minX + 180) {
       minX = 20;
       maxX = stage.vw - 20;
     }
@@ -3974,12 +5415,12 @@
         node: wrap,
         x: sx,
         y: sy,
-        w: Math.ceil(r.width) || wrap.offsetWidth || 168,
-        h: Math.ceil(r.height) || wrap.offsetHeight || 36,
+        w: Math.ceil(r.width) || wrap.offsetWidth || (mob ? 118 : 168),
+        h: Math.ceil(r.height) || wrap.offsetHeight || (mob ? 30 : 36),
       });
     });
 
-    separate2DPills(placed, minX, maxX, minY, maxY, 10);
+    separate2DPills(placed, minX, maxX, minY, maxY, mob ? 6 : 10);
     placed.forEach(it => {
       it.node.style.transform = `translate3d(${Math.round(it.x)}px, ${Math.round(it.y)}px, 0) translate(-50%, -50%)`;
     });
@@ -3992,7 +5433,9 @@
     if (!layer) return;
 
     const modalOpen = isModalOpenSafe();
-    if (modalOpen) {
+    const stage = measureOpenStage();
+    const isMatOpen = Boolean(document.body && document.body.classList.contains('rr-mat-open'));
+    if (modalOpen || sceneState.peekMode || (stage.isMobile && isMatOpen)) {
       layer.style.display = 'none';
       hideTooltip();
       return;
@@ -4000,21 +5443,22 @@
     layer.style.display = 'block';
 
     const { THREE, camera } = sceneState.ctx;
-    const stage = measureOpenStage();
-    const minY = stage.topPx + 22;
-    const maxY = stage.bottomPx - 8;
+    const minY = stage.topPx + (stage.isMobile ? 14 : 22);
+    const maxY = Math.max(minY + 28, stage.bottomPx - 8);
     const phase = getPhaseSafe();
     const selectedDest = getSelectedDestSafe();
     const currentLoc = getCurrentLocationSafe();
     const rawNeeds = getRawNeedsSafe();
-    const isDesktopDirect = !stage.isMobile && stage.openH >= 120;
+    // Unified Direct Interactive 3D Board Plaques on ALL viewports (Desktop & Mobile, >=300px)
+    // Mobile floor (64) stays strictly below measureOpenStage()'s 70 floor so Mobile Phase 1 never falls back to hidden <div>s
+    const isDirectBoard = stage.vw >= 300 && stage.openH >= (stage.isMobile ? 64 : 120);
 
     camera.updateMatrixWorld();
     const proj = new THREE.Vector3();
 
-    // DESKTOP BOARD-FIRST DIRECT 3D CONTROLS (>= 1024px)
-    if (isDesktopDirect) {
-      // Phase 1: Clickable pills on ALL 6 Markets + The Island
+    // UNIFIED BOARD-FIRST DIRECT 3D CONTROLS (Desktop + Mobile Open-Wood Tabletop)
+    if (isDirectBoard) {
+      // Phase 1: Clickable plaques on ALL 6 Markets + Chợ Bến Thành Island
       if (phase === 1) {
         hideDesktopDirectPills();
         const placedP1 = [];
@@ -4042,6 +5486,7 @@
               invokeSelectMarket(key);
             });
             node.addEventListener('pointerenter', (e) => {
+              if (e.pointerType === 'touch') return;
               sceneState.hoveredMarketKey = key;
               updateMarketGlowRings();
               if (sceneState.ctx && sceneState.ctx.requestRender) sceneState.ctx.requestRender(2);
@@ -4069,16 +5514,18 @@
           const meta = getMarketMeta(key);
           const need = normalizeMarketNeed(rawNeeds, key);
           const isSel = key === selectedDest;
-          const accentHex = '#' + (meta.color || 0xfbbf24).toString(16).padStart(6, '0');
-          const sig = `${key}|${isSel}|${meta.cost}|${need.count}|${meta.short}`;
+          const accentHex = '#' + (meta.color || 0xdcb35c).toString(16).padStart(6, '0');
+          const shortTitle = stage.isMobile && key === 'island' ? 'Bến Thành' : meta.short;
+          const sig = `${key}|${isSel}|${meta.cost}|${need.count}|${shortTitle}|${stage.isMobile ? 'm' : 'd'}`;
           if (node.dataset.sig !== sig) {
             node.dataset.sig = sig;
             node.className = 'vdb-3d-market-pill' + (isSel ? ' is-selected' : '');
             node.style.setProperty('--pill-accent', accentHex);
-            node._parts.labelSpan.textContent = `${isSel ? '✓ ' : ''}${meta.emoji} ${meta.short}`;
-            node._parts.costSpan.textContent = key === 'island' ? '$0' : `$${meta.cost}`;
+            node._parts.labelSpan.textContent = `${isSel ? '✓ ' : ''}${meta.emoji} ${shortTitle}`;
+            node._parts.costSpan.textContent = key === 'island' ? (stage.isMobile ? '' : '$0') : `$${meta.cost}`;
+            node._parts.costSpan.style.display = (stage.isMobile && key === 'island') ? 'none' : 'inline';
             if (need.count > 0) {
-              node._parts.needSpan.textContent = `🎯 ×${need.count}`;
+              node._parts.needSpan.textContent = stage.isMobile ? `×${need.count}` : `🎯 ×${need.count}`;
               node._parts.needSpan.style.display = 'inline-block';
             } else {
               node._parts.needSpan.textContent = '';
@@ -4091,9 +5538,9 @@
             node.style.display = 'none';
             return;
           }
-          const sx = (proj.x * 0.5 + 0.5) * stage.vw;
-          const sy = (-proj.y * 0.5 + 0.5) * stage.vh;
-          if (sx < 16 || sx > stage.vw - 16 || sy < minY - 12 || sy > maxY + 12) {
+          const rawSx = (proj.x * 0.5 + 0.5) * stage.vw;
+          const rawSy = (-proj.y * 0.5 + 0.5) * stage.vh;
+          if (!stage.isMobile && (rawSx < 16 || rawSx > stage.vw - 16 || rawSy < minY - 12 || rawSy > maxY + 12)) {
             node.style.display = 'none';
             return;
           }
@@ -4101,27 +5548,28 @@
           const nr = node.getBoundingClientRect();
           placedP1.push({
             node,
-            x: sx,
-            y: sy,
-            w: Math.ceil(nr.width) || node.offsetWidth || 126,
-            h: Math.ceil(nr.height) || node.offsetHeight || 28,
+            x: clamp(rawSx, 6, stage.vw - 6),
+            y: clamp(rawSy, minY, maxY),
+            w: Math.ceil(nr.width) || node.offsetWidth || (stage.isMobile ? 96 : 126),
+            h: Math.ceil(nr.height) || node.offsetHeight || (stage.isMobile ? 30 : 28),
           });
         });
 
-        let p1MinX = stage.leftPx + 10;
-        let p1MaxX = stage.rightPx - 10;
-        if (p1MaxX < p1MinX + 180) {
+        let p1MinX = stage.isMobile ? 6 : (stage.leftPx + 10);
+        let p1MaxX = stage.isMobile ? (stage.vw - 6) : (stage.rightPx - 10);
+        if (!stage.isMobile && p1MaxX < p1MinX + 180) {
           p1MinX = 16;
           p1MaxX = stage.vw - 16;
         }
-        separate2DPills(placedP1, p1MinX, p1MaxX, minY, maxY, 6);
+        const p1Gap = stage.isMobile ? (stage.vw < 360 ? 4 : 5) : 6;
+        separate2DPills(placedP1, p1MinX, p1MaxX, minY, maxY, p1Gap);
         placedP1.forEach(it => {
           it.node.style.transform = `translate3d(${Math.round(it.x)}px, ${Math.round(it.y)}px, 0) translate(-50%, -50%)`;
         });
         return;
       }
 
-      // Phase 2: Direct 3D Card/Shelf Pills (Regular Markets) OR 5 Island Service Pills
+      // Phase 2: Direct 3D Card/Shelf Plaques (Regular Markets) OR 5 Island Service Plaques
       if (phase === 2) {
         hideAllZoneBadges();
         hideDesktopDirectPills();
@@ -4136,13 +5584,13 @@
         return;
       }
 
-      // Phase 3 Desktop: clean uncluttered 3D board while cooking
+      // Phase 3: clean uncluttered 3D board while cooking
       hideAllZoneBadges();
       hideDesktopDirectPills();
       return;
     }
 
-    // MOBILE (< 1024px): Lightweight non-blocking indicator badges (v1.1.0 behavior)
+    // FALLBACK (only when open stage height < 136px, e.g. full Mat Drawer open): non-blocking indicator badges
     hideDesktopDirectPills();
     Object.keys(sceneState.marketZones).forEach(key => {
       const zone = sceneState.marketZones[key];
@@ -4214,6 +5662,7 @@
     const phase = getPhaseSafe();
     const currentLoc = getCurrentLocationSafe();
 
+    ensureSceneColorTexturesSRGB(ctx, false);
     syncServiceBellVisibility();
     updateMarketGlowRings();
     setActiveMarketTilt(phase === 2 ? currentLoc : null);
@@ -4618,17 +6067,54 @@
       }
     }
 
-    // Dynamic camera framing: analytic open-stage framing for Desktop Open-Wood Tabletop (>=768px, deckHeight < 210px)
-    // and upper-stage biased framing when Desktop Mat Drawer is open or Mobile Bottom Sheet (<768px) is active!
+    // Dynamic camera framing:
+    // - Desktop Open-Wood Tabletop (>=768px, deckHeight < 210px)
+    // - Unified Mobile Open-Wood Tabletop (<768px): computes BOTH horizontal aspect & vertical [topPx..bottomPx] open stage!
     const upperShift = clamp(stage.ndcY, 0, 0.55);
     const openFrac = clamp(stage.openH / Math.max(1, stage.vh), 0.35, 0.92);
-    const aspect = clamp(stage.vw / Math.max(1, stage.vh), 0.5, 2.5);
+    const aspect = clamp(stage.vw / Math.max(1, stage.vh), 0.42, 2.5);
+    // Allow portrait Mobile enough zoom-out headroom so the full 28-unit Indochine board fits edge-to-edge!
+    if (stage.isMobile && controls && typeof controls.maxDistance === 'number' && controls.maxDistance < 96) {
+      controls.maxDistance = 96;
+    }
     const maxDist = (controls && typeof controls.maxDistance === 'number') ? (controls.maxDistance - 2.5) : 62;
 
     let endTarget;
     let endPos;
 
-    if (stage.isSlimDesktop) {
+    if (stage.isMobile) {
+      // Portrait / Compact Mobile Open-Wood Tabletop framing (tan(19 deg) ~ 0.3443)
+      const hHalfTan = 0.3443 * aspect;
+      if (resolvedMode === 'island') {
+        const dist = clamp(Math.max(22.5 / openFrac, 7.6 / hHalfTan), 25.0, Math.min(54.0, maxDist));
+        const zBias = clamp(0.40 * dist * stage.ndcY + 0.4, -1.0, 12.0);
+        const tz = clamp(boardCenterZ - 0.3 + zBias, -15, 22);
+        endTarget = new THREE.Vector3(0, 0.8, tz);
+        endPos = new THREE.Vector3(2.0, dist * 0.78, tz + dist * 0.62);
+      } else if (resolvedMode === 'market') {
+        const isVert = Math.abs(mx) > 10;
+        const needHalfW = isVert ? 5.2 : 6.4;
+        const dist = clamp(Math.max((isVert ? 25.0 : 21.5) / openFrac, needHalfW / hHalfTan), 24.0, Math.min(52.0, maxDist));
+        const zBias = clamp(0.40 * dist * stage.ndcY + 0.45, -0.5, 11.5);
+        const tx = clamp(mx + (isVert ? (mx < 0 ? 1.0 : -1.0) : 0), -22, 22);
+        const tz = clamp(mz + zBias, -15, 22);
+        endTarget = new THREE.Vector3(tx, 0.35, tz);
+        endPos = new THREE.Vector3(clamp(tx * 0.94, -24, 24), dist * 0.80, tz + dist * 0.59);
+      } else if (resolvedMode === 'board') {
+        const dist = clamp(Math.max(27.0 / openFrac, 14.6 / hHalfTan), 44.0, Math.min(90.0, maxDist));
+        const zBias = clamp(0.41 * dist * stage.ndcY + 0.4, -1.0, 15.0);
+        const tz = clamp(boardCenterZ + zBias, -15, 24);
+        endTarget = new THREE.Vector3(0, 0, tz);
+        endPos = new THREE.Vector3(0, dist * 0.87, tz + dist * 0.49);
+      } else {
+        // 'overview' on Mobile: frames all 6 stalls + Chợ Bến Thành + brass board frame cleanly inside narrow portrait screen
+        const dist = clamp(Math.max(29.0 / openFrac, 15.1 / hHalfTan), 46.0, Math.min(92.0, maxDist));
+        const zBias = clamp(0.41 * dist * stage.ndcY + 0.5, -1.0, 15.5);
+        const tz = clamp(boardCenterZ + zBias, -15, 24);
+        endTarget = new THREE.Vector3(0, 0, tz);
+        endPos = new THREE.Vector3(0, dist * 0.87, tz + dist * 0.49);
+      }
+    } else if (stage.isSlimDesktop) {
       // Factor in Left/Right Rival Flanks (#tt-rivals-left / #tt-rivals-right) when active!
       const hasRivalFlanks = stage.leftPx > 40 || stage.rightPx < stage.vw - 40;
       const openWFrac = clamp(stage.openW / Math.max(1, stage.vw), 0.45, 1.0);
@@ -4831,6 +6317,15 @@
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     }
 
+    // Resolve extended 3D scene references (direct ctx refs with clean scene-graph fallback)
+    const refs = resolveSceneRefs(ctx);
+
+    // 1. Indochine Collector's Edition Lighting, PMREM Studio Env & sRGB Tone-Mapping Pipeline
+    setupIndochineLightingAndEnv(ctx, refs);
+
+    // 2. Dark Indochine Walnut & Rosewood Marquetry Tabletop
+    upgradeTabletop(ctx, refs);
+
     // Build 3D Vietnamese Tabletop Architecture once
     if (!sceneState.enhanced) {
       sceneState.enhanced = true;
@@ -4838,6 +6333,12 @@
       const root = new THREE.Group();
       root.name = 'VdbAAASceneRoot';
       root.userData.isDecorative = true;
+
+      // 3. Collector's Edition Board Face + Physical 3D Beveled Rosewood & Brushed-Brass Perimeter Frame
+      upgradeCollectorBoard(ctx, refs, root, boardHeight, boardCenterZ);
+
+      // 4. Heirloom 3D Props (Brass/Crystal Hourglass, Hardcover Gilt Decks, Kitchen Service Hamper)
+      upgradeHeirloomProps(ctx, refs);
 
       const clockTower = buildBenThanhClockTower(THREE, boardHeight, boardCenterZ);
       const marketStalls = buildMarketStalls(THREE, boardHeight, boardCenterZ);
@@ -4866,7 +6367,14 @@
 
       setupCardHoverHighlight(ctx);
       startAmbient3DLoop();
+    } else {
+      // If enhanceScene is re-invoked with newly provided refs, ensure upgrades apply cleanly
+      upgradeCollectorBoard(ctx, refs, sceneState.rootGroup, boardHeight, boardCenterZ);
+      upgradeHeirloomProps(ctx, refs);
     }
+
+    // Ensure every color CanvasTexture in the scene uses true sRGB encoding
+    ensureSceneColorTexturesSRGB(ctx, true);
 
     if (ctx.playerDial) {
       sceneState.playerDial = ctx.playerDial;
@@ -4925,7 +6433,7 @@
   // ==========================================
   global.VdbAAA = {
     __loaded: true,
-    version: '1.3.2',
+    version: '2.0.0',
     enhanceScene,
     upgradeChefStandee,
     setInteractiveContext,

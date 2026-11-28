@@ -1071,9 +1071,18 @@
       --sal: env(safe-area-inset-left, 0px);
       --sar: env(safe-area-inset-right, 0px);
       --target-size: 24px;
-      --scrollbar-thumb: rgba(245, 158, 11, 0.72);
-      --scrollbar-track: rgba(28, 25, 23, 0.45);
-      --rest-accent: #f59e0b;
+      --font-display: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, 'Times New Roman', serif;
+      --gold-100: #fbf0d1;
+      --gold-300: #e8c77b;
+      --gold-500: #c8963e;
+      --gold-700: #8a5e1a;
+      --lacquer-bg: rgba(15, 10, 8, 0.90);
+      --lacquer-border: rgba(212, 164, 76, 0.40);
+      --ivory-1: #fdf9f0;
+      --ivory-2: #efe4ce;
+      --scrollbar-thumb: rgba(200, 150, 62, 0.72);
+      --scrollbar-track: rgba(15, 10, 8, 0.55);
+      --rest-accent: #c8963e;
     }
     @media (pointer: coarse) {
       :root { --target-size: 44px; }
@@ -1538,125 +1547,129 @@
         padding: 4px 10px !important;
         gap: 4px 6px !important;
       }
-
       .rr-dock-summary { display: flex; }
-      #desktop-delivery-strip.open { display: flex; }
+    }
 
-      /* ELIMINATE DARK HUD BOX IN data-tab="controls" (ALL 3 PHASES) -> OPEN CHERRY-WOOD TABLETOP */
-      #hud-main-deck[data-tab="controls"] {
-        background: transparent !important;
-        border: 0 !important;
-        box-shadow: none !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        pointer-events: none !important;
-        padding: 0 !important;
-        margin-top: auto !important;
-        margin-bottom: 0 !important;
-        width: 100% !important;
-        max-width: min(98vw, 1340px) !important;
-        max-height: none !important;
-        overflow: visible !important;
-        border-radius: 0 !important;
-      }
-      #hud-main-deck[data-tab="controls"] #hud-tabs,
-      #hud-main-deck[data-tab="controls"] #sheet-grab-handle {
-        display: none !important;
-      }
-      /* Keep #mat-phase-controller-area 0x0 fixed so all 9 required IDs stay live & floating alerts render above the wood! */
-      #hud-main-deck[data-tab="controls"] #mat-phase-controller-area {
-        position: fixed !important;
-        left: 0;
-        bottom: 0;
-        width: 0 !important;
-        height: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        border: 0 !important;
-        background: transparent !important;
-        overflow: visible !important;
-        pointer-events: none !important;
-      }
-      #hud-main-deck[data-tab="controls"] #panel-phase-1,
-      #hud-main-deck[data-tab="controls"] #panel-phase-3 {
-        display: none !important;
-      }
-      #hud-main-deck[data-tab="controls"] #panel-phase-2 {
-        position: fixed !important;
-        left: 0;
-        bottom: 0;
-        width: 0 !important;
-        height: 0 !important;
-        overflow: visible !important;
-        padding: 0 !important;
-        pointer-events: none !important;
-      }
-      #hud-main-deck[data-tab="controls"] #panel-phase-2 > :not(#contested-market-alert) {
-        display: none !important;
-      }
-      #hud-main-deck[data-tab="controls"] #contested-market-alert:not(.hidden) {
-        position: fixed;
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: calc(var(--dock-h, 148px) + var(--hpvn-bar-h, 0px) + 10px);
-        z-index: 35;
-        width: max-content;
-        max-width: min(calc(100vw - 24px), 760px);
-        padding: 5px 10px !important;
-        border-radius: 12px !important;
-        gap: 8px !important;
-        pointer-events: auto !important;
-        box-sizing: border-box;
-      }
-      #hud-main-deck[data-tab="controls"] #coachmark-banner:not(.hidden),
-      #hud-main-deck[data-tab="controls"] #resume-save-banner:not(.hidden) {
-        position: fixed;
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: calc(var(--dock-h, 148px) + var(--hpvn-bar-h, 0px) + 10px);
-        z-index: 34;
-        width: max-content;
-        max-width: min(92vw, 780px);
-        margin: 0 !important;
-        padding: 6px 12px !important;
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.72);
-        pointer-events: auto !important;
-      }
-      #hud-main-deck[data-tab="controls"][data-phase="2"] #coachmark-banner:not(.hidden) {
-        bottom: calc(var(--dock-h, 148px) + var(--hpvn-bar-h, 0px) + 52px);
-      }
-      html.hpvn-framed.hpvn-has-bottom-bar #hud-main-deck[data-tab="controls"] #contested-market-alert:not(.hidden) {
-        bottom: calc(var(--dock-h, 148px) + var(--hpvn-bar-h, 64px) + 22px);
-      }
+    /* ===================================================================== */
+    /* UNIFIED OPEN-WOOD TABLETOP PLAYER ZONE & BRASS BELL (ALL SCREEN SIZES) */
+    /* ===================================================================== */
+    #desktop-delivery-strip.open { display: flex; }
 
-      /* SHOW TRANSPARENT OPEN-WOOD TABLETOP PLAYER ZONE */
-      #hud-main-deck[data-tab="controls"] #tabletop-player-zone {
-        display: flex !important;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 10px;
-        width: 100%;
-        padding: 0 4px 4px;
-        box-sizing: border-box;
-        pointer-events: none;
-      }
-      #hud-main-deck[data-tab="mat"] #tabletop-player-zone {
-        display: none !important;
-      }
+    /* ELIMINATE DARK HUD BOX IN data-tab="controls" (ALL 3 PHASES, ALL VIEWPORTS) -> OPEN WOOD TABLETOP */
+    #hud-main-deck[data-tab="controls"] {
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      pointer-events: none !important;
+      padding: 0 !important;
+      margin-top: auto !important;
+      margin-bottom: 0 !important;
+      width: 100% !important;
+      max-width: min(98vw, 1340px) !important;
+      max-height: none !important;
+      overflow: visible !important;
+      border-radius: 0 !important;
+    }
+    #hud-main-deck[data-tab="controls"] #hud-tabs,
+    #hud-main-deck[data-tab="controls"] #sheet-grab-handle {
+      display: none !important;
+    }
+    /* Keep #mat-phase-controller-area 0x0 fixed so all 9 required IDs stay live & floating alerts render above the wood! */
+    #hud-main-deck[data-tab="controls"] #mat-phase-controller-area {
+      position: fixed !important;
+      left: 0;
+      bottom: 0;
+      width: 0 !important;
+      height: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+      overflow: visible !important;
+      pointer-events: none !important;
+    }
+    #hud-main-deck[data-tab="controls"] #panel-phase-1,
+    #hud-main-deck[data-tab="controls"] #panel-phase-3 {
+      display: none !important;
+    }
+    #hud-main-deck[data-tab="controls"] #panel-phase-2 {
+      position: fixed !important;
+      left: 0;
+      bottom: 0;
+      width: 0 !important;
+      height: 0 !important;
+      overflow: visible !important;
+      padding: 0 !important;
+      pointer-events: none !important;
+    }
+    #hud-main-deck[data-tab="controls"] #panel-phase-2 > :not(#contested-market-alert) {
+      display: none !important;
+    }
+    #hud-main-deck[data-tab="controls"] #contested-market-alert:not(.hidden) {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(var(--dock-h, 148px) + var(--hpvn-bar-h, 0px) + 10px);
+      z-index: 35;
+      width: max-content;
+      max-width: min(calc(100vw - 24px), 760px);
+      padding: 5px 10px !important;
+      border-radius: 12px !important;
+      gap: 8px !important;
+      pointer-events: auto !important;
+      box-sizing: border-box;
+    }
+    #hud-main-deck[data-tab="controls"] #coachmark-banner:not(.hidden),
+    #hud-main-deck[data-tab="controls"] #resume-save-banner:not(.hidden) {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(var(--dock-h, 148px) + var(--hpvn-bar-h, 0px) + 10px);
+      z-index: 34;
+      width: max-content;
+      max-width: min(92vw, 780px);
+      margin: 0 !important;
+      padding: 6px 12px !important;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.72);
+      pointer-events: auto !important;
+    }
+    #hud-main-deck[data-tab="controls"][data-phase="2"] #coachmark-banner:not(.hidden) {
+      bottom: calc(var(--dock-h, 148px) + var(--hpvn-bar-h, 0px) + 52px);
+    }
+    html.hpvn-framed.hpvn-has-bottom-bar #hud-main-deck[data-tab="controls"] #contested-market-alert:not(.hidden) {
+      bottom: calc(var(--dock-h, 148px) + var(--hpvn-bar-h, 64px) + 22px);
+    }
 
-      /* Restaurant Mat Drawer on Desktop (data-tab="mat") */
-      #hud-main-deck[data-tab="mat"] {
-        max-width: min(96vw, 1080px) !important;
-        max-height: min(68dvh, calc(100dvh - var(--hdr-h, 80px) - 20px)) !important;
-        border-radius: 18px !important;
-        pointer-events: auto !important;
-      }
-      #hud-main-deck[data-tab="mat"] #btn-dock-size {
-        display: none !important;
-      }
-      #hud-main-deck[data-tab="mat"] #btn-close-mat-drawer {
-        display: inline-flex;
-      }
+    /* SHOW TRANSPARENT OPEN-WOOD TABLETOP PLAYER ZONE */
+    #hud-main-deck[data-tab="controls"] #tabletop-player-zone {
+      display: flex !important;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      padding: 0 4px 4px;
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+    #hud-main-deck[data-tab="mat"] #tabletop-player-zone {
+      display: none !important;
+    }
+
+    /* Restaurant Mat Drawer (data-tab="mat") on Desktop & Mobile */
+    #hud-main-deck[data-tab="mat"] {
+      max-width: min(96vw, 1080px) !important;
+      max-height: min(72dvh, calc(100dvh - var(--hdr-h, 80px) - 20px)) !important;
+      border-radius: 18px !important;
+      pointer-events: auto !important;
+    }
+    #hud-main-deck[data-tab="mat"] #btn-dock-size {
+      display: none !important;
+    }
+    #hud-main-deck[data-tab="mat"] #btn-close-mat-drawer {
+      display: inline-flex;
+    }
 
       /* ---- LEFT CLUSTER: 2 PHYSICAL RECIPE QUEST CARDS ON WOOD ---- */
       .rr-tt-quests {
@@ -2255,7 +2268,6 @@
         border-color: #fde047;
         color: #fffbeb;
       }
-    }
 
     /* Compact Laptop Height Tuning (e.g., 1280x600, 900x620) */
     @media (min-width: 768px) and (max-height: 660px) {
@@ -4138,12 +4150,278 @@
       .rr-qz-ing-row { padding: 5px 8px; }
     }
 
-    /* Responsive breakpoints (Mobile Bottom Sheet strictly < 768px — NO height gate!) */
+    /* ==========================================
+       MOBILE & TABLET RIVAL TOP STRIP (< 1024px)
+       ========================================== */
+    .rr-tt-rivals-strip {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 5px;
+      width: 100%;
+      max-width: min(100%, 760px);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      padding: 1px 2px;
+      box-sizing: border-box;
+      pointer-events: auto;
+    }
+    .rr-tt-rivals-strip::-webkit-scrollbar { display: none; }
+    .rr-tt-rivals-strip:empty { display: none; }
+    @media (min-width: 1024px) {
+      .rr-tt-rivals-strip { display: none !important; }
+    }
+    body.rr-peek-3d .rr-tt-rivals-strip,
+    body.rr-start-open .rr-tt-rivals-strip,
+    body.rr-mat-open .rr-tt-rivals-strip {
+      display: none !important;
+    }
+    .rr-ttrs-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-height: 28px;
+      padding: 2px 7px 2px 3.5px;
+      border-radius: 999px;
+      background: linear-gradient(165deg, rgba(20, 12, 8, 0.90) 0%, rgba(12, 7, 5, 0.94) 100%);
+      border: 1px solid rgba(212, 164, 76, 0.48);
+      box-shadow: inset 2px 0 0 var(--rival-accent, var(--gold-500)), 0 4px 10px rgba(0, 0, 0, 0.46);
+      color: var(--gold-100);
+      font: inherit;
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+      flex-shrink: 0;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.12s ease, border-color 0.14s ease;
+    }
+    .rr-ttrs-badge:hover {
+      border-color: var(--gold-300);
+      transform: translateY(-1px);
+    }
+    .rr-ttrs-portrait {
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      border: 1.5px solid var(--rival-accent, var(--gold-300));
+      background: #1c1917;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .rr-ttrs-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .rr-ttrs-fb { display: none; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 11px; line-height: 1; }
+    .rr-ttrs-name {
+      font-family: var(--font-display);
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--gold-100);
+      max-width: 64px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .rr-ttrs-stars {
+      padding: 0.5px 5px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--gold-100) 0%, var(--gold-300) 50%, var(--gold-500) 100%);
+      color: #1a1007;
+      font-size: 9.5px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+    .rr-ttrs-cards {
+      font-size: 9px;
+      font-weight: 800;
+      color: #d9cbb6;
+      letter-spacing: 0.01em;
+    }
+    .rr-ttrs-ready {
+      padding: 0 3.5px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.28);
+      border: 1px solid rgba(52, 211, 153, 0.72);
+      color: #a7f3d0;
+      font-size: 8.5px;
+      font-weight: 900;
+    }
+
+    /* Responsive Mobile Open-Wood Tabletop (< 768px — Unified With Desktop!) */
     @media (max-width: 767px) {
       .hud-layer {
-        padding: max(4px, var(--sat)) max(6px, var(--sar)) 0 max(6px, var(--sal));
+        padding: max(4px, var(--sat)) max(4px, var(--sar)) 0 max(4px, var(--sal));
+        gap: 3px;
       }
-      #hud-main-deck {
+      .rr-header-leaderboard {
+        display: none !important;
+      }
+      #hud-main-deck[data-tab="controls"] {
+        max-width: 100% !important;
+      }
+      /* 2-Tier Compact Open-Wood Player Zone on Mobile (~155-166px total, 0px horizontal overflow down to 320px) */
+      #hud-main-deck[data-tab="controls"] #tabletop-player-zone {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
+        align-items: end;
+        gap: 4px 10px;
+        width: 100%;
+        padding: 0 4px max(5px, var(--sab, 0px));
+        box-sizing: border-box;
+        pointer-events: none;
+      }
+      /* Tier 1: 2 Fine-Dining Ivory Recipe Quest Cards Side-by-Side */
+      .rr-tt-quests {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 5px;
+        width: 100%;
+        align-items: stretch;
+      }
+      .rr-tt-quest-card {
+        width: 100%;
+        min-width: 0;
+        min-height: 58px;
+        padding: 3px 5px 4px;
+        gap: 2.5px;
+        border-radius: 10px;
+        transform: none !important;
+      }
+      .rr-tt-quest-card:hover {
+        transform: translateY(-2px) !important;
+      }
+      .rr-tt-q-head {
+        padding: 1.5px 4px;
+        font-size: 8px;
+      }
+      .rr-tt-q-score {
+        font-size: 8.5px;
+        padding: 0 4px;
+      }
+      .rr-tt-q-dish {
+        gap: 4px;
+      }
+      .rr-tt-q-thumb {
+        width: 26px;
+        height: 20px;
+        font-size: 12px;
+        border-radius: 5px;
+      }
+      .rr-tt-q-name {
+        font-size: 9.5px;
+        -webkit-line-clamp: 1;
+      }
+      .rr-tt-q-ings {
+        gap: 2px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .rr-tt-q-ings::-webkit-scrollbar { display: none; }
+      .rr-tt-q-ing {
+        font-size: 8px;
+        padding: 0.5px 3.5px;
+        flex-shrink: 0;
+      }
+      .rr-tt-q-foot { margin-top: 0; }
+      .rr-tt-cook-btn { padding: 3px 5px; font-size: 9.5px; }
+      .rr-tt-q-ready { font-size: 8.5px; padding: 1.5px 4px; }
+
+      /* Tier 2 Left: Scrollable Utility Chips + Scrollable Ivory/Tarot Hand Card Fan */
+      .rr-tt-hand {
+        grid-column: 1;
+        grid-row: 2;
+        align-items: stretch;
+        gap: 3px;
+        min-width: 0;
+        width: 100%;
+      }
+      .rr-tt-util-strip {
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        gap: 4px;
+        padding: 1px 1px;
+        max-width: 100%;
+        pointer-events: auto;
+      }
+      .rr-tt-util-strip::-webkit-scrollbar { display: none; }
+      .rr-tt-chip {
+        padding: 2.5px 7px;
+        font-size: 9.5px;
+        flex-shrink: 0;
+      }
+      .rr-tt-diff-group {
+        font-size: 9px;
+        padding: 1.5px 3px;
+        flex-shrink: 0;
+      }
+      .rr-tt-diff-opt { font-size: 9px; padding: 1px 5px; }
+      .rr-tt-cards-fan {
+        justify-content: flex-start;
+        gap: 4px;
+        padding: 5px 2px 1px;
+        pointer-events: auto;
+      }
+      .rr-tt-card {
+        width: 48px;
+        height: 60px;
+        padding: 3px 2px 2.5px;
+        border-radius: 8px;
+        transform: none !important;
+      }
+      .rr-tt-card:hover { transform: translateY(-4px) !important; }
+      .rr-tt-card-emoji { font-size: 17px; margin-top: 4px; }
+      .rr-tt-card-name { font-size: 7.5px; -webkit-line-clamp: 1; }
+      .rr-tt-card-cost, .rr-tt-card-badge { font-size: 7px; padding: 0 3px; left: 2px; top: 2px; }
+      .rr-tt-card-del { opacity: 1; transform: scale(1); width: 17px; height: 17px; font-size: 9px; top: -4px; right: -4px; }
+      .rr-tt-slot-empty { width: 40px; height: 58px; font-size: 12px; border-radius: 8px; }
+      .rr-tt-fan-div { height: 46px; margin: 0 1px 4px; }
+
+      /* Tier 2 Right: Sculpted Thumb-Friendly Antique Brass Service Bell (66px) */
+      .rr-tt-bell-zone {
+        grid-column: 2;
+        grid-row: 2;
+        gap: 2px;
+      }
+      .rr-tt-bell-status {
+        font-size: 9px;
+        padding: 1px 6px;
+        max-width: 84px;
+      }
+      .rr-brass-bell {
+        width: 66px;
+        height: 66px;
+      }
+      .rr-bell-rim { inset: 2.5px; border-width: 2px; }
+      .rr-bell-dome { inset: 8px 8px 11px 8px; }
+      .rr-bell-icon { font-size: 16px; margin-bottom: 7px; }
+      .rr-bell-plunger { width: 16px; height: 7px; top: 1px; }
+      .rr-bell-label { font-size: 7.5px; padding: 1.5px 5px; bottom: 3px; }
+
+      /* Mobile Online hpvn-framed Compact Spacing (>= 260px open 3D board on 375x667) */
+      html.hpvn-framed.hpvn-has-bottom-bar #hud-main-deck[data-tab="controls"] #tabletop-player-zone {
+        gap: 3px 5px;
+        padding-bottom: 2px;
+      }
+      html.hpvn-framed.hpvn-has-bottom-bar .rr-tt-quest-card {
+        min-height: 50px;
+        padding: 2.5px 4px 3px;
+        gap: 1.5px;
+      }
+      html.hpvn-framed.hpvn-has-bottom-bar .rr-tt-card { width: 45px; height: 54px; }
+      html.hpvn-framed.hpvn-has-bottom-bar .rr-tt-slot-empty { width: 38px; height: 52px; }
+      html.hpvn-framed.hpvn-has-bottom-bar .rr-brass-bell { width: 64px; height: 64px; }
+
+      /* Mobile Restaurant Mat Drawer (data-tab="mat") */
+      #hud-main-deck[data-tab="mat"] {
         display: flex;
         flex-direction: column;
         overflow: hidden !important;
@@ -4155,112 +4433,609 @@
         border-bottom-width: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
+        max-height: min(76dvh, calc(100dvh - var(--hdr-h, 110px) - var(--hpvn-bar-h, 0px) - 10px)) !important;
       }
-      #hud-main-deck[data-sheet="half"] {
-        max-height: min(56dvh, calc(100dvh - var(--hdr-h, 128px) - 86px)) !important;
-      }
-      #hud-main-deck[data-sheet="full"] {
-        max-height: min(78dvh, calc(100dvh - var(--hdr-h, 128px) - 10px)) !important;
-      }
-      .rr-sheet-grab-bar { display: block; }
-      .hud-tabs {
+      #hud-main-deck[data-tab="mat"] .hud-tabs {
         display: flex;
         flex-wrap: nowrap;
         align-items: center;
         justify-content: space-between;
         gap: 6px;
-        position: static;
-        flex-shrink: 0;
-        padding: 4px 8px 6px;
-        margin: 0;
-        background: rgba(24, 14, 8, 0.98);
-        border-bottom: 1px solid rgba(245, 158, 11, 0.35);
+        padding: 5px 8px;
       }
-      .rr-dock-tabs { flex: 1 1 auto; min-width: 0; gap: 5px; }
-      .hud-tabs [role="tab"] {
-        flex: 1 1 0;
-        min-width: 0;
-        min-height: 44px;
+      #hud-main-deck[data-tab="mat"] .hud-tabs [role="tab"] {
+        min-height: 40px;
         white-space: nowrap;
         font-size: 12px;
-        padding: 6px 8px;
+        padding: 5px 8px;
       }
-      .rr-dock-toggle {
-        min-height: 44px;
-        padding: 6px 9px;
-        font-size: 11px;
+      #hud-main-deck[data-tab="mat"] #btn-close-mat-drawer {
+        min-height: 40px;
+        padding: 5px 10px;
       }
-      #hud-main-deck[data-tab="controls"] #hud-mat-section { display: none !important; }
-      #hud-main-deck[data-tab="mat"] #mat-phase-controller-area { display: none !important; }
-      #hud-mat-section,
-      #mat-phase-controller-area {
+      #hud-main-deck[data-tab="mat"] #hud-mat-section {
         flex: 1 1 auto;
         min-height: 0;
         overflow-y: auto;
         overflow-x: hidden;
-        overscroll-behavior: contain;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-        scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
         padding: 8px 8px max(22px, calc(var(--sab, 0px) + 16px));
-        scroll-padding-bottom: max(28px, calc(var(--sab, 0px) + 22px));
-        position: static;
-        box-shadow: none;
-        border-top: 0 !important;
       }
-      .dial-buttons-grid button.dest-btn { flex: 1 1 calc(25% - 6px); min-width: 75px; padding: 5px 6px; }
+      #hud-main-deck[data-tab="controls"] #contested-market-alert:not(.hidden) {
+        max-width: calc(100vw - 12px);
+        padding: 4px 8px !important;
+        font-size: 10.5px;
+      }
+      #hud-main-deck[data-tab="controls"] #coachmark-banner:not(.hidden) {
+        max-width: calc(100vw - 12px);
+        padding: 5px 8px !important;
+      }
+      #desktop-delivery-strip {
+        max-width: calc(100vw - 10px);
+        padding: 2.5px 6px;
+        font-size: 10px;
+      }
+      #desktop-delivery-strip .rr-delivery-btn {
+        padding: 2px 6px;
+        font-size: 10px;
+        min-block-size: 28px;
+        min-inline-size: auto;
+      }
     }
 
-    @media (max-width: 420px) {
-      .rr-dock-toggle-lbl { display: none !important; }
-      .hud-tabs { padding: 4px 6px 5px; gap: 4px; }
-      .rr-dock-tabs { gap: 4px; }
-      .hud-tabs [role="tab"] { font-size: 11px; padding: 5px 5px; gap: 3px; }
-      .hud-tab-badge { font-size: 9.5px; padding: 1px 4px; }
-      .rr-dock-toggle { padding: 4px 8px; min-width: 44px; }
+    /* Ultra-Narrow Mobile Trim (320px..360px) */
+    @media (max-width: 360px) {
+      .rr-tt-quest-card { padding: 2.5px 4px 3px; min-height: 54px; }
+      .rr-tt-q-thumb { width: 22px; height: 18px; }
+      .rr-tt-q-name { font-size: 8.5px; }
+      .rr-tt-card { width: 44px; height: 56px; }
+      .rr-tt-card-emoji { font-size: 15px; }
+      .rr-tt-slot-empty { width: 36px; height: 54px; }
+      .rr-brass-bell { width: 64px; height: 64px; }
+      .rr-util-btn { min-width: 24px; min-height: 24px; padding: 2px 4px; font-size: 11px; }
     }
 
     @media (max-width: 640px) {
-      .hud-layer { padding: max(4px, var(--sat)) max(4px, var(--sar)) 0 max(4px, var(--sal)); gap: 4px; }
-      #hud-main-deck {
-        border-width: 3px;
-        border-bottom-width: 0 !important;
-        width: 100% !important;
-        margin-inline: auto !important;
-        padding: 0 !important;
-      }
-      header { justify-content: space-between; align-items: center; width: 100%; padding: 4px 8px !important; gap: 3px 4px !important; }
+      .hud-layer { padding: max(3px, var(--sat)) max(4px, var(--sar)) 0 max(4px, var(--sal)); gap: 3px; }
+      header { justify-content: space-between; align-items: center; width: 100%; padding: 3px 6px !important; gap: 2px 4px !important; border-radius: 13px !important; }
       header > div { min-width: 0; }
-      header > div:nth-child(1) { flex: 1 1 auto; min-width: 0; gap: 6px !important; }
-      header > div:nth-child(1) > div:first-child { width: 24px !important; height: 24px !important; font-size: 13px !important; }
-      header > div:nth-child(1) .text-\[11px\] { font-size: 10.5px !important; gap: 4px !important; flex-wrap: nowrap; white-space: nowrap; }
+      header > div:nth-child(1) { flex: 1 1 auto; min-width: 0; gap: 5px !important; }
+      header > div:nth-child(1) > div:first-child { width: 22px !important; height: 22px !important; font-size: 12px !important; }
+      header > div:nth-child(1) .text-\[11px\] { font-size: 10px !important; gap: 3px !important; flex-wrap: nowrap; white-space: nowrap; }
       header .ph-label { display: none !important; }
-      #btn-seat-lola, #btn-seat-angus { font-size: 11px; padding: 3px 6px; min-height: 28px; }
+      #btn-seat-lola, #btn-seat-angus { font-size: 10px; padding: 2px 5px; min-height: 24px; }
       #btn-seat-lola > span:first-child, #btn-seat-angus > span:first-child { display: none; }
-      header > div:nth-child(2) { order: 3; width: 100%; justify-content: center; flex-wrap: wrap; gap: 3px 5px; margin-top: 1px; }
-      header > div:nth-child(3) { order: 2; gap: 3px !important; flex-shrink: 0; margin-left: 0 !important; }
+      header > div:nth-child(2) { order: 3; flex: 1 1 auto; justify-content: flex-start; flex-wrap: nowrap; gap: 4px; }
+      header > div:nth-child(3) { order: 4; gap: 3px !important; flex-shrink: 0; margin-left: auto !important; }
+      header .rr-util-group { order: 2; gap: 2px; padding: 1.5px; }
       #btn-open-rival-kitchens, #btn-open-actions, #btn-open-barter, #btn-toggle-hud {
-        padding: 3px 6px !important; min-height: 32px !important; min-width: 32px !important; font-size: 11px !important;
+        padding: 2px 5px !important; min-height: 24px !important; min-width: 26px !important; font-size: 10.5px !important;
       }
-      #header-action-badge { font-size: 9px !important; padding: 1px 5px !important; }
+      #header-action-badge { font-size: 8.5px !important; padding: 0.5px 4px !important; }
+      #daily-event-banner { border-radius: 10px; }
+      .rr-event-head { padding: 3px 8px; min-height: 24px; font-size: 10px; }
       #event-toast.toast-floating {
         padding: 6px 12px !important; font-size: 11px !important; line-height: 1.3 !important;
         max-width: min(92vw, 24rem) !important;
       }
-      .dial-buttons-grid button.dest-btn {
-        flex: 1 1 calc(50% - 4px) !important; min-width: 115px !important; max-width: 100% !important;
-        min-height: 50px !important; padding: 6px 4px !important; font-size: 11px !important; border-radius: 10px !important;
-      }
-      .dial-buttons-grid button.dest-btn[data-dest="island"] {
-        flex: 1 1 100% !important; max-width: 100% !important; min-height: 44px !important;
-        flex-direction: row !important; justify-content: center !important; gap: 8px !important;
-      }
-      #phase1-recipes-display { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 10px !important; }
-      #phase1-recipes-display > div { max-width: 100% !important; }
       .rr-pop-steps { grid-template-columns: repeat(11, minmax(0, 1fr)); }
       .rr-pop-cell { font-size: 8.5px; min-height: 20px; }
       #mat-pantry-cards, #barter-rival-tabs, #rival-kitchen-tabs { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
       #mat-pantry-cards::-webkit-scrollbar, #barter-rival-tabs::-webkit-scrollbar, #rival-kitchen-tabs::-webkit-scrollbar { display: none; }
+    }
+
+    /* ==========================================
+       INDOCHINE COLLECTOR'S EDITION — LUXURY VISUAL THEME LAYER
+       (Saigon Fine-Dining / Lacquerware & Brushed Antique Brass — 0 Layout Shifts)
+       ========================================== */
+    body {
+      background: #0b0604;
+    }
+    :focus-visible {
+      outline: 2.5px solid var(--gold-300) !important;
+      outline-offset: 2px;
+    }
+
+    /* Smoked Obsidian-Lacquer Glass & Top Chrome */
+    .glass-card,
+    header.glass-card {
+      background: linear-gradient(180deg, rgba(22, 14, 10, 0.93) 0%, rgba(13, 8, 6, 0.95) 100%) !important;
+      border-color: var(--lacquer-border) !important;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(251, 240, 209, 0.14);
+    }
+    header h1 {
+      font-family: var(--font-display);
+      letter-spacing: 0.08em;
+      background: linear-gradient(90deg, var(--gold-100) 0%, var(--gold-300) 52%, var(--gold-500) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent !important;
+    }
+    #day-badge {
+      background: rgba(200, 150, 62, 0.18) !important;
+      border-color: rgba(232, 199, 123, 0.52) !important;
+      color: var(--gold-100) !important;
+    }
+    #btn-open-rival-kitchens {
+      background: linear-gradient(160deg, rgba(54, 31, 14, 0.92), rgba(28, 16, 8, 0.94)) !important;
+      border-color: rgba(212, 164, 76, 0.48) !important;
+      color: var(--gold-100) !important;
+    }
+    #btn-open-actions {
+      background: linear-gradient(160deg, rgba(44, 22, 66, 0.92), rgba(22, 11, 36, 0.95)) !important;
+      border-color: rgba(200, 150, 62, 0.46) !important;
+      color: #f3e8ff !important;
+    }
+    #btn-open-barter {
+      background: linear-gradient(160deg, rgba(14, 58, 46, 0.92), rgba(8, 34, 27, 0.95)) !important;
+      border-color: rgba(110, 231, 183, 0.42) !important;
+      color: #d1fae5 !important;
+    }
+    #btn-toggle-hud {
+      background: rgba(200, 150, 62, 0.16) !important;
+      border-color: rgba(212, 164, 76, 0.48) !important;
+      color: var(--gold-300) !important;
+    }
+    .rr-util-group {
+      background: rgba(12, 8, 6, 0.88);
+      border-color: rgba(212, 164, 76, 0.34);
+      box-shadow: inset 0 1px 0 rgba(251, 240, 209, 0.08);
+    }
+    .rr-util-btn {
+      background: linear-gradient(180deg, rgba(30, 20, 14, 0.94), rgba(18, 12, 8, 0.96));
+      border-color: rgba(212, 164, 76, 0.28);
+      color: var(--gold-100);
+    }
+    .rr-util-btn:hover {
+      background: rgba(58, 36, 18, 0.92);
+      border-color: var(--gold-300);
+      color: #ffffff;
+    }
+    .rr-util-btn.active {
+      background: linear-gradient(135deg, var(--gold-300), var(--gold-500));
+      border-color: var(--gold-100);
+      color: #160e07;
+      box-shadow: 0 0 12px rgba(200, 150, 62, 0.45);
+    }
+    #daily-event-banner {
+      background: linear-gradient(180deg, rgba(20, 13, 9, 0.92), rgba(13, 8, 6, 0.94));
+      border-color: rgba(212, 164, 76, 0.44);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(251, 240, 209, 0.12);
+    }
+    .rr-event-tag {
+      background: rgba(200, 150, 62, 0.22);
+      border-color: rgba(232, 199, 123, 0.5);
+      color: var(--gold-100);
+    }
+    .rr-event-name {
+      font-family: var(--font-display);
+      color: var(--gold-100);
+      letter-spacing: 0.02em;
+    }
+    #desktop-delivery-strip {
+      background: linear-gradient(180deg, rgba(18, 13, 10, 0.94), rgba(11, 8, 6, 0.96));
+      border-color: rgba(212, 164, 76, 0.5);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(251, 240, 209, 0.12);
+    }
+    #event-toast.toast-floating {
+      background: linear-gradient(180deg, rgba(20, 13, 9, 0.95), rgba(12, 8, 6, 0.97)) !important;
+      border-color: rgba(212, 164, 76, 0.58) !important;
+      color: var(--gold-100) !important;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(251, 240, 209, 0.14);
+    }
+
+    /* Fine-Dining Tabletop Cards & Jeweler's Antique Brass Bell (ALL SCREEN WIDTHS) */
+    .rr-tt-quest-card {
+        background: linear-gradient(165deg, var(--ivory-1) 0%, var(--ivory-2) 100%);
+        border: 1.5px solid #164e63;
+        box-shadow: 0 12px 26px rgba(0, 0, 0, 0.66), inset 0 0 0 2px rgba(200, 150, 62, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      }
+      .rr-tt-quest-card.rr-tt-q-gourmet {
+        border-color: #5b2169;
+        box-shadow: 0 12px 26px rgba(0, 0, 0, 0.68), inset 0 0 0 2px rgba(200, 150, 62, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      }
+      .rr-tt-quest-card:hover {
+        border-color: var(--gold-300);
+        box-shadow: 0 18px 34px rgba(0, 0, 0, 0.8), 0 0 18px rgba(200, 150, 62, 0.42), inset 0 0 0 2px rgba(200, 150, 62, 0.45);
+      }
+      .rr-tt-quest-card.rr-tt-q-cookable {
+        border-color: #10b981;
+        box-shadow: 0 0 0 2px rgba(232, 199, 123, 0.82), 0 14px 28px rgba(16, 185, 129, 0.44), inset 0 0 0 2px rgba(200, 150, 62, 0.38);
+      }
+      .rr-tt-q-head {
+        background: linear-gradient(90deg, #124559 0%, #0d3240 100%);
+        color: var(--gold-100);
+        border: 1px solid rgba(232, 199, 123, 0.32);
+        letter-spacing: 0.04em;
+      }
+      .rr-tt-q-gourmet .rr-tt-q-head {
+        background: linear-gradient(90deg, #4c1d57 0%, #2d0e36 100%);
+        color: var(--gold-100);
+        border-color: rgba(232, 199, 123, 0.42);
+      }
+      .rr-tt-q-score {
+        background: linear-gradient(145deg, var(--gold-100) 0%, var(--gold-300) 55%, var(--gold-500) 100%);
+        color: #1c1108;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.38);
+      }
+      .rr-tt-q-thumb {
+        border: 1.5px solid rgba(200, 150, 62, 0.72);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+      }
+      .rr-tt-q-name {
+        font-family: var(--font-display);
+        color: #1f130b;
+        letter-spacing: 0.01em;
+      }
+      .rr-tt-q-ing.has {
+        background: #e6f4ec;
+        border: 1px solid #2b7a52;
+        color: #123c27;
+      }
+      .rr-tt-q-ing.miss {
+        background: #f9eaec;
+        border: 1px dashed #a83244;
+        color: #6b1524;
+      }
+      .rr-tt-cook-btn {
+        background: linear-gradient(135deg, #15805a 0%, #0d5c40 100%);
+        border: 1.5px solid var(--gold-300);
+        color: #fffdf5;
+        box-shadow: 0 4px 14px rgba(13, 92, 64, 0.55), inset 0 1px 0 rgba(251, 240, 209, 0.35);
+      }
+
+      /* Smoked-Lacquer Utility Micro-Chips */
+      .rr-tt-chip {
+        background: rgba(15, 10, 8, 0.88);
+        border-color: rgba(212, 164, 76, 0.46);
+        color: var(--gold-100);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.54), inset 0 1px 0 rgba(251, 240, 209, 0.12);
+      }
+      .rr-tt-chip-btn:hover {
+        border-color: var(--gold-300);
+        background: rgba(46, 28, 14, 0.94);
+      }
+      .rr-tt-chip-mat {
+        background: linear-gradient(135deg, rgba(138, 94, 26, 0.92), rgba(76, 48, 12, 0.95));
+        border-color: var(--gold-300);
+        color: var(--gold-100);
+      }
+      .rr-tt-chip-barter {
+        background: linear-gradient(135deg, rgba(16, 86, 64, 0.92), rgba(10, 56, 42, 0.95));
+        border-color: rgba(110, 231, 183, 0.58);
+        color: #ecfdf5;
+      }
+      .rr-tt-diff-group {
+        background: rgba(15, 10, 8, 0.88);
+        border-color: rgba(212, 164, 76, 0.36);
+      }
+      .rr-tt-diff-opt.active {
+        background: linear-gradient(135deg, var(--gold-300), var(--gold-500));
+        color: #160e07;
+      }
+
+      /* Warm Ivory Linen Pantry Cards & Royal Velvet-Indigo Gold-Foil Action Tarot Cards */
+      .rr-tt-ing-card {
+        background: linear-gradient(165deg, var(--ivory-1) 0%, var(--ivory-2) 100%);
+        border: 1.5px solid var(--gold-500);
+        color: #21140b;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.64), inset 0 0 0 2px rgba(200, 150, 62, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      }
+      .rr-tt-ing-card.special {
+        background: linear-gradient(165deg, #faf4fc 0%, #eadcf2 100%);
+        border-color: #8b5cf6;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.64), inset 0 0 0 2px rgba(200, 150, 62, 0.32);
+      }
+      .rr-tt-card-name {
+        font-family: var(--font-display);
+      }
+      .rr-tt-card-cost {
+        background: radial-gradient(circle at 35% 30%, var(--gold-100) 0%, var(--gold-300) 65%, var(--gold-500) 100%);
+        border: 1px solid var(--gold-700);
+        color: #241407;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+      }
+      .rr-tt-act-card {
+        background: linear-gradient(155deg, #25153f 0%, #160c29 58%, #0e071a 100%);
+        border: 1.5px solid var(--gold-500);
+        color: var(--gold-100);
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.7), inset 0 0 0 2.5px rgba(232, 199, 123, 0.28);
+      }
+      .rr-tt-card-badge {
+        background: linear-gradient(145deg, var(--gold-100), var(--gold-500));
+        color: #190e06;
+      }
+      .rr-tt-card:hover {
+        border-color: var(--gold-100);
+        box-shadow: 0 16px 30px rgba(0, 0, 0, 0.8), 0 0 18px rgba(232, 199, 123, 0.48);
+      }
+      .rr-tt-slot-empty {
+        border-color: rgba(212, 164, 76, 0.36);
+        background: rgba(15, 9, 6, 0.50);
+        color: rgba(232, 199, 123, 0.38);
+      }
+      .rr-tt-fan-div {
+        background: linear-gradient(180deg, transparent, rgba(212, 164, 76, 0.62), transparent);
+      }
+
+      /* Sculpted Jeweler's Brushed Antique-Brass Service Bell */
+      .rr-tt-bell-status {
+        background: rgba(14, 9, 6, 0.92);
+        border-color: rgba(212, 164, 76, 0.58);
+        color: var(--gold-100);
+        font-family: var(--font-display);
+        letter-spacing: 0.02em;
+      }
+      .rr-bell-rim {
+        background: radial-gradient(circle at 50% 62%, #38180a 0%, #200d05 70%, #100602 100%);
+        border-color: #a67422;
+        box-shadow: inset 0 2px 7px rgba(251, 240, 209, 0.34), inset 0 -5px 10px rgba(0, 0, 0, 0.88);
+      }
+      .rr-bell-dome {
+        background: radial-gradient(circle at 32% 24%, #fffbeb 0%, #fbf0d1 15%, #e2b85b 44%, #a67120 75%, #5c3a0b 100%);
+        border: 1.5px solid rgba(251, 240, 209, 0.82);
+        box-shadow: inset 0 -10px 16px rgba(56, 24, 6, 0.72), 0 4px 12px rgba(0, 0, 0, 0.68);
+      }
+      .rr-bell-plunger {
+        background: linear-gradient(180deg, #fffbeb 0%, #e8c77b 48%, #8a5e1a 100%);
+        border-color: #fffbeb;
+      }
+      .rr-bell-label {
+        background: linear-gradient(135deg, #1b110a 0%, #2b1a0e 100%);
+        border-color: var(--gold-300);
+        color: var(--gold-100);
+        letter-spacing: 0.04em;
+      }
+      .rr-brass-bell.is-phase2 .rr-bell-label {
+        background: linear-gradient(135deg, #0d5c40 0%, #083d2a 100%);
+        border-color: #6ee7b7;
+      }
+      .rr-brass-bell.is-phase3 .rr-bell-label {
+        background: linear-gradient(135deg, #8a5e1a 0%, #5c3a0b 100%);
+        border-color: var(--gold-100);
+      }
+
+    /* Smoked Walnut-Velvet Collector Rival Trays (>= 1024px) */
+    @media (min-width: 1024px) {
+      .rr-tt-rival-seat {
+        background: linear-gradient(165deg, rgba(18, 11, 8, 0.64) 0%, rgba(12, 7, 5, 0.74) 100%);
+        border-color: rgba(212, 164, 76, 0.42);
+        box-shadow: inset 3px 0 0 var(--rival-accent, var(--gold-500)), 0 10px 22px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(251, 240, 209, 0.10);
+      }
+      .rr-tt-rival-seat:hover {
+        background: linear-gradient(165deg, rgba(28, 17, 11, 0.80) 0%, rgba(16, 10, 7, 0.86) 100%);
+        border-color: var(--gold-300);
+        box-shadow: inset 3px 0 0 var(--rival-accent, var(--gold-300)), 0 14px 28px rgba(0, 0, 0, 0.56), 0 0 16px rgba(200, 150, 62, 0.30);
+      }
+      .rr-ttr-name {
+        font-family: var(--font-display);
+        color: var(--gold-100);
+        letter-spacing: 0.015em;
+      }
+      .rr-ttr-stars {
+        background: linear-gradient(135deg, var(--gold-100) 0%, var(--gold-300) 48%, var(--gold-500) 100%);
+        border-color: #fffbeb;
+        color: #1a1007;
+      }
+      .rr-ttr-prog-fill {
+        background: linear-gradient(90deg, var(--gold-500) 0%, var(--gold-100) 100%);
+      }
+      .rr-ttr-ing-card {
+        background: linear-gradient(165deg, var(--ivory-1) 0%, var(--ivory-2) 100%);
+        border-color: rgba(200, 150, 62, 0.72);
+        color: #21140b;
+      }
+      .rr-ttr-card-lbl {
+        font-family: var(--font-display);
+      }
+      .rr-ttr-act-back {
+        background: linear-gradient(155deg, #25153f 0%, #150b26 58%, #0c0618 100%);
+        border-color: var(--gold-300);
+        color: var(--gold-100);
+        box-shadow: 0 3px 7px rgba(0, 0, 0, 0.62), inset 0 0 0 1.5px rgba(232, 199, 123, 0.28);
+      }
+      .rr-ttr-act-cnt {
+        background: #140c08;
+        border-color: var(--gold-300);
+        color: var(--gold-100);
+      }
+      .rr-ttr-rec-chip.is-basic {
+        border-color: rgba(86, 174, 206, 0.46);
+        background: rgba(10, 34, 46, 0.68);
+      }
+      .rr-ttr-rec-chip.is-gourmet {
+        border-color: rgba(200, 150, 62, 0.50);
+        background: rgba(42, 15, 52, 0.68);
+      }
+      .rr-ttr-rec-chip.is-ready {
+        border-color: #34d399;
+        background: rgba(8, 66, 48, 0.76);
+        box-shadow: 0 0 10px rgba(52, 211, 153, 0.42);
+      }
+    }
+
+    /* Museum-Grade Single Quest Card Zoom (#modal-quest-zoom) */
+    .rr-qz-card {
+      background: linear-gradient(165deg, var(--ivory-1) 0%, var(--ivory-2) 100%);
+      border: 2.5px solid #164e63;
+      box-shadow: inset 0 0 0 3px var(--ivory-1), inset 0 0 0 4.5px rgba(200, 150, 62, 0.48), 0 28px 66px rgba(0, 0, 0, 0.84);
+    }
+    .rr-qz-card.is-gourmet {
+      border-color: #5b2169;
+    }
+    .rr-qz-card.is-cookable {
+      border-color: #10b981;
+      box-shadow: inset 0 0 0 3px var(--ivory-1), inset 0 0 0 4.5px rgba(200, 150, 62, 0.58), 0 0 0 3px rgba(232, 199, 123, 0.78), 0 28px 66px rgba(0, 0, 0, 0.86);
+    }
+    .rr-qz-tier {
+      background: linear-gradient(90deg, #124559, #0c3140);
+      color: var(--gold-100);
+      border: 1px solid rgba(232, 199, 123, 0.35);
+    }
+    .rr-qz-card.is-gourmet .rr-qz-tier {
+      background: linear-gradient(90deg, #4c1d57, #2d0e36);
+    }
+    .rr-qz-stars {
+      background: linear-gradient(145deg, var(--gold-100) 0%, var(--gold-300) 52%, var(--gold-500) 100%);
+      border-color: var(--gold-700);
+      color: #1c1108;
+    }
+    .rr-qz-photo {
+      border: 2px solid rgba(200, 150, 62, 0.78);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32);
+    }
+    .rr-qz-title {
+      font-family: var(--font-display);
+      letter-spacing: 0.04em;
+      color: var(--gold-100);
+    }
+    .rr-qz-cook-btn {
+      background: linear-gradient(135deg, #15805a 0%, #0d5c40 100%);
+      border-color: var(--gold-300);
+    }
+
+    /* Collector's Edition Start Screen (#start-screen) — Corner Filigree & Champagne Gold */
+    .rr-start-overlay {
+      background: radial-gradient(ellipse at 50% 40%, rgba(22, 13, 8, 0.50) 0%, rgba(8, 5, 3, 0.86) 100%);
+    }
+    .rr-start-card {
+      position: relative;
+      background: linear-gradient(168deg, rgba(24, 15, 10, 0.94) 0%, rgba(12, 7, 5, 0.97) 100%);
+      border: 1.5px solid rgba(212, 164, 76, 0.72);
+      box-shadow: 0 32px 72px rgba(0, 0, 0, 0.86), inset 0 0 0 4px rgba(212, 164, 76, 0.12), inset 0 1px 0 rgba(251, 240, 209, 0.22), 0 0 48px rgba(200, 150, 62, 0.20);
+    }
+    .rr-start-card::before,
+    .rr-start-card::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      pointer-events: none;
+      border-color: rgba(232, 199, 123, 0.72);
+      border-style: solid;
+    }
+    .rr-start-card::before {
+      top: 9px;
+      left: 9px;
+      border-width: 2px 0 0 2px;
+      border-radius: 6px 0 0 0;
+    }
+    .rr-start-card::after {
+      bottom: 9px;
+      right: 9px;
+      border-width: 0 2px 2px 0;
+      border-radius: 0 0 6px 0;
+    }
+    .rr-start-crest {
+      background: radial-gradient(circle at 35% 28%, #fffbeb 0%, var(--gold-300) 44%, var(--gold-700) 100%);
+      border-color: var(--gold-100);
+      box-shadow: 0 0 28px rgba(232, 199, 123, 0.48), 0 6px 16px rgba(0, 0, 0, 0.55), inset 0 -4px 8px rgba(69, 26, 3, 0.5);
+    }
+    .rr-start-title {
+      font-family: var(--font-display);
+      letter-spacing: 0.08em;
+      background: linear-gradient(90deg, #fffbeb 0%, var(--gold-300) 48%, var(--gold-500) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+    .rr-start-sub {
+      color: #d9cbb6;
+      letter-spacing: 0.02em;
+    }
+    .rr-start-label {
+      color: var(--gold-300);
+      letter-spacing: 0.08em;
+    }
+    .rr-start-chef-card {
+      background: linear-gradient(170deg, rgba(28, 18, 12, 0.86), rgba(16, 10, 7, 0.92));
+      border-color: rgba(212, 164, 76, 0.26);
+    }
+    .rr-start-chef-card.selected {
+      background: linear-gradient(160deg, rgba(102, 62, 18, 0.48) 0%, rgba(28, 16, 8, 0.95) 100%);
+      border-color: var(--gold-300);
+      box-shadow: 0 0 0 1.5px rgba(232, 199, 123, 0.55), 0 8px 20px rgba(200, 150, 62, 0.28);
+    }
+    .rr-start-chef-check {
+      background: linear-gradient(135deg, var(--gold-100), var(--gold-500));
+    }
+    .rr-start-chef-name {
+      font-family: var(--font-display);
+    }
+    .rr-start-chef-info {
+      background: rgba(11, 7, 5, 0.78);
+      border-color: rgba(212, 164, 76, 0.36);
+    }
+    .rr-start-info-rest {
+      font-family: var(--font-display);
+      color: var(--gold-100);
+    }
+    .rr-start-seg {
+      background: rgba(10, 6, 4, 0.84);
+      border-color: rgba(212, 164, 76, 0.28);
+    }
+    .rr-start-seg-btn.active {
+      background: linear-gradient(135deg, var(--gold-300) 0%, var(--gold-500) 100%);
+      border-color: var(--gold-100);
+      color: #160d06;
+    }
+    .rr-start-cta-primary {
+      border-color: var(--gold-100);
+      background: linear-gradient(90deg, #e8c77b 0%, #c8963e 48%, #f3d999 100%);
+      color: #1a0f06;
+      font-family: var(--font-display);
+      letter-spacing: 0.08em;
+      box-shadow: 0 10px 28px rgba(200, 150, 62, 0.42), inset 0 1px 0 rgba(255, 251, 235, 0.75);
+    }
+    .rr-start-cta-resume {
+      border-color: #6ee7b7;
+      background: linear-gradient(135deg, #107052 0%, #0a4c36 100%);
+    }
+    .rr-start-util-btn {
+      background: rgba(22, 14, 10, 0.88);
+      border-color: rgba(212, 164, 76, 0.34);
+      color: var(--gold-100);
+    }
+    .rr-start-util-btn:hover {
+      border-color: var(--gold-300);
+      background: rgba(48, 28, 14, 0.92);
+    }
+
+    /* Harmonized Modals, Dialogs & Restaurant Mat Drawer */
+    .rr-dialog-card,
+    .modal-mobile-fit {
+      background: linear-gradient(170deg, rgba(22, 14, 10, 0.96) 0%, rgba(12, 8, 6, 0.98) 100%) !important;
+      border-color: rgba(212, 164, 76, 0.62) !important;
+      box-shadow: 0 28px 64px rgba(0, 0, 0, 0.88), inset 0 1px 0 rgba(251, 240, 209, 0.16), 0 0 32px rgba(200, 150, 62, 0.18) !important;
+    }
+    .rr-dialog-title,
+    #modal-victory h1 {
+      font-family: var(--font-display);
+      color: var(--gold-100);
+      letter-spacing: 0.06em;
+    }
+    #hud-main-deck[data-tab="mat"] {
+      border-color: rgba(212, 164, 76, 0.64) !important;
+      box-shadow: 0 24px 56px rgba(0, 0, 0, 0.82), inset 0 1px 0 rgba(251, 240, 209, 0.16);
+    }
+    #hud-mat-section,
+    #mat-phase-controller-area {
+      background: linear-gradient(180deg, rgba(18, 11, 8, 0.96), rgba(12, 7, 5, 0.98)) !important;
+    }
+    .hud-tabs {
+      background: linear-gradient(180deg, rgba(24, 15, 10, 0.98), rgba(15, 9, 6, 0.98));
+      border-bottom-color: rgba(212, 164, 76, 0.36);
+    }
+    .pantry-mini-card {
+      background: linear-gradient(165deg, var(--ivory-1) 0%, var(--ivory-2) 100%) !important;
+      border: 1.5px solid var(--gold-500) !important;
+    }
+    .pantry-mini-card.mystery-special {
+      background: linear-gradient(165deg, #faf4fc 0%, #eadcf2 100%) !important;
+      border-color: #8b5cf6 !important;
+    }
+    .rr-victory-home-btn {
+      background: rgba(20, 13, 9, 0.94);
+      border-color: rgba(212, 164, 76, 0.52);
+      color: var(--gold-100);
     }
 
     .modal-mobile-fit {
@@ -4310,27 +5085,25 @@
       header h1 .sm\:inline { display: none !important; }
       header .ph-label { display: none !important; }
       header .md\:flex { display: none !important; }
-      header { padding-top: 3px !important; padding-bottom: 3px !important; }
-      #hud-main-deck {
-        position: relative !important; top: auto !important; right: auto !important; bottom: auto !important; left: auto !important;
-        transform: none !important; margin-left: auto !important; margin-right: auto !important;
-        margin-top: auto !important; margin-bottom: 0 !important;
+      header { padding-top: 2px !important; padding-bottom: 2px !important; }
+      #hud-main-deck[data-tab="controls"] #tabletop-player-zone {
+        display: flex !important;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 6px;
+        padding: 0 4px 3px;
+      }
+      #hud-main-deck[data-tab="controls"] .rr-tt-quests {
+        display: flex;
+        width: auto;
+        flex-shrink: 0;
+        gap: 4px;
+      }
+      #hud-main-deck[data-tab="controls"] .rr-tt-quest-card { width: 126px; min-height: 48px; }
+      #hud-main-deck[data-tab="mat"] {
         width: min(96vw, 860px) !important; max-width: min(96vw, 860px) !important;
-        border-radius: 14px 14px 0 0 !important; border-bottom-width: 0 !important;
-        border-width: 3px; padding: 0 !important; overflow: hidden !important;
+        max-height: min(82dvh, calc(100dvh - var(--hdr-h, 52px) - 8px)) !important;
       }
-      #hud-main-deck[data-sheet="half"] {
-        max-height: min(62dvh, calc(100dvh - var(--hdr-h, 52px) - 34px)) !important;
-      }
-      #hud-main-deck[data-sheet="full"] {
-        max-height: min(82dvh, calc(100dvh - var(--hdr-h, 52px) - 6px)) !important;
-      }
-      .hud-tabs { padding: 4px 6px !important; }
-      .hud-tabs [role="tab"] { min-height: 36px; padding: 4px 8px; font-size: 12px; }
-      #hud-mat-section,
-      #mat-phase-controller-area { padding: 6px 6px max(16px, calc(var(--sab, 0px) + 12px)) !important; }
-      .dial-buttons-grid button.dest-btn { flex: 1 1 calc(14.28% - 6px) !important; min-width: 66px !important; min-height: 44px !important; padding: 3px 2px !important; }
-      .dial-buttons-grid button.dest-btn[data-dest="island"] { flex: 1 1 calc(14.28% - 6px) !important; max-width: 148px !important; flex-direction: column !important; }
     }
 
     footer.glass-card {
@@ -4678,27 +5451,30 @@
     }
 
     @media (max-width: 640px) {
-      .rr-util-group { order: 4; width: 100%; justify-content: center; gap: 4px; }
-      .rr-util-btn { min-width: 34px; min-height: 32px; padding: 3px 8px; font-size: 12px; }
-      .rr-chef-portrait-wrap.rr-cp-sm { width: 24px; height: 24px; font-size: 13px; }
+      .rr-util-group { order: 2; width: auto; justify-content: flex-end; gap: 2px; padding: 1.5px; }
+      .rr-util-btn { min-width: 26px; min-height: 26px; padding: 2px 4px; font-size: 11px; }
+      .rr-chef-portrait-wrap.rr-cp-sm { width: 22px; height: 22px; font-size: 12px; }
       .rr-diff-bar { width: 100%; justify-content: center; }
     }
     @media (max-width: 360px) {
-      header { padding: 3px 5px !important; }
-      header > div:nth-child(1) .text-\[11px\] { font-size: 9.5px !important; gap: 3px !important; }
+      header { padding: 3px 4px !important; gap: 2px 3px !important; }
+      header > div:nth-child(1) { gap: 3px !important; }
+      header > div:nth-child(1) .text-\[11px\] { font-size: 9px !important; gap: 2px !important; }
+      .rr-util-group { gap: 1.5px; padding: 1px; }
+      .rr-util-btn { min-width: 21px; min-height: 24px; padding: 1px 2px; font-size: 10px; }
       #btn-open-rival-kitchens, #btn-open-actions, #btn-open-barter, #btn-toggle-hud {
-        padding: 3px 5px !important; min-width: 28px !important; min-height: 28px !important; font-size: 10.5px !important;
+        padding: 2px 4px !important; min-width: 24px !important; min-height: 24px !important; font-size: 10px !important;
       }
     }
     @media (max-width: 767px) and (orientation: landscape) and (max-height: 560px) {
       .rr-util-group { order: unset; width: auto; }
-      .rr-util-btn { min-width: 28px; min-height: 28px; padding: 2px 5px; font-size: 11px; }
+      .rr-util-btn { min-width: 26px; min-height: 26px; padding: 2px 4px; font-size: 11px; }
       #daily-event-banner { margin-bottom: 4px; }
       .rr-event-head { padding: 3px 8px; font-size: 10px; }
     }
     /* Coarse-pointer 44px touch targets (placed last to always win cascade on mobile portrait & landscape) */
     @media (pointer: coarse) {
-      .rr-touch-btn, .rr-phase-cta, .rr-btn, .buy-btn, .btn-snatch-card, .cook-btn, .rr-delivery-btn,
+      .rr-touch-btn, .rr-phase-cta, .rr-btn, .buy-btn, .btn-snatch-card, .cook-btn,
       #btn-reveal-dials, #btn-done-buying, #btn-next-day, #btn-panel-barter, #btn-panel-actions,
       #btn-dock-size, .rr-dock-toggle, .hud-tabs [role="tab"],
       .dial-buttons-grid button.dest-btn, #hud-tabs button, .rr-confirm-actions button {
@@ -4706,12 +5482,32 @@
         min-block-size: 44px !important;
         min-inline-size: 44px;
       }
+      #desktop-delivery-strip .rr-delivery-btn {
+        min-height: 30px !important;
+        min-block-size: 30px !important;
+        min-inline-size: auto !important;
+        padding: 3px 7px;
+      }
       .rr-diff-btn, .rr-rules-tab, #peek-3d-bar button, #coachmark-banner button, #resume-save-banner button {
         min-block-size: 38px;
       }
       .rr-util-btn {
-        min-width: 36px;
-        min-height: 34px;
+        min-width: 28px;
+        min-height: 28px;
+      }
+    }
+    @media (max-width: 640px) and (pointer: coarse) {
+      .rr-util-btn {
+        min-width: 26px;
+        min-height: 26px;
+        padding: 2px 4px;
+      }
+    }
+    @media (max-width: 360px) and (pointer: coarse) {
+      .rr-util-btn {
+        min-width: 21px;
+        min-height: 24px;
+        padding: 1px 2px;
       }
     }
   </style>
@@ -4778,7 +5574,7 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-1 sm:gap-1.5 bg-stone-900/90 border border-stone-800 px-2 sm:px-2.5 py-0.5 rounded-xl text-[10px] sm:text-[11px] font-semibold" title="Bảng xếp hạng Danh Tiếng 0→20⭐ (Bấm để xem bếp đối thủ)">
+        <div class="rr-header-leaderboard flex items-center gap-1 sm:gap-1.5 bg-stone-900/90 border border-stone-800 px-2 sm:px-2.5 py-0.5 rounded-xl text-[10px] sm:text-[11px] font-semibold" title="Bảng xếp hạng Danh Tiếng 0→20⭐ (Bấm để xem bếp đối thủ)">
           <span class="text-stone-400 font-bold">🏆</span>
           <span class="text-pink-300 font-bold cursor-pointer hover:underline" id="lead-chef-lola" title="Cô Ba">🍲 <b id="lead-p-likes" class="text-amber-400">0</b></span>
           <span class="text-stone-600">•</span>
@@ -4849,7 +5645,10 @@
       </div>
     </div>
 
-    <!-- DESKTOP PHASE 2 REMOTE DELIVERY SWITCHER (compact 1-row top chrome strip, shown only when player has unused upg_delivery) -->
+    <!-- MOBILE & TABLET COMPACT RIVAL STRIP (< 1024px) -->
+    <div id="tt-rivals-top-strip" class="rr-tt-rivals-strip hud-interactive" aria-label="Đối thủ trên bàn cờ"></div>
+
+    <!-- PHASE 2 REMOTE DELIVERY SWITCHER (compact 1-row top chrome strip, Desktop + Mobile) -->
     <div id="desktop-delivery-strip" class="hud-interactive" role="region" aria-label="Xe Giao Hàng chọn chợ từ xa"></div>
     </div>
 
@@ -6869,45 +7668,135 @@
     // ==========================================
     // 6. DYNAMIC 3D SHELF DECKS + 3 FACE-UP COUNTER CARDS
     // ==========================================
+    const LUX_MARKET_JEWEL = {
+      '#0284c7': { band: '#124559', bandDark: '#0a2936', foil: '#e8c77b' },
+      '#16a34a': { band: '#14533c', bandDark: '#0b3324', foil: '#e8c77b' },
+      '#d97706': { band: '#8c4f14', bandDark: '#572f09', foil: '#fbf0d1' },
+      '#dc2626': { band: '#7f1d28', bandDark: '#4d0f16', foil: '#fbf0d1' },
+      '#eab308': { band: '#8a6214', bandDark: '#523808', foil: '#fbf0d1' },
+      '#9333ea': { band: '#4c1d57', bandDark: '#2c0d33', foil: '#e8c77b' },
+    };
+
     function make3DCardTexture(card, colorHex, claimedOwner = null) {
       return makeCanvasTexture((ctx, w, h) => {
         if (!card) {
-          ctx.fillStyle = '#18181b'; ctx.fillRect(0, 0, w, h);
-          ctx.strokeStyle = '#3f3f46'; ctx.lineWidth = 10; ctx.strokeRect(8, 8, w - 16, h - 16);
-          ctx.fillStyle = '#71717a'; ctx.font = '900 26px sans-serif'; ctx.textAlign = 'center';
-          ctx.fillText('ĐÃ HẾT', w / 2, h / 2);
+          ctx.fillStyle = '#120c09'; ctx.fillRect(0, 0, w, h);
+          ctx.strokeStyle = 'rgba(200, 150, 62, 0.45)'; ctx.lineWidth = 4;
+          ctx.setLineDash([8, 6]); ctx.strokeRect(12, 12, w - 24, h - 24); ctx.setLineDash([]);
+          ctx.fillStyle = 'rgba(232, 199, 123, 0.55)'; ctx.font = '700 24px Georgia, serif'; ctx.textAlign = 'center';
+          ctx.fillText('ĐÃ HẾT', w / 2, h / 2 + 8);
           return;
         }
-        ctx.fillStyle = claimedOwner ? '#fef3c7' : '#fffdfa';
-        ctx.fillRect(0, 0, w, h);
-        ctx.strokeStyle = claimedOwner ? '#ef4444' : colorHex;
-        ctx.lineWidth = 14; ctx.strokeRect(6, 6, w - 12, h - 12);
-        ctx.fillStyle = '#15803d';
-        ctx.beginPath(); ctx.arc(w - 38, 38, 28, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#ffffff'; ctx.font = '900 22px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('$' + card.cost, w - 38, 46);
-        ctx.font = '92px sans-serif'; ctx.fillText(card.emoji || '📦', w / 2, 148);
-        ctx.fillStyle = '#0f172a'; ctx.font = '900 21px sans-serif';
-        fitText(ctx, card.name, w / 2, 212, w - 30);
+        const pal = LUX_MARKET_JEWEL[String(colorHex || '').toLowerCase()] || { band: colorHex || '#4c1d57', bandDark: '#1b110a', foil: '#e8c77b' };
+
+        // Warm ivory linen collector cardstock
+        const bg = ctx.createLinearGradient(0, 0, 0, h);
+        bg.addColorStop(0, claimedOwner ? '#f9eed9' : '#fdf9f0');
+        bg.addColorStop(0.55, claimedOwner ? '#f1e1c4' : '#f5ebd8');
+        bg.addColorStop(1, claimedOwner ? '#e6d2ae' : '#ecdec4');
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+
+        // Subtle linen paper grain
+        ctx.fillStyle = 'rgba(138, 94, 26, 0.035)';
+        for (let y = 4; y < h; y += 6) ctx.fillRect(0, y, w, 1);
+
+        // Outer jewel-lacquer border
+        ctx.strokeStyle = claimedOwner ? '#7f1d28' : pal.band;
+        ctx.lineWidth = 10; ctx.strokeRect(5, 5, w - 10, h - 10);
+
+        // Top Indochine jewel editorial ribbon
+        const rib = ctx.createLinearGradient(0, 10, 0, 50);
+        rib.addColorStop(0, claimedOwner ? '#7f1d28' : pal.band);
+        rib.addColorStop(1, claimedOwner ? '#4d0f16' : pal.bandDark);
+        ctx.fillStyle = rib; ctx.fillRect(10, 10, w - 20, 40);
+        ctx.fillStyle = '#c8963e'; ctx.fillRect(10, 49, w - 20, 2);
+
+        // Double antique-gold hairline filigree frame
+        ctx.strokeStyle = '#c8963e'; ctx.lineWidth = 2.5; ctx.strokeRect(13, 13, w - 26, h - 26);
+        ctx.strokeStyle = 'rgba(200, 150, 62, 0.5)'; ctx.lineWidth = 1; ctx.strokeRect(18, 18, w - 36, h - 36);
+
+        // Gold corner diamond accents
+        ctx.fillStyle = '#d4a44c';
+        [[21, 56], [w - 21, 56], [21, h - 21], [w - 21, h - 21]].forEach(([dx, dy]) => {
+          ctx.beginPath();
+          ctx.moveTo(dx, dy - 4); ctx.lineTo(dx + 4, dy); ctx.lineTo(dx, dy + 4); ctx.lineTo(dx - 4, dy);
+          ctx.closePath(); ctx.fill();
+        });
+
+        // Embossed brushed-gold coin $cost seal
+        const cx = w - 38, cy = 36, cr = 24;
+        const coin = ctx.createRadialGradient(cx - 7, cy - 7, 3, cx, cy, cr);
+        coin.addColorStop(0, '#fffbeb');
+        coin.addColorStop(0.45, '#e8c77b');
+        coin.addColorStop(1, '#9c6b1c');
+        ctx.fillStyle = coin;
+        ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#6e4910'; ctx.lineWidth = 2.5; ctx.stroke();
+        ctx.strokeStyle = 'rgba(255, 251, 235, 0.65)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(cx, cy, cr - 4, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#1f1207'; ctx.font = '700 20px Georgia, serif'; ctx.textAlign = 'center';
+        ctx.fillText('$' + card.cost, cx, cy + 7);
+
+        // Subtle illuminated parchment halo behind ingredient icon
+        const halo = ctx.createRadialGradient(w / 2, 134, 8, w / 2, 134, 62);
+        halo.addColorStop(0, 'rgba(232, 199, 123, 0.34)');
+        halo.addColorStop(1, 'rgba(232, 199, 123, 0)');
+        ctx.fillStyle = halo;
+        ctx.beginPath(); ctx.arc(w / 2, 134, 62, 0, Math.PI * 2); ctx.fill();
+
+        ctx.font = '86px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(card.emoji || '📦', w / 2, 158);
+
+        // Gold hairline flourish divider above serif title
+        ctx.strokeStyle = 'rgba(180, 128, 44, 0.6)'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(36, 186); ctx.lineTo(w - 36, 186); ctx.stroke();
+        ctx.fillStyle = '#c8963e';
+        ctx.beginPath();
+        ctx.moveTo(w / 2, 182); ctx.lineTo(w / 2 + 5, 186); ctx.lineTo(w / 2, 190); ctx.lineTo(w / 2 - 5, 186);
+        ctx.closePath(); ctx.fill();
+
+        // Editorial serif ingredient title
+        ctx.fillStyle = '#1f1208'; ctx.font = '700 22px Georgia, "Palatino Linotype", serif';
+        fitText(ctx, card.name, w / 2, 218, w - 42);
+
         if (claimedOwner) {
-          ctx.fillStyle = '#dc2626'; ctx.fillRect(14, 232, w - 28, 42);
-          ctx.fillStyle = '#ffffff'; ctx.font = '900 18px sans-serif';
-          fitText(ctx, 'ĐÃ MUA: ' + claimedOwner, w / 2, 260, w - 40);
+          ctx.fillStyle = '#7f1d28'; ctx.fillRect(18, 234, w - 36, 36);
+          ctx.strokeStyle = '#e8c77b'; ctx.lineWidth = 1.8; ctx.strokeRect(18, 234, w - 36, 36);
+          ctx.fillStyle = '#fbf0d1'; ctx.font = '700 17px Georgia, serif';
+          fitText(ctx, 'ĐÃ MUA · ' + claimedOwner, w / 2, 258, w - 48);
         }
       }, 220, 290);
     }
 
     function make3DShelfBackTexture(mName, cost, colorHex) {
       return makeCanvasTexture((ctx, w, h) => {
-        ctx.fillStyle = colorHex; ctx.fillRect(0, 0, w, h);
-        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 12; ctx.strokeRect(10, 10, w - 20, h - 20);
-        ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(20, 56, w - 40, 175);
-        ctx.fillStyle = '#ffffff'; ctx.font = '900 32px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('KỆ ÚP', w / 2, 118);
-        ctx.fillStyle = '#fde047'; ctx.font = '900 42px sans-serif';
-        ctx.fillText('$' + cost, w / 2, 174);
-        ctx.fillStyle = '#f8fafc'; ctx.font = '800 19px sans-serif';
-        fitText(ctx, mName, w / 2, 214, w - 50);
+        const pal = LUX_MARKET_JEWEL[String(colorHex || '').toLowerCase()] || { band: colorHex || '#4c1d57', bandDark: '#160d08', foil: '#e8c77b' };
+        const bg = ctx.createRadialGradient(w / 2, h * 0.42, 18, w / 2, h / 2, h * 0.72);
+        bg.addColorStop(0, pal.band);
+        bg.addColorStop(1, pal.bandDark);
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+
+        // Double antique-gold filigree frame
+        ctx.strokeStyle = '#d4a44c'; ctx.lineWidth = 5; ctx.strokeRect(10, 10, w - 20, h - 20);
+        ctx.strokeStyle = 'rgba(251, 240, 209, 0.45)'; ctx.lineWidth = 1.5; ctx.strokeRect(19, 19, w - 38, h - 38);
+
+        // Indochine corner brackets
+        ctx.strokeStyle = '#fbf0d1'; ctx.lineWidth = 2.5;
+        [[26, 26, 1, 1], [w - 26, 26, -1, 1], [26, h - 26, 1, -1], [w - 26, h - 26, -1, -1]].forEach(([x, y, sx, sy]) => {
+          ctx.beginPath(); ctx.moveTo(x, y + sy * 16); ctx.lineTo(x, y); ctx.lineTo(x + sx * 16, y); ctx.stroke();
+        });
+
+        // Central smoked-lacquer medallion
+        ctx.fillStyle = 'rgba(12, 8, 6, 0.58)';
+        ctx.beginPath(); ctx.ellipse(w / 2, h / 2 - 4, 72, 92, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#d4a44c'; ctx.lineWidth = 2.5; ctx.stroke();
+
+        ctx.fillStyle = '#fbf0d1'; ctx.font = '700 28px Georgia, serif'; ctx.textAlign = 'center';
+        ctx.fillText('KỆ ÚP', w / 2, 114);
+        ctx.fillStyle = '#e8c77b'; ctx.font = '700 40px Georgia, serif';
+        ctx.fillText('$' + cost, w / 2, 168);
+        ctx.fillStyle = '#f5ebd8'; ctx.font = '700 17px Georgia, serif';
+        fitText(ctx, mName, w / 2, 210, w - 58);
       }, 220, 290);
     }
 
@@ -6919,15 +7808,16 @@
       const m = gameState.markets[key];
       const hex = '#' + m.color.toString(16).padStart(6, '0');
       const shelfTex = make3DShelfBackTexture(m.name, m.cost, hex);
+      const giltEdgeMat = new THREE.MeshStandardMaterial({ color: 0xd8c6a6, roughness: 0.48, metalness: 0.12 });
       const deckMesh = new THREE.Mesh(
         new THREE.BoxGeometry(1.5, 0.58, 2.0),
         [
-          new THREE.MeshStandardMaterial({ color: m.color, roughness: 0.55 }),
-          new THREE.MeshStandardMaterial({ color: m.color, roughness: 0.55 }),
-          new THREE.MeshStandardMaterial({ map: shelfTex, roughness: 0.4 }),
-          new THREE.MeshStandardMaterial({ color: m.color, roughness: 0.55 }),
-          new THREE.MeshStandardMaterial({ color: m.color, roughness: 0.55 }),
-          new THREE.MeshStandardMaterial({ color: m.color, roughness: 0.55 }),
+          giltEdgeMat,
+          giltEdgeMat,
+          new THREE.MeshStandardMaterial({ map: shelfTex, roughness: 0.36, metalness: 0.08 }),
+          giltEdgeMat,
+          giltEdgeMat,
+          giltEdgeMat,
         ]
       );
       deckMesh.position.set(...m.deckPos);
@@ -6941,7 +7831,7 @@
         const cardData = m.cards[idx] || null;
         const cMesh = new THREE.Mesh(
           new THREE.BoxGeometry(1.4, 0.06, 1.85),
-          new THREE.MeshStandardMaterial({ map: make3DCardTexture(cardData, hex, null), roughness: 0.4 })
+          new THREE.MeshStandardMaterial({ map: make3DCardTexture(cardData, hex, null), roughness: 0.38, metalness: 0.05 })
         );
         cMesh.position.set(...pos);
         cMesh.castShadow = true;
@@ -6954,11 +7844,15 @@
       });
     });
 
-    // Upgrade 3D Scene with AAA Chợ Bến Thành Clock Tower, 6 Market Stalls, Hover Glow, Brass Bell & Portrait Standees
+    // Upgrade 3D Scene with Indochine Collector's Edition Clock Tower, Stalls, Lighting, PMREM, Props & Standees
     if (window.VdbAAA && typeof window.VdbAAA.enhanceScene === 'function') {
       try {
         window.VdbAAA.enhanceScene({
-          THREE, scene, camera, controls, renderer, boardHeight, boardCenterZ,
+          THREE, scene, camera, controls, renderer,
+          boardWidth, boardDepth, boardHeight, boardCenterZ,
+          tableMesh, boardBaseMesh, boardFaceMesh,
+          sandTimerGroup, gourmetDeck, basicDeck,
+          keyLight, fillLight,
           interactive3DCards, interactive3DShelves, marketMeshes,
           garbageBagGroup, actionDeckMesh, playerDial,
           markets: gameState.markets,
@@ -7928,7 +8822,7 @@
 
     function isAnyModalOpen() {
       if (document.body.classList.contains('rr-start-open')) return true;
-      if (isDesktopDockMode() && hudMainDeck?.dataset.tab === 'mat') return true;
+      if (hudMainDeck?.dataset.tab === 'mat') return true;
       if (document.querySelector('dialog[open]')) return true;
       const reveal = document.getElementById('dial-reveal-banner');
       if (reveal && reveal.classList.contains('open')) return true;
@@ -8008,7 +8902,7 @@
     function syncDockSizeUI() {
       if (!hudMainDeck) return;
       const isDesk = isDesktopDockMode();
-      document.body.classList.toggle('rr-mat-open', isDesk && hudMainDeck.dataset.tab === 'mat');
+      document.body.classList.toggle('rr-mat-open', hudMainDeck.dataset.tab === 'mat');
       const expanded = isDesk
         ? hudMainDeck.dataset.dock === 'expanded'
         : hudMainDeck.dataset.sheet === 'full';
@@ -8032,7 +8926,7 @@
     function showHudTab(tab) {
       if (!hudMainDeck) return;
       hudMainDeck.dataset.tab = tab;
-      document.body.classList.toggle('rr-mat-open', isDesktopDockMode() && tab === 'mat');
+      document.body.classList.toggle('rr-mat-open', tab === 'mat');
       document.querySelectorAll('#hud-tabs [role="tab"]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
       if (isDesktopDockMode()) {
         hudMainDeck.dataset.dock = tab === 'mat' ? 'expanded' : 'compact';
@@ -8045,7 +8939,7 @@
     }
     document.querySelectorAll('#hud-tabs [role="tab"]').forEach(b => b.addEventListener('click', () => {
       const targetTab = b.dataset.tab;
-      if (isDesktopDockMode() && targetTab === 'mat' && hudMainDeck?.dataset.tab === 'mat') {
+      if (targetTab === 'mat' && hudMainDeck?.dataset.tab === 'mat') {
         showHudTab('controls');
       } else {
         showHudTab(targetTab);
@@ -11104,10 +11998,14 @@
       if (txt) txt.textContent = COACHMARK_STEPS[coachStep] || COACHMARK_STEPS[0];
       if (nextBtn) nextBtn.textContent = coachStep >= COACHMARK_STEPS.length - 1 ? '✓ Bắt đầu!' : 'Tiếp →';
       banner.classList.remove('hidden');
+      syncHeaderHeight();
+      sync3DBoardOverlays();
     }
     function dismissCoachmark() {
       document.getElementById('coachmark-banner')?.classList.add('hidden');
       try { localStorage.setItem(COACHMARK_KEY, '1'); } catch {}
+      syncHeaderHeight();
+      sync3DBoardOverlays();
     }
     function initCoachmark() {
       if (BOT_MODE || document.documentElement.classList.contains('hpvn-framed') || location.hash.includes('hpvn-ticket=')) return;
@@ -11867,6 +12765,7 @@
     // ==========================================
     const ttRivalsLeft = document.getElementById('tt-rivals-left');
     const ttRivalsRight = document.getElementById('tt-rivals-right');
+    const ttRivalsTopStrip = document.getElementById('tt-rivals-top-strip');
     const RIVAL_MARKET_SHORT = {
       fruit: 'Hoa Quả',
       vegetable: 'Rau Củ',
@@ -12222,6 +13121,68 @@
       ttRivalsLeft.replaceChildren(...left.map(buildRivalSeatNode));
       ttRivalsRight.replaceChildren(...right.map(buildRivalSeatNode));
 
+      if (ttRivalsTopStrip) {
+        const ph = gameState.phase || 1;
+        ttRivalsTopStrip.replaceChildren(...rivals.map(rival => {
+          const cid = getChefPortraitId(rival);
+          const accent = rival.colorHex || CHEFS_CATALOG[cid]?.colorHex || '#c8963e';
+          const likes = Math.max(0, rival.likes || 0);
+          const displayName = rival.playerName || rival.short || rival.name || cid;
+          const pantryCnt = (rival.inventory || []).length;
+          const actCnt = (rival.actionCards || []).length;
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'rr-ttrs-badge';
+          b.dataset.chefId = rival.id;
+          b.style.setProperty('--rival-accent', accent);
+          b.title = `${displayName} • ${likes}/${WIN_LIKES}⭐ • $${rival.money || 0} • ${pantryCnt} nguyên liệu${actCnt ? `, ${actCnt} thẻ ẩn` : ''} — Chạm để xem bếp`;
+
+          const pw = document.createElement('span');
+          pw.className = 'rr-ttrs-portrait';
+          const im = document.createElement('img');
+          im.src = `./images/chefs/${cid}.webp`;
+          im.alt = displayName;
+          im.loading = 'lazy';
+          im.decoding = 'async';
+          const fb = document.createElement('span');
+          fb.className = 'rr-ttrs-fb';
+          fb.setAttribute('aria-hidden', 'true');
+          fb.textContent = rival.avatar || CHEFS_CATALOG[cid]?.avatar || '👨‍🍳';
+          im.onerror = function () { this.style.display = 'none'; fb.style.display = 'inline-flex'; };
+          pw.append(im, fb);
+
+          const nm = document.createElement('span');
+          nm.className = 'rr-ttrs-name';
+          nm.textContent = displayName;
+
+          const st = document.createElement('span');
+          st.className = 'rr-ttrs-stars';
+          st.textContent = `⭐${likes}/${WIN_LIKES}`;
+
+          const cd = document.createElement('span');
+          cd.className = 'rr-ttrs-cards';
+          cd.textContent = actCnt > 0 ? `🃏${pantryCnt}·⚡${actCnt}` : `🃏${pantryCnt}`;
+
+          b.append(pw, nm, st, cd);
+          const isReady = meta && (
+            (ph === 1 && (meta.humans || []).includes(rival.id) && (meta.dialReady || []).includes(rival.id))
+            || (ph === 2 && (meta.readyDone || []).includes(rival.id))
+            || (ph === 3 && (meta.readyNextDay || []).includes(rival.id))
+          );
+          if (isReady) {
+            const rd = document.createElement('span');
+            rd.className = 'rr-ttrs-ready';
+            rd.textContent = '✓';
+            b.appendChild(rd);
+          }
+          b.addEventListener('click', () => {
+            playSound('card');
+            openRivalKitchensModal(rival.id);
+          });
+          return b;
+        }));
+      }
+
       syncRivalPropsTo3D();
 
       const layoutKey = `${left.length}:${right.length}`;
@@ -12277,7 +13238,7 @@
           if (open.id === 'modal-snatch') closeSnatchModal();
           else if (open.id === 'modal-action-cards') closeActionCardsModal();
           else open.classList.add('hidden');
-        } else if (isDesktopDockMode() && hudMainDeck?.dataset.tab === 'mat') {
+        } else if (hudMainDeck?.dataset.tab === 'mat') {
           showHudTab('controls');
         }
       });
@@ -12790,6 +13751,6 @@
     if (window.visualViewport) window.visualViewport.addEventListener('resize', handleViewportResize);
     handleViewportResize();
   </script>
-  <script src="./hpvn.js?v=94fcfb31ad"></script>
+  <script src="./hpvn.js?v=ae19140615"></script>
 </body>
 </html>
